@@ -1,0 +1,85 @@
+:root {
+  --color-surface-0: #ffffff;
+  --color-surface-1: #fafafc;
+  --color-surface-2: #f1f0f5;
+  --color-warm-accent: #fff7ed;
+  --color-creative-violet: #6d28d9;
+  --color-blossom-pink: #f472b6;
+  --color-ink-primary: #111827;
+  --color-ink-secondary: #6b7280;
+  --color-ink-tertiary: #9ca3af;
+  --color-ink-muted: #9ca3af;
+  --color-ink-quaternary: #d1d5db;
+  --color-canvas-mist: var(--color-surface-2);
+  --color-border-whisper: #e5e7eb;
+  --color-success-mint: #10b981;
+  --color-warning-amber: #f59e0b;
+  --color-overlay-veil: rgba(17, 24, 39, 0.45);
+  --sub-bg: #fff9f5;
+  --sub-bg-card: #ffffff;
+  --sub-accent-from: #ff8a65;
+  --sub-accent-to: #ff6b9d;
+  --sub-badge: #ff4d6d;
+  --sub-plan-active-border: #ffb088;
+  --sub-plan-active-bg: #fff3eb;
+  --shadow-soft: 0 2px 8px rgba(17, 24, 39, 0.04);
+  --shadow-card: 0 2px 8px rgba(17, 24, 39, 0.04);
+  --shadow-card-hover: var(--shadow-lift);
+  --shadow-lift: 0 8px 24px rgba(109, 40, 217, 0.12);
+  --z-sidebar: 50;
+  --z-dropdown: 100;
+  --z-overlay: 999;
+  --z-modal: 1000;
+  --z-toast: 2000;
+  --sidebar-width: 5rem;
+  --spacing-section: 32px;
+  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s var(--motion-ease) both;
+}
+
+.animate-fade-up-delay-1 {
+  animation-delay: 80ms;
+}
+
+.scroll-area {
+  overflow: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-whisper) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border-whisper);
+    border-radius: 9999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-secondary);
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
