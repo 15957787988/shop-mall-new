@@ -6,7 +6,7 @@ import viteCompression from 'vite-plugin-compression'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: './', //打包路径
+  base: '/', //打包路径
   plugins: [
     vue(),
     // gzip压缩 生产环境生成 .gz 文件
@@ -37,7 +37,14 @@ export default defineConfig({
     port: 8000,
     open: true,
     https: false,
-    proxy: {},
+    proxy: {
+      '/admin-api': {
+        target: "https://muxunai.com",
+        // target: "http://10.8.0.18:48080",
+        //target: "http://localhost:48080",
+        changeOrigin: true,
+      },
+    },
   },
   // 生产环境打包配置
   //去除 console debugger

@@ -118,7 +118,7 @@ module.exports = {
     'no-mixed-spaces-and-tabs': 'warn',
     // 禁止出现多行空行
     'no-multiple-empty-lines': 'warn',
-    // 禁止出现;
+    // 禁止出现分号
     semi: ['warn', 'never'],
     // 强制在块之前使用一致的空格
     'space-before-blocks': 'warn',
@@ -150,6 +150,7 @@ module.exports = {
     defineProps: 'readonly',
     defineEmits: 'readonly',
     defineExpose: 'readonly',
+    defineModel: 'readonly',
     withDefaults: 'readonly',
   },
 }
