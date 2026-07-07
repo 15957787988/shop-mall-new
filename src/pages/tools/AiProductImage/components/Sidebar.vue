@@ -6,7 +6,11 @@
           商品原图
           <Popover placement="bottomLeft" :overlay-inner-style="{ padding: 0 }">
             <template #content>
-              <img class="saleor-sidebar__upload-guide-img" :src="uploadGuideImg" alt="上传图片引导" />
+              <img
+                class="saleor-sidebar__upload-guide-img"
+                :src="uploadGuideImg"
+                alt="上传图片引导"
+              />
             </template>
             <QuestionCircleOutlined class="saleor-sidebar__hint-icon" role="button" tabindex="0" />
           </Popover>
@@ -119,10 +123,14 @@
 <script setup lang="ts">
 import { reactive, computed, ref } from 'vue'
 import { Input, Select, Button, Radio, Spin, Popover } from 'ant-design-vue'
-import { PlusOutlined, MinusOutlined, BulbOutlined, QuestionCircleOutlined } from '@ant-design/icons-vue'
+import {
+  PlusOutlined,
+  MinusOutlined,
+  BulbOutlined,
+  QuestionCircleOutlined,
+} from '@ant-design/icons-vue'
 import uploadGuideImg from '@/assets/image/aiProductImage-tips.png'
 import { aiWriteSellingPoints } from '@/service/api/shop-image-group'
-import { MODEL_ID_SHOP_IMAGE_AI_WRITE } from '@/constants/ai-model'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
@@ -149,7 +157,9 @@ const { addToast } = useToast()
 const aiWriting = ref(false)
 
 const form = reactive<SaleorFormData>({
-  productImages: [],
+  productImages: [
+    'https://muxunai.oss-cn-hangzhou.aliyuncs.com/20260702/1782999513876.png?imageView2/0/w/500/q/60',
+  ],
   platform: 'amazon',
   region: '无',
   language: '中文',
@@ -196,21 +206,17 @@ function changeCount(key: string, delta: number) {
 }
 
 async function handleAiWrite() {
-  if (!isLoggedIn.value) {
-    openLogin()
-    return
-  }
+  // if (!isLoggedIn.value) {
+  //   openLogin()
+  //   return
+  // }
   if (!form.productImages.length || aiWriting.value) {
     return
   }
 
   aiWriting.value = true
   try {
-    form.sellingPoints = await aiWriteSellingPoints(
-      form.productImages.slice(0, 3),
-      MODEL_ID_SHOP_IMAGE_AI_WRITE,
-      2
-    )
+    form.sellingPoints = await aiWriteSellingPoints(form.productImages.slice(0, 3))
     addToast('AI 帮写完成', 'success')
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'AI 帮写失败'
@@ -221,10 +227,10 @@ async function handleAiWrite() {
 }
 
 function handleGenerate() {
-  if (!isLoggedIn.value) {
-    openLogin()
-    return
-  }
+  // if (!isLoggedIn.value) {
+  //   openLogin()
+  //   return
+  // }
   if (!canGenerate.value || generating.value) {
     return
   }

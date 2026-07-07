@@ -410,8 +410,6 @@ import {
   removeLoginFormCache,
   setLoginFormCache,
 } from '@/lib/auth/loginFormCache'
-import { resolveTenantFromWebsite } from '@/lib/auth/resolveTenant'
-
 type LoginTab = 'wechat' | 'account' | 'sms'
 type LoginSubView = 'reset' | 'register' | null
 
@@ -738,7 +736,6 @@ watch(
       return
     }
     loadLoginCache()
-    void resolveTenantFromWebsite()
   }
 )
 

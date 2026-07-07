@@ -222,10 +222,10 @@ function handleModelUploadClick() {
   if (modelUploading.value) {
     return
   }
-  if (!isLoggedIn.value) {
-    openLogin()
-    return
-  }
+  // if (!isLoggedIn.value) {
+  //   openLogin()
+  //   return
+  // }
   modelInputRef.value?.click()
 }
 
@@ -264,10 +264,10 @@ async function handleModelFileChange(e: Event) {
 }
 
 function handleGenerate() {
-  if (!isLoggedIn.value) {
-    openLogin()
-    return
-  }
+  // if (!isLoggedIn.value) {
+  //   openLogin()
+  //   return
+  // }
   if (!canGenerate.value || generating.value) {
     return
   }

@@ -94,15 +94,6 @@ export async function resetPassword(
   )
 }
 
-/** 按域名获取租户 */
-export async function getTenantByWebsite(website: string): Promise<TenantInfo | null> {
-  return http.get<TenantInfo | null>(
-    `${TENANT_PREFIX}/get-by-website`,
-    { website },
-    { skipAuth: true },
-  )
-}
-
 /** 获取默认租户 */
 export async function getDefaultTenant(): Promise<TenantInfo | null> {
   return http.get<TenantInfo | null>(`${TENANT_PREFIX}/simple-by-default`, undefined, {

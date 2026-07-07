@@ -37,10 +37,7 @@ import type {
   TabFormState,
   TabKey,
 } from '@/pages/tools/ViralVideos/utils/types'
-import {
-  MODEL_ID_SHOP_IMAGE_AI_WRITE,
-  MODEL_ID_SHOP_VIDEO,
-} from '@/constants/ai-model'
+import { MODEL_ID_SHOP_VIDEO } from '@/constants/ai-model'
 
 export function useShopVideo() {
   const { isLoggedIn, openLogin } = useAuth()
@@ -445,11 +442,7 @@ export function useShopVideo() {
     }
     aiWriting.value = true
     try {
-      const text = await aiWriteSellingPoints(
-        currentForm.value.uploadedUrls,
-        MODEL_ID_SHOP_IMAGE_AI_WRITE,
-        3
-      )
+      const text = await aiWriteSellingPoints(currentForm.value.uploadedUrls)
       currentForm.value.sellingPoints = text
       addToast('卖点已生成', 'success')
     } catch (e: unknown) {

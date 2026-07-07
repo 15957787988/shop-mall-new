@@ -32,20 +32,20 @@ export function useSaleorImageGroup() {
   };
 
   const fetchResults = async (silent = false) => {
-    if (!isLoggedIn.value) {
-      results.value = [];
-      stopPolling();
-      return;
-    }
+    // if (!isLoggedIn.value) {
+    //   results.value = [];
+    //   stopPolling();
+    //   return;
+    // }
     if (!silent) loading.value = true;
     try {
       const data = await pageShopImageGroup(1, PAGE_SIZE);
       results.value = (data.list ?? []).map(groupVoToResult);
-      if (hasInProgress(results.value)) {
-        startPolling();
-      } else {
-        stopPolling();
-      }
+      // if (hasInProgress(results.value)) {
+      //   startPolling();
+      // } else {
+      //   stopPolling();
+      // }
     } catch {
       if (!silent) addToast("获取套图列表失败", "error");
     } finally {
@@ -73,16 +73,11 @@ export function useSaleorImageGroup() {
   };
 
   onMounted(() => {
-    if (isLoggedIn.value) {
-      void fetchResults(false);
-    }
+    void fetchResults(false);
   });
 
   watch(isLoggedIn, (loggedIn) => {
-    if (loggedIn) {
-      void fetchResults(false);
-      return;
-    }
+    void fetchResults(false);
     results.value = [];
     stopPolling();
   });

@@ -30,11 +30,11 @@ export function useWearImageResults() {
   }
 
   const fetchResults = async (silent = false) => {
-    if (!isLoggedIn.value) {
-      results.value = []
-      stopPolling()
-      return
-    }
+    // if (!isLoggedIn.value) {
+    //   results.value = []
+    //   stopPolling()
+    //   return
+    // }
     if (!silent) loading.value = true
     try {
       const data = await pageWearImage(1, PAGE_SIZE)

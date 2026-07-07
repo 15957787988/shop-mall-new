@@ -85,7 +85,9 @@ function resolveFileUrl(file: UploadFile): string | undefined {
 }
 
 function urlsFromModelValue(val: string | string[]): string[] {
-  if (!val) return []
+  if (!val) {
+    return []
+  }
   return Array.isArray(val) ? val : [val]
 }
 
@@ -111,10 +113,14 @@ watch(
   () => props.modelValue,
   (val) => {
     const hasUploading = fileList.value.some((file) => file.status === 'uploading')
-    if (hasUploading) return
+    if (hasUploading) {
+      return
+    }
 
     if (!val || (Array.isArray(val) && val.length === 0)) {
-      if (fileList.value.length === 0) return
+      if (fileList.value.length === 0) {
+        return
+      }
       fileList.value = []
       return
     }
@@ -130,10 +136,10 @@ watch(
 )
 
 const beforeUpload: UploadProps['beforeUpload'] = (file) => {
-  if (props.requireLogin && !isLoggedIn.value) {
-    openLogin()
-    return Upload.LIST_IGNORE
-  }
+  // if (props.requireLogin && !isLoggedIn.value) {
+  //   openLogin()
+  //   return Upload.LIST_IGNORE
+  // }
   if (!matchImageFileType(file, props.fileType)) {
     addToast('上传图片不符合所需的格式', 'error')
     return Upload.LIST_IGNORE
@@ -172,7 +178,9 @@ const handleRemove: UploadProps['onRemove'] = (file) => {
 
 function handlePreview(file: UploadFile) {
   const url = resolveFileUrl(file)
-  if (!url) return
+  if (!url) {
+    return
+  }
   Modal.info({
     title: '预览',
     content: h('img', {

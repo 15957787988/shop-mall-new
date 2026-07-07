@@ -21,7 +21,6 @@ import {
   clearUserInfoCache,
 } from '@/lib/auth/storage'
 import { initTenantFromStorage } from '@/lib/auth/tenant'
-import { resolveTenantFromWebsite } from '@/lib/auth/resolveTenant'
 
 export type LoginModalMode = 'login' | 'bind-mobile'
 
@@ -145,7 +144,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   const init = () => {
     initTenantFromStorage()
-    void resolveTenantFromWebsite()
     const at = getAccessToken()
     if (at) {
       isLoggedIn.value = true
@@ -157,19 +155,16 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const loginWithPassword = async (username: string, password: string) => {
-    await resolveTenantFromWebsite()
     const resp = await loginByPassword(username, password)
     await completeLogin(resp)
   }
 
   const loginWithSms = async (mobile: string, code: string) => {
-    await resolveTenantFromWebsite()
     const resp = await loginBySms(mobile, code)
     await completeLogin(resp)
   }
 
   const register = async (username: string, password: string) => {
-    await resolveTenantFromWebsite()
     const resp = await registerAccount({ username, password })
     await completeLogin(resp)
   }

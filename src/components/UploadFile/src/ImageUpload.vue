@@ -136,7 +136,9 @@ function isAllowedImage(file: File): boolean {
 let limitToastShown = false
 
 function showLimitToast() {
-  if (limitToastShown) return
+  if (limitToastShown) {
+    return
+  }
   limitToastShown = true
   addToast(`最多上传${props.maxCount}张图片`, 'error')
   queueMicrotask(() => {
@@ -149,7 +151,9 @@ watch(
   (list) => {
     const urls = list.map((i) => i.url).filter(Boolean)
     const key = urls.join('\0')
-    if (key === lastSyncedUrls.value) return
+    if (key === lastSyncedUrls.value) {
+      return
+    }
     lastSyncedUrls.value = key
     emit('uploadComplete', urls)
   },
@@ -161,10 +165,10 @@ function triggerSelect() {
 }
 
 const beforeUpload: UploadProps['beforeUpload'] = (file, uploadFileList) => {
-  if (props.requireLogin && !isLoggedIn.value) {
-    openLogin()
-    return Upload.LIST_IGNORE
-  }
+  // if (props.requireLogin && !isLoggedIn.value) {
+  //   openLogin()
+  //   return Upload.LIST_IGNORE
+  // }
   if (props.fileSize && file.size / 1024 / 1024 >= props.fileSize) {
     addToast(`上传图片大小不能超过 ${props.fileSize}MB`, 'error')
     return Upload.LIST_IGNORE
@@ -216,7 +220,9 @@ async function customRequest(options: UploadRequestOption) {
     const msg = err instanceof Error ? err.message : '图片上传失败'
     emit('uploadError', msg)
     images.value = images.value.filter((item) => item.uid !== uid)
-    if (img.previewUrl) URL.revokeObjectURL(img.previewUrl)
+    if (img.previewUrl) {
+      URL.revokeObjectURL(img.previewUrl)
+    }
     fileList.value = (fileList.value ?? []).filter((item) => item.uid !== uid)
     onError?.(err instanceof Error ? err : new Error(msg))
   }

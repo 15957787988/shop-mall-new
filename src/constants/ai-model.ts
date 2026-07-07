@@ -11,10 +11,10 @@ export const MODEL_ID_SHOP_IMAGE = 571
 export const MODEL_ID_SHOP_VIDEO = 577
 
 /** 商品套图生成默认模型（对齐 humanAI-pc saleor） */
-export const DEFAULT_SALEOR_MODEL_ID = 574
+export const DEFAULT_SALEOR_MODEL_ID = 2
 
 /** AI 服饰穿戴生成模型 */
-export const MODEL_ID_WEAR = 574
+export const MODEL_ID_WEAR = 2
 
 /** 套图 AI 帮写卖点（视觉 Chat） */
 export const MODEL_ID_SHOP_IMAGE_AI_WRITE = 576

@@ -2,11 +2,7 @@
   <section class="recommended-tools animate-fade-up">
     <h2 class="recommended-tools__title">推荐工具</h2>
 
-    <div v-if="loading" class="recommended-tools__loading">
-      <a-spin />
-    </div>
-
-    <div v-else class="recommended-tools__layout">
+    <div class="recommended-tools__layout">
       <div class="recommended-tools__featured">
         <router-link
           v-for="tool in FEATURED_TOOLS"
@@ -43,13 +39,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
 import { ArrowRightOutlined } from '@ant-design/icons-vue'
 import ToolIcon from '@/components/ui/ToolIcon.vue'
 import { tools, type ToolCategory } from '@/mock/tools'
-import { getQuickCreateList, type QuickCreateItem } from '@/pages/home/api'
-import { apiEnv } from '@/service/env'
-import { getToolHref, parseToolIdFromLinkUrl } from '@/lib/tool-routes'
+import { getToolHref } from '@/lib/tool-routes'
 
 interface DisplayTool {
   id: string
@@ -83,53 +76,11 @@ const FEATURED_GRAD: Record<string, { from: string; to: string; accent: string }
   t8: { from: '#D1FAE5', to: '#ECFDF5', accent: '#059669' },
 }
 
-const useMock = apiEnv.useMock
-
 function getTool(id: string) {
   return tools.find((t) => t.id === id)
 }
 
-function quickCreateToDisplay(item: QuickCreateItem): DisplayTool {
-  const toolId = parseToolIdFromLinkUrl(item.linkUrl)
-  const local = toolId ? tools.find((t) => t.id === toolId) : undefined
-  return {
-    id: toolId ?? String(item.id),
-    name: item.name ?? local?.name ?? '',
-    description: item.description ?? local?.description ?? '',
-    category: local?.category ?? 'design',
-    icon: item.icon,
-    linkUrl: item.linkUrl,
-  }
-}
-
-const quickItems = ref<DisplayTool[] | null>(null)
-const loading = ref(false)
-
-onMounted(async () => {
-  if (useMock) {
-    quickItems.value = null
-    return
-  }
-
-  loading.value = true
-  try {
-    const items = await getQuickCreateList()
-    quickItems.value = items.length > 0 ? items.map(quickCreateToDisplay) : null
-  } catch {
-    quickItems.value = null
-  } finally {
-    loading.value = false
-  }
-})
-
-const useApiData = computed(() => quickItems.value !== null && quickItems.value.length >= 4)
-
-const displayGrid = computed(() => {
-  if (useApiData.value) {
-    return quickItems.value!.slice(2, 10)
-  }
-  return GRID_IDS.map(getTool).filter(Boolean) as DisplayTool[]
-})
+const displayGrid = GRID_IDS.map(getTool).filter(Boolean) as DisplayTool[]
 
 function getFeaturedStyle(id: string) {
   const gradient = FEATURED_GRAD[id]
@@ -159,14 +110,6 @@ function getFeaturedAccent(id: string) {
     font-size: 14px;
     font-weight: 600;
     color: var(--color-ink-primary);
-  }
-
-  &__loading {
-    display: flex;
-    min-height: 160px;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-ink-tertiary);
   }
 
   &__layout {
