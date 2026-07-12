@@ -12,381 +12,363 @@
   >
     <div class="login-modal" aria-labelledby="login-modal-title">
       <button type="button" class="login-modal__close" aria-label="关闭" @click="onClose">
-          <CloseOutlined />
-        </button>
+        <CloseOutlined />
+      </button>
 
-        <div class="login-modal__header">
-          <h2 id="login-modal-title" class="login-modal__title">
-            {{ isBindMode ? '绑定手机号' : '登录 / 注册' }}
-          </h2>
-          <p class="login-modal__subtitle">
-            {{ isBindMode ? '绑定后可接收通知并使用完整功能' : '登录后即可使用全部 AI 工具' }}
-          </p>
+      <div class="login-modal__header">
+        <h2 id="login-modal-title" class="login-modal__title">
+          {{ isBindMode ? '绑定手机号' : '登录 / 注册' }}
+        </h2>
+        <p class="login-modal__subtitle">
+          {{ isBindMode ? '绑定后可接收通知并使用完整功能' : '登录后即可使用全部 AI 工具' }}
+        </p>
 
-          <template v-if="!isBindMode">
-            <p v-if="subView === 'reset'" class="login-modal__hint">验证手机号后可设置新密码</p>
-            <p v-else-if="subView === 'register'" class="login-modal__hint">注册成功后将自动登录</p>
-            <div v-else class="login-modal__tabs">
-              <button
-                v-for="item in TAB_ITEMS"
-                :key="item.id"
-                type="button"
-                class="login-modal__tab"
-                :class="{ 'login-modal__tab--active': tab === item.id }"
-                @click="switchTab(item.id)"
-              >
-                <component :is="item.icon" class="login-modal__tab-icon" />
-                <span class="login-modal__tab-label">{{ item.label }}</span>
-              </button>
-            </div>
-          </template>
-        </div>
-
-        <div class="login-modal__body scroll-area">
-          <p v-if="success && !subView && !isBindMode" class="login-modal__success">
-            {{ success }}
-          </p>
-
-          <!-- 绑手机 -->
-          <form v-if="isBindMode" class="login-modal__form" @submit.prevent="handleBindSubmit">
-            <label class="login-modal__label" for="bind-mobile">绑定手机号</label>
-            <Input
-              id="bind-mobile"
-              :value="bindMobileInput"
-              size="large"
-              maxlength="11"
-              placeholder="请输入手机号"
-              :disabled="loading"
-              autofocus
-              @update:value="(v: string) => (bindMobileInput = digitsOnly(v))"
-            />
-
-            <label class="login-modal__label" for="bind-code">验证码</label>
-            <div class="login-modal__code-row">
-              <Input
-                id="bind-code"
-                :value="bindCode"
-                size="large"
-                maxlength="6"
-                placeholder="请输入验证码"
-                class="login-modal__code-input"
-                :disabled="loading"
-                @update:value="(v: string) => (bindCode = digitsOnly(v))"
-              />
-              <Button
-                size="large"
-                :disabled="bindCooldown.sending || loading"
-                @click="
-                  handleSendSms(
-                    bindMobileInput.trim(),
-                    SMS_SCENE.MEMBER_UPDATE_MOBILE,
-                    bindCooldown
-                  )
-                "
-              >
-                {{ bindCooldown.sending ? `${bindCooldown.seconds}s` : '获取验证码' }}
-              </Button>
-            </div>
-
-            <p v-if="error" class="login-modal__error">{{ error }}</p>
-
-            <Button
-              type="primary"
-              html-type="submit"
-              size="large"
-              block
-              :loading="loading"
-              class="login-modal__submit"
-            >
-              {{ loading ? '绑定中…' : '完成绑定' }}
-            </Button>
-          </form>
-
-          <!-- 忘记密码 -->
-          <form
-            v-else-if="subView === 'reset'"
-            class="login-modal__form"
-            @submit.prevent="handleForgotSubmit"
-          >
-            <label class="login-modal__label" for="forgot-mobile">手机号</label>
-            <Input
-              id="forgot-mobile"
-              :value="forgotMobile"
-              size="large"
-              maxlength="11"
-              placeholder="请输入注册手机号"
-              :disabled="loading"
-              autofocus
-              @update:value="(v: string) => (forgotMobile = digitsOnly(v))"
-            />
-
-            <label class="login-modal__label" for="forgot-code">验证码</label>
-            <div class="login-modal__code-row">
-              <Input
-                id="forgot-code"
-                :value="forgotCode"
-                size="large"
-                maxlength="6"
-                placeholder="请输入验证码"
-                class="login-modal__code-input"
-                :disabled="loading"
-                @update:value="(v: string) => (forgotCode = digitsOnly(v))"
-              />
-              <Button
-                size="large"
-                :disabled="forgotCooldown.sending || loading"
-                @click="
-                  handleSendSms(
-                    forgotMobile.trim(),
-                    SMS_SCENE.MEMBER_RESET_PASSWORD,
-                    forgotCooldown
-                  )
-                "
-              >
-                {{ forgotCooldown.sending ? `${forgotCooldown.seconds}s` : '获取验证码' }}
-              </Button>
-            </div>
-
-            <label class="login-modal__label" for="forgot-password">新密码</label>
-            <Input
-              id="forgot-password"
-              v-model:value="forgotPassword"
-              type="password"
-              size="large"
-              maxlength="16"
-              placeholder="4-16 位新密码"
-              :disabled="loading"
-            />
-
-            <label class="login-modal__label" for="forgot-password-confirm"> 确认密码 </label>
-            <Input
-              id="forgot-password-confirm"
-              v-model:value="forgotPasswordConfirm"
-              type="password"
-              size="large"
-              maxlength="16"
-              placeholder="再次输入新密码"
-              :disabled="loading"
-            />
-
-            <p v-if="error" class="login-modal__error">{{ error }}</p>
-
-            <Button
-              type="primary"
-              html-type="submit"
-              size="large"
-              block
-              :loading="loading"
-              class="login-modal__submit"
-            >
-              {{ loading ? '提交中…' : '重置密码' }}
-            </Button>
-            <button type="button" class="login-modal__link-btn" @click="closeSubView">
-              返回登录
-            </button>
-          </form>
-
-          <!-- 注册 -->
-          <form
-            v-else-if="subView === 'register'"
-            class="login-modal__form"
-            @submit.prevent="handleRegisterSubmit"
-          >
-            <label class="login-modal__label" for="register-username">账号</label>
-            <Input
-              id="register-username"
-              v-model:value="registerUsername"
-              size="large"
-              maxlength="30"
-              placeholder="4-30 位账号"
-              :disabled="loading"
-              autofocus
-            />
-
-            <label class="login-modal__label" for="register-password">密码</label>
-            <Input
-              id="register-password"
-              v-model:value="registerPassword"
-              type="password"
-              size="large"
-              maxlength="20"
-              placeholder="5-20 位密码"
-              :disabled="loading"
-            />
-
-            <label class="login-modal__label" for="register-password-confirm"> 确认密码 </label>
-            <Input
-              id="register-password-confirm"
-              v-model:value="registerPasswordConfirm"
-              type="password"
-              size="large"
-              maxlength="20"
-              placeholder="再次输入密码"
-              :disabled="loading"
-            />
-
-            <label class="login-modal__agreement">
-              <Checkbox v-model:checked="agreement" :disabled="loading" />
-              <span>
-                我已阅读并同意
-                <a href="/Agreement" target="_blank" rel="noopener noreferrer">用户协议</a>
-              </span>
-            </label>
-
-            <p v-if="error" class="login-modal__error">{{ error }}</p>
-
-            <Button
-              type="primary"
-              html-type="submit"
-              size="large"
-              block
-              :loading="loading"
-              class="login-modal__submit"
-            >
-              {{ loading ? '注册中…' : '注册' }}
-            </Button>
-            <button type="button" class="login-modal__link-btn" @click="closeSubView">
-              已有账号，返回登录
-            </button>
-          </form>
-
-          <!-- 微信扫码 -->
-          <div v-else-if="tab === 'wechat'" class="login-modal__wechat">
-            <div class="login-modal__qr-wrap">
-              <img v-if="qrUrl" :src="qrUrl" alt="微信登录二维码" class="login-modal__qr" />
-              <LoadingOutlined v-else class="login-modal__qr-loading" spin />
-            </div>
-            <p class="login-modal__wechat-status">{{ wechatStatus }}</p>
-            <p class="login-modal__wechat-tip">扫码登录即表示同意用户协议</p>
+        <template v-if="!isBindMode">
+          <p v-if="subView === 'reset'" class="login-modal__hint">验证手机号后可设置新密码</p>
+          <p v-else-if="subView === 'register'" class="login-modal__hint">注册成功后将自动登录</p>
+          <div v-else class="login-modal__tabs">
             <button
-              v-if="scanToken"
+              v-for="item in TAB_ITEMS"
+              :key="item.id"
               type="button"
-              class="login-modal__refresh"
-              @click="loadWechatQr"
+              class="login-modal__tab"
+              :class="{ 'login-modal__tab--active': tab === item.id }"
+              @click="switchTab(item.id)"
             >
-              刷新二维码
+              <component :is="item.icon" class="login-modal__tab-icon" />
+              <span class="login-modal__tab-label">{{ item.label }}</span>
             </button>
-            <p v-if="error" class="login-modal__error">{{ error }}</p>
+          </div>
+        </template>
+      </div>
+
+      <div class="login-modal__body scroll-area">
+        <p v-if="success && !subView && !isBindMode" class="login-modal__success">
+          {{ success }}
+        </p>
+
+        <!-- 绑手机 -->
+        <form v-if="isBindMode" class="login-modal__form" @submit.prevent="handleBindSubmit">
+          <label class="login-modal__label" for="bind-mobile">绑定手机号</label>
+          <Input
+            id="bind-mobile"
+            :value="bindMobileInput"
+            size="large"
+            maxlength="11"
+            placeholder="请输入手机号"
+            :disabled="loading"
+            autofocus
+            @update:value="(v: string) => (bindMobileInput = digitsOnly(v))"
+          />
+
+          <label class="login-modal__label" for="bind-code">验证码</label>
+          <div class="login-modal__code-row">
+            <Input
+              id="bind-code"
+              :value="bindCode"
+              size="large"
+              maxlength="6"
+              placeholder="请输入验证码"
+              class="login-modal__code-input"
+              :disabled="loading"
+              @update:value="(v: string) => (bindCode = digitsOnly(v))"
+            />
+            <Button
+              size="large"
+              :disabled="bindCooldown.sending || loading"
+              @click="
+                handleSendSms(bindMobileInput.trim(), SMS_SCENE.MEMBER_UPDATE_MOBILE, bindCooldown)
+              "
+            >
+              {{ bindCooldown.sending ? `${bindCooldown.seconds}s` : '获取验证码' }}
+            </Button>
           </div>
 
-          <!-- 账号密码 -->
-          <form
-            v-else-if="tab === 'account'"
-            class="login-modal__form"
-            @submit.prevent="handlePasswordSubmit"
+          <p v-if="error" class="login-modal__error">{{ error }}</p>
+
+          <Button
+            type="primary"
+            html-type="submit"
+            size="large"
+            block
+            :loading="loading"
+            class="login-modal__submit"
           >
-            <label class="login-modal__label" for="login-account-username"> 账号 </label>
+            {{ loading ? '绑定中…' : '完成绑定' }}
+          </Button>
+        </form>
+
+        <!-- 忘记密码 -->
+        <form
+          v-else-if="subView === 'reset'"
+          class="login-modal__form"
+          @submit.prevent="handleForgotSubmit"
+        >
+          <label class="login-modal__label" for="forgot-mobile">手机号</label>
+          <Input
+            id="forgot-mobile"
+            :value="forgotMobile"
+            size="large"
+            maxlength="11"
+            placeholder="请输入注册手机号"
+            :disabled="loading"
+            autofocus
+            @update:value="(v: string) => (forgotMobile = digitsOnly(v))"
+          />
+
+          <label class="login-modal__label" for="forgot-code">验证码</label>
+          <div class="login-modal__code-row">
             <Input
-              id="login-account-username"
-              v-model:value="accountUsername"
+              id="forgot-code"
+              :value="forgotCode"
               size="large"
-              maxlength="30"
-              placeholder="请输入账号"
+              maxlength="6"
+              placeholder="请输入验证码"
+              class="login-modal__code-input"
               :disabled="loading"
-              autofocus
+              @update:value="(v: string) => (forgotCode = digitsOnly(v))"
             />
-
-            <label class="login-modal__label" for="login-password">密码</label>
-            <Input
-              id="login-password"
-              v-model:value="password"
-              type="password"
-              size="large"
-              maxlength="16"
-              placeholder="请输入密码（4-16 位）"
-              :disabled="loading"
-            />
-
-            <div class="login-modal__options-row">
-              <label class="login-modal__remember">
-                <Checkbox v-model:checked="rememberMe" :disabled="loading" />
-                <span>记住我</span>
-              </label>
-              <!-- <button type="button" class="login-modal__link" @click="openReset">忘记密码？</button> -->
-            </div>
-
-            <label class="login-modal__agreement">
-              <Checkbox v-model:checked="agreement" :disabled="loading" />
-              <span>
-                我已阅读并同意
-                <a href="/Agreement" target="_blank" rel="noopener noreferrer">用户协议</a>
-              </span>
-            </label>
-
-            <p v-if="error" class="login-modal__error">{{ error }}</p>
-
             <Button
-              type="primary"
-              html-type="submit"
               size="large"
-              block
-              :loading="loading"
-              class="login-modal__submit"
+              :disabled="forgotCooldown.sending || loading"
+              @click="
+                handleSendSms(forgotMobile.trim(), SMS_SCENE.MEMBER_RESET_PASSWORD, forgotCooldown)
+              "
             >
-              {{ loading ? '登录中…' : '登录' }}
+              {{ forgotCooldown.sending ? `${forgotCooldown.seconds}s` : '获取验证码' }}
             </Button>
+          </div>
 
-            <button type="button" class="login-modal__link-btn" @click="openRegister">
-              没有账号？立即注册
-            </button>
-          </form>
+          <label class="login-modal__label" for="forgot-password">新密码</label>
+          <InputPassword
+            id="forgot-password"
+            v-model:value="forgotPassword"
+            size="large"
+            maxlength="16"
+            placeholder="4-16 位新密码"
+            :disabled="loading"
+          />
 
-          <!-- 手机验证 -->
-          <form v-else class="login-modal__form" @submit.prevent="handleSmsSubmit">
-            <label class="login-modal__label" for="login-sms-mobile">手机号</label>
-            <Input
-              id="login-sms-mobile"
-              :value="smsMobile"
-              size="large"
-              maxlength="11"
-              placeholder="请输入手机号"
-              :disabled="loading"
-              autofocus
-              @update:value="(v: string) => (smsMobile = digitsOnly(v))"
-            />
+          <label class="login-modal__label" for="forgot-password-confirm"> 确认密码 </label>
+          <InputPassword
+            id="forgot-password-confirm"
+            v-model:value="forgotPasswordConfirm"
+            size="large"
+            maxlength="16"
+            placeholder="再次输入新密码"
+            :disabled="loading"
+          />
 
-            <label class="login-modal__label" for="login-sms-code">验证码</label>
-            <div class="login-modal__code-row">
-              <Input
-                id="login-sms-code"
-                :value="smsCode"
-                size="large"
-                maxlength="6"
-                placeholder="请输入验证码"
-                class="login-modal__code-input"
-                :disabled="loading"
-                @update:value="(v: string) => (smsCode = digitsOnly(v))"
-              />
-              <Button
-                size="large"
-                :disabled="smsCooldown.sending || loading"
-                @click="handleSendSms(smsMobile.trim(), SMS_SCENE.MEMBER_LOGIN, smsCooldown)"
-              >
-                {{ smsCooldown.sending ? `${smsCooldown.seconds}s` : '获取验证码' }}
-              </Button>
-            </div>
+          <p v-if="error" class="login-modal__error">{{ error }}</p>
 
-            <p v-if="error" class="login-modal__error">{{ error }}</p>
+          <Button
+            type="primary"
+            html-type="submit"
+            size="large"
+            block
+            :loading="loading"
+            class="login-modal__submit"
+          >
+            {{ loading ? '提交中…' : '重置密码' }}
+          </Button>
+          <button type="button" class="login-modal__link-btn" @click="closeSubView">
+            返回登录
+          </button>
+        </form>
 
-            <Button
-              type="primary"
-              html-type="submit"
-              size="large"
-              block
-              :loading="loading"
-              class="login-modal__submit"
-            >
-              {{ loading ? '登录中…' : '登录 / 注册' }}
-            </Button>
-          </form>
+        <!-- 注册 -->
+        <form
+          v-else-if="subView === 'register'"
+          class="login-modal__form"
+          @submit.prevent="handleRegisterSubmit"
+        >
+          <label class="login-modal__label" for="register-username">账号</label>
+          <Input
+            id="register-username"
+            v-model:value="registerUsername"
+            size="large"
+            maxlength="30"
+            placeholder="4-30 位账号"
+            :disabled="loading"
+            autofocus
+          />
+
+          <label class="login-modal__label" for="register-password">密码</label>
+          <InputPassword
+            id="register-password"
+            v-model:value="registerPassword"
+            size="large"
+            maxlength="20"
+            placeholder="5-20 位密码"
+            :disabled="loading"
+          />
+
+          <label class="login-modal__label" for="register-password-confirm"> 确认密码 </label>
+          <InputPassword
+            id="register-password-confirm"
+            v-model:value="registerPasswordConfirm"
+            size="large"
+            maxlength="20"
+            placeholder="再次输入密码"
+            :disabled="loading"
+          />
+
+          <label class="login-modal__agreement">
+            <Checkbox v-model:checked="agreement" :disabled="loading" />
+            <span>
+              我已阅读并同意
+              <a href="/Agreement" target="_blank" rel="noopener noreferrer">用户协议</a>
+            </span>
+          </label>
+
+          <p v-if="error" class="login-modal__error">{{ error }}</p>
+
+          <Button
+            type="primary"
+            html-type="submit"
+            size="large"
+            block
+            :loading="loading"
+            class="login-modal__submit"
+          >
+            {{ loading ? '注册中…' : '注册' }}
+          </Button>
+          <button type="button" class="login-modal__link-btn" @click="closeSubView">
+            已有账号，返回登录
+          </button>
+        </form>
+
+        <!-- 微信扫码 -->
+        <div v-else-if="tab === 'wechat'" class="login-modal__wechat">
+          <div class="login-modal__qr-wrap">
+            <img v-if="qrUrl" :src="qrUrl" alt="微信登录二维码" class="login-modal__qr" />
+            <LoadingOutlined v-else class="login-modal__qr-loading" spin />
+          </div>
+          <p class="login-modal__wechat-status">{{ wechatStatus }}</p>
+          <p class="login-modal__wechat-tip">扫码登录即表示同意用户协议</p>
+          <button v-if="scanToken" type="button" class="login-modal__refresh" @click="loadWechatQr">
+            刷新二维码
+          </button>
+          <p v-if="error" class="login-modal__error">{{ error }}</p>
         </div>
+
+        <!-- 账号密码 -->
+        <form
+          v-else-if="tab === 'account'"
+          class="login-modal__form"
+          @submit.prevent="handlePasswordSubmit"
+        >
+          <label class="login-modal__label" for="login-account-username"> 账号 </label>
+          <Input
+            id="login-account-username"
+            v-model:value="accountUsername"
+            size="large"
+            maxlength="30"
+            placeholder="请输入账号"
+            :disabled="loading"
+            autofocus
+          />
+
+          <label class="login-modal__label" for="login-password">密码</label>
+          <InputPassword
+            id="login-password"
+            v-model:value="password"
+            size="large"
+            maxlength="16"
+            placeholder="请输入密码（4-16 位）"
+            :disabled="loading"
+          />
+
+          <div class="login-modal__options-row">
+            <label class="login-modal__remember">
+              <Checkbox v-model:checked="rememberMe" :disabled="loading" />
+              <span>记住我</span>
+            </label>
+            <!-- <button type="button" class="login-modal__link" @click="openReset">忘记密码？</button> -->
+          </div>
+
+          <label class="login-modal__agreement">
+            <Checkbox v-model:checked="agreement" :disabled="loading" />
+            <span>
+              我已阅读并同意
+              <a href="/Agreement" target="_blank" rel="noopener noreferrer">用户协议</a>
+            </span>
+          </label>
+
+          <p v-if="error" class="login-modal__error">{{ error }}</p>
+
+          <Button
+            type="primary"
+            html-type="submit"
+            size="large"
+            block
+            :loading="loading"
+            class="login-modal__submit"
+          >
+            {{ loading ? '登录中…' : '登录' }}
+          </Button>
+
+          <button type="button" class="login-modal__link-btn" @click="openRegister">
+            没有账号？立即注册
+          </button>
+        </form>
+
+        <!-- 手机验证 -->
+        <form v-else class="login-modal__form" @submit.prevent="handleSmsSubmit">
+          <label class="login-modal__label" for="login-sms-mobile">手机号</label>
+          <Input
+            id="login-sms-mobile"
+            :value="smsMobile"
+            size="large"
+            maxlength="11"
+            placeholder="请输入手机号"
+            :disabled="loading"
+            autofocus
+            @update:value="(v: string) => (smsMobile = digitsOnly(v))"
+          />
+
+          <label class="login-modal__label" for="login-sms-code">验证码</label>
+          <div class="login-modal__code-row">
+            <Input
+              id="login-sms-code"
+              :value="smsCode"
+              size="large"
+              maxlength="6"
+              placeholder="请输入验证码"
+              class="login-modal__code-input"
+              :disabled="loading"
+              @update:value="(v: string) => (smsCode = digitsOnly(v))"
+            />
+            <Button
+              size="large"
+              :disabled="smsCooldown.sending || loading"
+              @click="handleSendSms(smsMobile.trim(), SMS_SCENE.MEMBER_LOGIN, smsCooldown)"
+            >
+              {{ smsCooldown.sending ? `${smsCooldown.seconds}s` : '获取验证码' }}
+            </Button>
+          </div>
+
+          <p v-if="error" class="login-modal__error">{{ error }}</p>
+
+          <Button
+            type="primary"
+            html-type="submit"
+            size="large"
+            block
+            :loading="loading"
+            class="login-modal__submit"
+          >
+            {{ loading ? '登录中…' : '登录 / 注册' }}
+          </Button>
+        </form>
+      </div>
     </div>
   </Modal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { Input, Button, Checkbox, Modal } from 'ant-design-vue'
+import { Input, InputPassword, Button, Checkbox, Modal } from 'ant-design-vue'
 import {
   CloseOutlined,
   LoadingOutlined,
@@ -414,7 +396,7 @@ type LoginTab = 'wechat' | 'account' | 'sms'
 type LoginSubView = 'reset' | 'register' | null
 
 const TAB_ITEMS: { id: LoginTab; label: string; icon: typeof QrcodeOutlined }[] = [
-  { id: 'wechat', label: '微信扫码', icon: QrcodeOutlined },
+  // { id: 'wechat', label: '微信扫码', icon: QrcodeOutlined },
   { id: 'account', label: '账号登录', icon: UserOutlined },
   // { id: 'sms', label: '手机验证', icon: MobileOutlined },
 ]
@@ -438,7 +420,7 @@ const bindCooldown = useSmsCooldown()
 
 const isBindMode = computed(() => props.mode === 'bind-mobile')
 
-const tab = ref<LoginTab>('wechat')
+const tab = ref<LoginTab>('account')
 const subView = ref<LoginSubView>(null)
 const success = ref<string | null>(null)
 const error = ref<string | null>(null)
@@ -509,7 +491,9 @@ function startWechatPoll(token: string) {
   pollTimer = setInterval(async () => {
     try {
       const resp = await checkWechatLogin(token, getInviteCode())
-      if (!resp?.accessToken) return
+      if (!resp?.accessToken) {
+        return
+      }
 
       stopPolling()
       wechatStatus.value = '扫码成功，正在进入…'
@@ -559,7 +543,9 @@ function closeSubView() {
 
 function loadLoginCache() {
   const cached = getLoginFormCache()
-  if (!cached) return
+  if (!cached) {
+    return
+  }
   accountUsername.value = cached.username
   password.value = cached.password
   rememberMe.value = cached.rememberMe
@@ -750,7 +736,9 @@ watch([() => props.open, isBindMode, tab, subView], ([open, bindMode, currentTab
 })
 
 watch([() => props.open, isBindMode, tab, scanToken], ([open, bindMode, currentTab, token]) => {
-  if (!open || bindMode || currentTab !== 'wechat' || !token) return
+  if (!open || bindMode || currentTab !== 'wechat' || !token) {
+    return
+  }
   startWechatPoll(token)
 })
 
