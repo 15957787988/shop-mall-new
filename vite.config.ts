@@ -41,7 +41,7 @@ export default defineConfig({
       '/admin-api': {
         //target: "https://muxunai.com",
         // target: "http://10.8.0.18:48080",
-        target: "http://localhost:8081",
+        target: "http://localhost:8082",
         changeOrigin: true,
       },
     },

@@ -1,7 +1,7 @@
 import type { ShopImageGenerateReq, ShopImageGroup } from "@/pages/tools/AiProductImage/api";
 import { DEFAULT_SALEOR_MODEL_ID } from "@/constants/ai-model";
 import type { SaleorFormData, SaleorResultGroup, StructureConfigItem } from "./types";
-import { IMAGE_TYPE_LABELS } from "./constants";
+import { DETAIL_STATUS_FAILED, DETAIL_STATUS_GENERATING, DETAIL_STATUS_SUCCESS, IMAGE_TYPE_LABELS } from "./constants";
 
 const getCountByKey = (config: StructureConfigItem[], key: string) =>
   config.find((item) => item.key === key)?.count ?? 0;
@@ -19,16 +19,24 @@ function formatCreateTime(ts?: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** 后端 0/1/2 → 前端展示状态 */
+function mapDetailStatus(status: number): number {
+  if (status === 1) return DETAIL_STATUS_SUCCESS;
+  if (status === 2) return DETAIL_STATUS_FAILED;
+  return DETAIL_STATUS_GENERATING;
+}
+
 /** 表单 → 生成接口请求体 */
 export function formToGenerateReq(form: SaleorFormData): ShopImageGenerateReq {
   const { structureConfig } = form;
   return {
+    platform: form.platform,
     modelId: DEFAULT_SALEOR_MODEL_ID,
     title: extractTitle(form.sellingPoints),
     originalUrls: form.productImages.slice(0, 3),
     language: form.language,
     size: form.aspectRatio,
-    country: form.region,
+    country: form.country,
     productSellingPoints: form.sellingPoints.trim(),
     whiteBgCount: getCountByKey(structureConfig, "white"),
     sceneCount: getCountByKey(structureConfig, "scene"),
@@ -47,9 +55,9 @@ export function groupVoToResult(group: ShopImageGroup): SaleorResultGroup {
     images: (group.details ?? []).map((detail) => ({
       id: String(detail.id),
       picUrl: detail.picUrl ?? "",
-      label: IMAGE_TYPE_LABELS[detail.type] ?? "图片",
+      label: detail.title?.trim() || IMAGE_TYPE_LABELS[detail.type] || "图片",
       texts: [],
-      status: detail.status,
+      status: mapDetailStatus(detail.status),
       progress: detail.progress,
       errorMessage: detail.errorMessage ?? undefined,
     })),

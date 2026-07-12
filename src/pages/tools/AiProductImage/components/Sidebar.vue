@@ -29,8 +29,12 @@
         <h3 class="saleor-sidebar__section-title">生成设置</h3>
         <div class="saleor-sidebar__settings">
           <label class="saleor-sidebar__field">
+            <span>平台</span>
+            <Select v-model:value="form.platform" :options="platformOptions" />
+          </label>
+          <label class="saleor-sidebar__field">
             <span>站点</span>
-            <Select v-model:value="form.region" :options="regionOptions" />
+            <Select v-model:value="form.country" :options="countryOptions" />
           </label>
           <label class="saleor-sidebar__field">
             <span>语言</span>
@@ -135,9 +139,10 @@ import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import {
-  regionOptions,
+  countryOptions,
   languageOptions,
   ratioOptions,
+  platformOptions,
   defaultStructureConfig,
   MIN_TOTAL_IMAGES,
   MAX_TOTAL_IMAGES,
@@ -157,11 +162,9 @@ const { addToast } = useToast()
 const aiWriting = ref(false)
 
 const form = reactive<SaleorFormData>({
-  productImages: [
-    'https://muxunai.oss-cn-hangzhou.aliyuncs.com/20260702/1782999513876.png?imageView2/0/w/500/q/60',
-  ],
-  platform: 'amazon',
-  region: '无',
+  productImages: ['https://xiuxiu-pro-new.meitudata.com/bizshoot/6a534a9271688xx5cqva889563.jpeg'],
+  platform: '阿里巴巴',
+  country: '中国',
   language: '中文',
   aspectRatio: '1024x1024',
   sellingPoints: '',

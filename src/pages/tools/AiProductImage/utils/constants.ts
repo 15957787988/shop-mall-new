@@ -16,12 +16,20 @@ export const DETAIL_STATUS_SUCCESS = 20;
 /** 子图状态：失败 */
 export const DETAIL_STATUS_FAILED = 30;
 
-export const MIN_TOTAL_IMAGES = 7;
+export const MIN_TOTAL_IMAGES = 2;
 export const MAX_TOTAL_IMAGES = 20;
 export const PAGE_SIZE = 20;
 export const POLL_INTERVAL = 4000;
 
-export const regionOptions = [
+
+export const platformOptions = [
+  { label: "亚马逊", value: "amazon" },
+  { label: "阿里巴巴", value: "阿里巴巴" },
+  { label: "拼多多", value: "拼多多" },
+  { label: "抖音电商", value: "抖音电商" },
+];
+
+export const countryOptions = [
   { label: "美国", value: "美国" },
   { label: "英国", value: "英国" },
   { label: "日本", value: "日本" },

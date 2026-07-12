@@ -7,6 +7,7 @@ const PREFIX = '/admin-api/ai/shop/image-group'
 export interface ShopImageDetail {
   id: number
   type: number
+  title?: string | null
   status: number
   progress: string
   picUrl: string | null

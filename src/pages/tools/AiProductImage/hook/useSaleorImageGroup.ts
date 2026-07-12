@@ -32,20 +32,15 @@ export function useSaleorImageGroup() {
   };
 
   const fetchResults = async (silent = false) => {
-    // if (!isLoggedIn.value) {
-    //   results.value = [];
-    //   stopPolling();
-    //   return;
-    // }
     if (!silent) loading.value = true;
     try {
       const data = await pageShopImageGroup(1, PAGE_SIZE);
       results.value = (data.list ?? []).map(groupVoToResult);
-      // if (hasInProgress(results.value)) {
-      //   startPolling();
-      // } else {
-      //   stopPolling();
-      // }
+      if (hasInProgress(results.value)) {
+        startPolling();
+      } else {
+        stopPolling();
+      }
     } catch {
       if (!silent) addToast("获取套图列表失败", "error");
     } finally {
@@ -62,13 +57,19 @@ export function useSaleorImageGroup() {
 
   const handleGenerate = async (form: SaleorFormData) => {
     try {
-      await generateShopImageGroup(formToGenerateReq(form));
+      console.log('handleGenerate===', form);
+      
+      generating.value = true;
+      const groupId = await generateShopImageGroup(formToGenerateReq(form));
       addToast("套图生成任务已提交，正在生成中...", "success");
       await fetchResults(false);
       startPolling();
+      return groupId;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "生成失败";
       addToast(msg, "error");
+    } finally {
+      generating.value = false;
     }
   };
 
