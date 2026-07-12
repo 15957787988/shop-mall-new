@@ -162,7 +162,7 @@ const { addToast } = useToast()
 const aiWriting = ref(false)
 
 const form = reactive<SaleorFormData>({
-  productImages: ['https://xiuxiu-pro-new.meitudata.com/bizshoot/6a534a9271688xx5cqva889563.jpeg'],
+  productImages: [],
   platform: '阿里巴巴',
   country: '中国',
   language: '中文',
