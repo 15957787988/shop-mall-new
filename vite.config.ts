@@ -39,8 +39,8 @@ export default defineConfig({
     https: false,
     proxy: {
       '/admin-api': {
-        //target: "https://muxunai.com",
-        // target: "http://10.8.0.18:48080",
+        // target: "https://try-clothes.cn/",
+        //target: "http://10.8.0.18:48080",
         target: "http://localhost:8082",
         changeOrigin: true,
       },

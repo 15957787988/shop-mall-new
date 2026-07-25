@@ -19,7 +19,7 @@ export const DETAIL_STATUS_FAILED = 30;
 export const MIN_TOTAL_IMAGES = 2;
 export const MAX_TOTAL_IMAGES = 20;
 export const PAGE_SIZE = 20;
-export const POLL_INTERVAL = 4000;
+export const POLL_INTERVAL = 15000;
 
 
 export const platformOptions = [

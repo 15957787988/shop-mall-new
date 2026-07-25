@@ -52,6 +52,7 @@ export function groupVoToResult(group: ShopImageGroup): SaleorResultGroup {
     title: group.title,
     createTime: formatCreateTime(group.createTime),
     status: group.status,
+    originalUrls: group.originalUrls ?? [],
     images: (group.details ?? []).map((detail) => ({
       id: String(detail.id),
       picUrl: detail.picUrl ?? "",

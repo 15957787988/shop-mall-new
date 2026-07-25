@@ -26,6 +26,7 @@ export interface SaleorResultGroup {
   images: SaleorImageItem[];
   copyContent: SaleorCopyContent;
   status?: number;
+  originalUrls?: string[];
 }
 
 /** 套图结构配置项 */

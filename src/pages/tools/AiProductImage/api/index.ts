@@ -21,6 +21,7 @@ export interface ShopImageGroup {
   status: number
   details: ShopImageDetail[]
   createTime?: number
+  originalUrls?: string[]
 }
 
 /** 生成请求 */
