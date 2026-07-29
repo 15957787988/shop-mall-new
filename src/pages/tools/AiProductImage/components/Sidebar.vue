@@ -162,7 +162,9 @@ const { addToast } = useToast()
 const aiWriting = ref(false)
 
 const form = reactive<SaleorFormData>({
-  productImages: [],
+  productImages: [
+    'https://try-clothes.cn/shop-mall-img/uploads/1785119646460_5b5f921b47174cb78765bf54a58442ce.jpg',
+  ],
   platform: '阿里巴巴',
   country: '中国',
   language: '中文',

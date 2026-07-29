@@ -39,7 +39,7 @@ export default defineConfig({
     https: false,
     proxy: {
       '/admin-api': {
-        // target: "https://try-clothes.cn/",
+        //target: "https://try-clothes.cn/",
         //target: "http://10.8.0.18:48080",
         target: "http://localhost:8082",
         changeOrigin: true,
