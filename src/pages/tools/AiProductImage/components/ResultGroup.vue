@@ -33,7 +33,7 @@
         v-for="img in group.images"
         :key="img.id"
         :image="img"
-        :regenerating="regeneratingId === img.id"
+        :regenerating="regeneratingIds.has(img.id)"
         @preview="openPreview"
         @download="handleDownloadImage"
         @regenerate="handleRegenerateImage"
@@ -79,6 +79,7 @@ const ImagePreviewGroup = Image.PreviewGroup
 
 const props = defineProps<{
   group: SaleorResultGroup
+  refreshResults?: () => Promise<void>
 }>()
 
 const emit = defineEmits<{
@@ -88,7 +89,7 @@ const emit = defineEmits<{
 const { addToast } = useToast()
 const downloading = ref(false)
 const batchRegenerating = ref(false)
-const regeneratingId = ref<string | null>(null)
+const regeneratingIds = ref(new Set<string>())
 const viewerVisible = ref(false)
 const viewerIndex = ref(0)
 
@@ -137,31 +138,40 @@ async function handleDownloadAll() {
 }
 
 async function handleRegenerateImage(image: SaleorImageItem) {
-  regeneratingId.value = image.id
+  regeneratingIds.value = new Set([...regeneratingIds.value, image.id])
   try {
     await regenerateShopImageGroup(Number(image.id))
     addToast('重新生成任务已提交', 'success')
+    await props.refreshResults?.()
     emit('regenerated')
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '重新生成失败'
     addToast(msg, 'error')
   } finally {
-    regeneratingId.value = null
+    const next = new Set(regeneratingIds.value)
+    next.delete(image.id)
+    regeneratingIds.value = next
   }
 }
 
 async function handleBatchRegenerate() {
   if (failedImages.value.length < 2) return
+  const ids = failedImages.value.map((img) => img.id)
   batchRegenerating.value = true
+  regeneratingIds.value = new Set([...regeneratingIds.value, ...ids])
   try {
-    await Promise.all(failedImages.value.map((img) => regenerateShopImageGroup(Number(img.id))))
-    addToast(`已提交 ${failedImages.value.length} 张失败图片的重新生成任务`, 'success')
+    await Promise.all(ids.map((id) => regenerateShopImageGroup(Number(id))))
+    addToast(`已提交 ${ids.length} 张失败图片的重新生成任务`, 'success')
+    await props.refreshResults?.()
     emit('regenerated')
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '批量重新生成失败'
     addToast(msg, 'error')
   } finally {
     batchRegenerating.value = false
+    const next = new Set(regeneratingIds.value)
+    ids.forEach((id) => next.delete(id))
+    regeneratingIds.value = next
   }
 }
 

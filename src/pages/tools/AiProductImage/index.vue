@@ -13,6 +13,7 @@
           <ResultList
             v-model:results="results"
             :loading="loading"
+            :refresh-results="() => fetchResults(true)"
             @regenerated="fetchResults(true)"
           />
         </main>

@@ -56,18 +56,18 @@
     @mouseleave="hovered = false"
   >
     <div class="image-card__wrap">
+      <div v-if="showGeneratingState" class="image-card__status">
+        <Spin />
+        <span>生成中</span>
+      </div>
+
       <img
-        v-if="image.picUrl"
+        v-else-if="image.picUrl"
         :src="image.picUrl"
         :alt="image.label"
         class="image-card__img"
         @click="emit('preview', image)"
       />
-
-      <div v-else-if="isGenerating" class="image-card__status">
-        <Spin />
-        <span>生成中</span>
-      </div>
 
       <div v-else-if="isFailed" class="image-card__status image-card__status--error">
         <span>{{ image.errorMessage || '生成失败，请重试' }}</span>
@@ -80,7 +80,7 @@
 
       <div v-if="showActions && hovered" class="image-card__actions">
         <button
-          v-if="showRegenerate"
+          v-if="showRegenerate && isFailed"
           type="button"
           class="image-card__action"
           title="重新生成"
@@ -142,8 +142,11 @@ const collageClass = computed(() => {
 
 const isGenerating = computed(() => props.image?.status === DETAIL_STATUS_GENERATING)
 const isFailed = computed(() => props.image?.status === DETAIL_STATUS_FAILED)
+const showGeneratingState = computed(() => props.regenerating || isGenerating.value)
 const showActions = computed(
-  () => Boolean(props.image?.picUrl) || (props.showRegenerate && isFailed.value),
+  () =>
+    !props.regenerating &&
+    (Boolean(props.image?.picUrl) || (props.showRegenerate && isFailed.value)),
 )
 </script>
 

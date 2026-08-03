@@ -13,6 +13,7 @@
         v-for="group in results"
         :key="group.id"
         :group="group"
+        :refresh-results="refreshResults"
         @regenerated="emit('regenerated')"
       />
     </div>
@@ -27,6 +28,7 @@ import type { SaleorResultGroup } from "../utils/types";
 
 defineProps<{
   loading?: boolean;
+  refreshResults?: () => Promise<void>;
 }>();
 
 const emit = defineEmits<{
