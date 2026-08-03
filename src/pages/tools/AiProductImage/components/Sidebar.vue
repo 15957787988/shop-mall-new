@@ -163,7 +163,7 @@ const aiWriting = ref(false)
 
 const form = reactive<SaleorFormData>({
   productImages: [
-    'https://muxunai.oss-cn-hangzhou.aliyuncs.com/20260802/1785656437489.webp',
+    //'https://muxunai.oss-cn-hangzhou.aliyuncs.com/20260802/1785656437489.webp',
     //'https://try-clothes.cn/shop-mall-img/uploads/1785119646460_5b5f921b47174cb78765bf54a58442ce.jpg',
   ],
   platform: '阿里巴巴',
