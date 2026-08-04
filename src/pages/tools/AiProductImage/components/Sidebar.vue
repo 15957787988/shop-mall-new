@@ -163,6 +163,8 @@ const aiWriting = ref(false)
 
 const form = reactive<SaleorFormData>({
   productImages: [
+    //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a7176f2da293pc37y18y33346.png',
+    //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a714ae9cd2a4aas5aef735391.jpeg',
     //'https://muxunai.oss-cn-hangzhou.aliyuncs.com/20260802/1785656437489.webp',
     //'https://try-clothes.cn/shop-mall-img/uploads/1785119646460_5b5f921b47174cb78765bf54a58442ce.jpg',
   ],

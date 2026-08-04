@@ -10,18 +10,27 @@
 
     <div v-else class="result-list__scroll scroll-area">
       <ResultGroup
-        v-for="group in results"
+        v-for="group in pagedResults"
         :key="group.id"
         :group="group"
         :refresh-results="refreshResults"
         @regenerated="emit('regenerated')"
+      />
+      <Pagination
+        v-if="results.length > pageSize"
+        v-model:current="currentPage"
+        :total="results.length"
+        :page-size="pageSize"
+        :show-size-changer="false"
+        class="result-list__pagination"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Spin } from "ant-design-vue";
+import { ref, computed } from "vue";
+import { Spin, Pagination } from "ant-design-vue";
 import EmptyState from "./EmptyState.vue";
 import ResultGroup from "./ResultGroup.vue";
 import type { SaleorResultGroup } from "../utils/types";
@@ -36,6 +45,14 @@ const emit = defineEmits<{
 }>();
 
 const results = defineModel<SaleorResultGroup[]>("results", { default: () => [] });
+
+const pageSize = 10;
+const currentPage = ref(1);
+
+const pagedResults = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return results.value.slice(start, start + pageSize);
+});
 </script>
 
 <style scoped lang="scss">
@@ -55,6 +72,12 @@ const results = defineModel<SaleorResultGroup[]>("results", { default: () => [] 
   &__scroll {
     height: 100%;
     padding: 16px;
+  }
+
+  &__pagination {
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 0 4px;
   }
 }
 </style>
