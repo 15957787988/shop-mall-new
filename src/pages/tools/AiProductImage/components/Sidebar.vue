@@ -173,6 +173,8 @@ const form = reactive<SaleorFormData>({
     //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a714ae9cd2a4aas5aef735391.jpeg',
     //'https://muxunai.oss-cn-hangzhou.aliyuncs.com/20260802/1785656437489.webp',
     //'https://try-clothes.cn/shop-mall-img/uploads/1785119646460_5b5f921b47174cb78765bf54a58442ce.jpg',
+    // 'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a8da053abb93inj4a7k8l5836.png',
+    //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a8db806b80191grv578318250.png',
   ],
   platform: '阿里巴巴',
   country: '中国',
