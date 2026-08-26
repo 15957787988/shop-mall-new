@@ -27,6 +27,7 @@ export interface SaleorResultGroup {
   copyContent: SaleorCopyContent;
   status?: number;
   originalUrls?: string[];
+  modelId?: number;
 }
 
 /** 套图结构配置项 */
@@ -43,10 +44,11 @@ export interface StructureConfigItem {
 export interface SaleorFormData {
   productImages: string[];
   platform: string;
-  region: string;
+  country: string;
   language: string;
   aspectRatio: string;
   sellingPoints: string;
   structureMode: "smart" | "custom";
   structureConfig: StructureConfigItem[];
+  modelId: number;
 }

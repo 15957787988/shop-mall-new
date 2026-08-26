@@ -2,7 +2,7 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import {
   generateShopImageGroup,
   pageShopImageGroup,
-} from "@/pages/tools/AiProductImage/api";
+} from "../api";
 import { useAuth } from "@/composables/useAuth";
 import { useToast } from "@/composables/useToast";
 import { DETAIL_STATUS_GENERATING, PAGE_SIZE, POLL_INTERVAL } from "../utils/constants";

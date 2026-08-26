@@ -1,5 +1,15 @@
+import { AI_IMAGE_MODELS, DEFAULT_SALEOR_MODEL_ID } from '@/constants/ai-model'
+
 /** 每张套图消耗积分 */
 export const POINTS_PER_IMAGE = 3;
+
+export { DEFAULT_SALEOR_MODEL_ID }
+
+/** 商品套图可选模型 */
+export const modelSelectOptions = AI_IMAGE_MODELS.map((item) => ({
+  label: item.name,
+  value: item.modelId,
+}))
 
 /** 子图类型 → 展示标签 */
 export const IMAGE_TYPE_LABELS: Record<number, string> = {
@@ -16,7 +26,7 @@ export const DETAIL_STATUS_SUCCESS = 20;
 /** 子图状态：失败 */
 export const DETAIL_STATUS_FAILED = 30;
 
-export const MIN_TOTAL_IMAGES = 2;
+export const MIN_TOTAL_IMAGES = 1;
 export const MAX_TOTAL_IMAGES = 20;
 export const PAGE_SIZE = 20;
 export const POLL_INTERVAL = 15000;

@@ -16,8 +16,11 @@ export const DEFAULT_SALEOR_MODEL_ID = 2
 /** AI 服饰穿戴生成模型 */
 export const MODEL_ID_WEAR = 2
 
-/** 套图 AI 帮写卖点（视觉 Chat） */
-export const MODEL_ID_SHOP_IMAGE_AI_WRITE = 576
+/** 商品套图可选图片模型 */
+export const AI_IMAGE_MODELS = [
+  { name: 'gpt2', modelId: 2 },
+  { name: 'Seedream-4', modelId: 6 },
+  { name: 'Seedream-4.5', modelId: 7 },
+  { name: 'seedream-5-0-lite', modelId: 8 },
+] as const
 
-/** @deprecated 使用 DEFAULT_SALEOR_MODEL_ID */
-export const DEFAULT_WRITE_MODEL_ID = MODEL_ID_SHOP_IMAGE_AI_WRITE

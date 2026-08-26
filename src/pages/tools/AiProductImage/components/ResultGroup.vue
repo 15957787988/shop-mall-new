@@ -9,7 +9,6 @@
         <Button
           v-if="failedImages.length >= 2"
           size="small"
-          :loading="batchRegenerating"
           @click="handleBatchRegenerate"
         >
           <ReloadOutlined />
@@ -41,6 +40,7 @@
     </div>
 
     <ImagePreviewGroup
+      v-if="viewerVisible"
       :preview="{
         visible: viewerVisible,
         onVisibleChange: (visible: boolean) => {
@@ -59,6 +59,14 @@
         :style="{ display: 'none' }"
       />
     </ImagePreviewGroup>
+
+    <RegenerateModal
+      :open="regenerateModalOpen"
+      :default-model-id="group.modelId"
+      :loading="regenerateModalLoading"
+      @confirm="handleRegenerateConfirm"
+      @cancel="closeRegenerateModal"
+    />
   </div>
 </template>
 
@@ -73,6 +81,7 @@ import {
 import { useToast } from '@/composables/useToast'
 import { DETAIL_STATUS_FAILED, downloadBlob } from '../utils/constants'
 import ImageCard from './ImageCard.vue'
+import RegenerateModal from './RegenerateModal.vue'
 import type { SaleorImageItem, SaleorResultGroup } from '../utils/types'
 
 const ImagePreviewGroup = Image.PreviewGroup
@@ -88,10 +97,12 @@ const emit = defineEmits<{
 
 const { addToast } = useToast()
 const downloading = ref(false)
-const batchRegenerating = ref(false)
 const regeneratingIds = ref(new Set<string>())
 const viewerVisible = ref(false)
 const viewerIndex = ref(0)
+const regenerateModalOpen = ref(false)
+const regenerateModalLoading = ref(false)
+const pendingRegenerateIds = ref<string[]>([])
 
 const failedImages = computed(() =>
   props.group.images.filter((img) => img.status === DETAIL_STATUS_FAILED),
@@ -137,42 +148,57 @@ async function handleDownloadAll() {
   }
 }
 
-async function handleRegenerateImage(image: SaleorImageItem) {
-  regeneratingIds.value = new Set([...regeneratingIds.value, image.id])
+function openRegenerateModal(imageIds: string[]) {
+  pendingRegenerateIds.value = imageIds
+  regenerateModalOpen.value = true
+}
+
+function closeRegenerateModal() {
+  if (regenerateModalLoading.value) {
+    return
+  }
+  regenerateModalOpen.value = false
+  pendingRegenerateIds.value = []
+}
+
+async function handleRegenerateConfirm(modelId: number) {
+  const ids = pendingRegenerateIds.value
+  if (!ids.length) {
+    return
+  }
+
+  regenerateModalLoading.value = true
+  regeneratingIds.value = new Set([...regeneratingIds.value, ...ids])
   try {
-    await regenerateShopImageGroup(Number(image.id))
-    addToast('重新生成任务已提交', 'success')
+    await Promise.all(
+      ids.map((id) => regenerateShopImageGroup({ id: Number(id), modelId })),
+    )
+    addToast(
+      ids.length > 1 ? `已提交 ${ids.length} 张图片的重新生成任务` : '重新生成任务已提交',
+      'success',
+    )
+    regenerateModalOpen.value = false
+    pendingRegenerateIds.value = []
     await props.refreshResults?.()
     emit('regenerated')
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '重新生成失败'
     addToast(msg, 'error')
   } finally {
-    const next = new Set(regeneratingIds.value)
-    next.delete(image.id)
-    regeneratingIds.value = next
-  }
-}
-
-async function handleBatchRegenerate() {
-  if (failedImages.value.length < 2) return
-  const ids = failedImages.value.map((img) => img.id)
-  batchRegenerating.value = true
-  regeneratingIds.value = new Set([...regeneratingIds.value, ...ids])
-  try {
-    await Promise.all(ids.map((id) => regenerateShopImageGroup(Number(id))))
-    addToast(`已提交 ${ids.length} 张失败图片的重新生成任务`, 'success')
-    await props.refreshResults?.()
-    emit('regenerated')
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '批量重新生成失败'
-    addToast(msg, 'error')
-  } finally {
-    batchRegenerating.value = false
+    regenerateModalLoading.value = false
     const next = new Set(regeneratingIds.value)
     ids.forEach((id) => next.delete(id))
     regeneratingIds.value = next
   }
+}
+
+function handleRegenerateImage(image: SaleorImageItem) {
+  openRegenerateModal([image.id])
+}
+
+async function handleBatchRegenerate() {
+  if (failedImages.value.length < 2) return
+  openRegenerateModal(failedImages.value.map((img) => img.id))
 }
 
 function handleDownloadImage(image: SaleorImageItem) {

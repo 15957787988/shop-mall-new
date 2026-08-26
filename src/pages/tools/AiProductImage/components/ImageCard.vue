@@ -11,14 +11,14 @@
       @click="emit('previewOriginal', 0)"
     >
       <template v-if="displayUrls.length === 1">
-        <img :src="displayUrls[0]" alt="原图" class="image-card__original-img" />
+        <img v-lazy="displayUrls[0]" alt="原图" class="image-card__original-img" />
       </template>
 
       <template v-else-if="displayUrls.length === 2">
         <img
           v-for="(url, index) in displayUrls"
           :key="index"
-          :src="url"
+          v-lazy="url"
           alt="原图"
           class="image-card__original-img"
           @click.stop="emit('previewOriginal', index)"
@@ -27,17 +27,17 @@
 
       <template v-else-if="displayUrls.length >= 3">
         <div class="image-card__original-main" @click.stop="emit('previewOriginal', 0)">
-          <img :src="displayUrls[0]" alt="原图" class="image-card__original-img" />
+          <img v-lazy="displayUrls[0]" alt="原图" class="image-card__original-img" />
         </div>
         <div class="image-card__original-side">
           <img
-            :src="displayUrls[1]"
+            v-lazy="displayUrls[1]"
             alt="原图"
             class="image-card__original-img"
             @click.stop="emit('previewOriginal', 1)"
           />
           <img
-            :src="displayUrls[2]"
+            v-lazy="displayUrls[2]"
             alt="原图"
             class="image-card__original-img"
             @click.stop="emit('previewOriginal', 2)"
@@ -63,7 +63,7 @@
 
       <img
         v-else-if="image.picUrl"
-        :src="image.picUrl"
+        v-lazy="image.picUrl"
         :alt="image.label"
         class="image-card__img"
         @click="emit('preview', image)"
@@ -80,7 +80,7 @@
 
       <div v-if="showActions && hovered" class="image-card__actions">
         <button
-          v-if="showRegenerate && isFailed"
+          v-if="showRegenerate"
           type="button"
           class="image-card__action"
           title="重新生成"
@@ -120,7 +120,7 @@ const props = withDefaults(
     regenerating?: boolean
     showRegenerate?: boolean
   }>(),
-  { mode: 'generated', regenerating: false, showRegenerate: true, originalUrls: () => [] },
+  { mode: 'generated', regenerating: false, showRegenerate: true, originalUrls: () => [] }
 )
 
 const emit = defineEmits<{
@@ -135,8 +135,12 @@ const hovered = ref(false)
 const displayUrls = computed(() => (props.originalUrls ?? []).slice(0, 3))
 const collageClass = computed(() => {
   const count = displayUrls.value.length
-  if (count <= 1) return 'image-card__wrap--original-1'
-  if (count === 2) return 'image-card__wrap--original-2'
+  if (count <= 1) {
+    return 'image-card__wrap--original-1'
+  }
+  if (count === 2) {
+    return 'image-card__wrap--original-2'
+  }
   return 'image-card__wrap--original-3'
 })
 
@@ -146,7 +150,7 @@ const showGeneratingState = computed(() => props.regenerating || isGenerating.va
 const showActions = computed(
   () =>
     !props.regenerating &&
-    (Boolean(props.image?.picUrl) || (props.showRegenerate && isFailed.value)),
+    (Boolean(props.image?.picUrl) || (props.showRegenerate && isFailed.value))
 )
 </script>
 

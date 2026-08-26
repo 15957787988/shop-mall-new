@@ -1,5 +1,4 @@
 import type { ShopImageGenerateReq, ShopImageGroup } from "@/pages/tools/AiProductImage/api";
-import { DEFAULT_SALEOR_MODEL_ID } from "@/constants/ai-model";
 import type { SaleorFormData, SaleorResultGroup, StructureConfigItem } from "./types";
 import { DETAIL_STATUS_FAILED, DETAIL_STATUS_GENERATING, DETAIL_STATUS_SUCCESS, IMAGE_TYPE_LABELS } from "./constants";
 
@@ -31,7 +30,7 @@ export function formToGenerateReq(form: SaleorFormData): ShopImageGenerateReq {
   const { structureConfig } = form;
   return {
     platform: form.platform,
-    modelId: DEFAULT_SALEOR_MODEL_ID,
+    modelId: form.modelId,
     title: extractTitle(form.sellingPoints),
     originalUrls: form.productImages.slice(0, 3),
     language: form.language,
@@ -53,6 +52,7 @@ export function groupVoToResult(group: ShopImageGroup): SaleorResultGroup {
     createTime: formatCreateTime(group.createTime),
     status: group.status,
     originalUrls: group.originalUrls ?? [],
+    modelId: group.modelId,
     images: (group.details ?? []).map((detail) => ({
       id: String(detail.id),
       picUrl: detail.picUrl ?? "",

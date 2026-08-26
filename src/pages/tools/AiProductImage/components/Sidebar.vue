@@ -44,6 +44,10 @@
             <span>图片比例</span>
             <Select v-model:value="form.aspectRatio" :options="ratioSelectOptions" />
           </label>
+          <label class="saleor-sidebar__field">
+            <span>生成模型</span>
+            <Select v-model:value="form.modelId" :options="modelSelectOptions" />
+          </label>
         </div>
       </section>
 
@@ -147,6 +151,8 @@ import {
   MIN_TOTAL_IMAGES,
   MAX_TOTAL_IMAGES,
   POINTS_PER_IMAGE,
+  DEFAULT_SALEOR_MODEL_ID,
+  modelSelectOptions,
 } from '../utils/constants'
 import type { SaleorFormData } from '../utils/types'
 
@@ -175,6 +181,7 @@ const form = reactive<SaleorFormData>({
   sellingPoints: '',
   structureMode: 'custom',
   structureConfig: defaultStructureConfig(),
+  modelId: DEFAULT_SALEOR_MODEL_ID,
 })
 
 const ratioSelectOptions = ratioOptions.map((opt) => ({

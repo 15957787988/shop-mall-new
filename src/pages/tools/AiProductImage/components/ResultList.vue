@@ -8,7 +8,7 @@
       :results="results"
     />
 
-    <div v-else class="result-list__scroll scroll-area">
+    <div v-else ref="scrollRef" class="result-list__scroll scroll-area">
       <ResultGroup
         v-for="group in pagedResults"
         :key="group.id"
@@ -29,29 +29,58 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, inject, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { Spin, Pagination } from "ant-design-vue";
 import EmptyState from "./EmptyState.vue";
 import ResultGroup from "./ResultGroup.vue";
 import type { SaleorResultGroup } from "../utils/types";
+
+interface LazyloadInstance {
+  config: (options: { observerOptions?: IntersectionObserverInit }) => void;
+}
 
 defineProps<{
   loading?: boolean;
   refreshResults?: () => Promise<void>;
 }>();
 
-const emit = defineEmits<{
-  regenerated: [];
-}>();
-
 const results = defineModel<SaleorResultGroup[]>("results", { default: () => [] });
 
 const pageSize = 10;
 const currentPage = ref(1);
+const scrollRef = ref<HTMLElement>();
+const lazyload = inject<LazyloadInstance>("Lazyload");
 
 const pagedResults = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
   return results.value.slice(start, start + pageSize);
+});
+
+const emit = defineEmits<{
+  regenerated: [];
+}>();
+
+function bindLazyRoot() {
+  if (scrollRef.value && lazyload) {
+    lazyload.config({
+      observerOptions: { root: scrollRef.value, rootMargin: "0px", threshold: 0 },
+    });
+  }
+}
+
+onMounted(() => {
+  bindLazyRoot();
+});
+
+watch(scrollRef, async () => {
+  await nextTick();
+  bindLazyRoot();
+});
+
+onUnmounted(() => {
+  lazyload?.config({
+    observerOptions: { root: null, rootMargin: "0px", threshold: 0 },
+  });
 });
 </script>
 

@@ -8,6 +8,7 @@ import '@/assets/style/global.scss'
 import router from './router/index'
 import { useAuthStore } from './store/auth'
 import { initTenantFromStorage } from '@/lib/auth/tenant'
+import VueLazyload from 'vue3-lazyload'
 
 initTenantFromStorage()
 
@@ -18,5 +19,7 @@ app.use(pinia)
 useAuthStore().init()
 app.use(router)
 app.use(Antd)
+// ponytail: vue3-lazyload peer types target newer @vue/runtime-core than this app resolves
+VueLazyload.install(app as Parameters<typeof VueLazyload.install>[0])
 
 app.mount('#app')

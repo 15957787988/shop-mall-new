@@ -22,6 +22,7 @@ export interface ShopImageGroup {
   details: ShopImageDetail[]
   createTime?: number
   originalUrls?: string[]
+  modelId?: number
 }
 
 /** 生成请求 */
@@ -75,9 +76,15 @@ export async function deleteShopImageGroup(id: number): Promise<boolean> {
   return http.delete<boolean>(`${PREFIX}/delete`, { id })
 }
 
-/** 重新生成套图，返回 groupId */
-export async function regenerateShopImageGroup(id: number): Promise<number> {
-  return http.post<number>(`${PREFIX}/regenerate`, { id })
+/** 重新生成请求 */
+export interface ShopImageRegenerateReq {
+  id: number
+  modelId?: number
+}
+
+/** 重新生成套图，复用库内 prompt，返回 groupId */
+export async function regenerateShopImageGroup(req: ShopImageRegenerateReq): Promise<number> {
+  return http.post<number>(`${PREFIX}/regenerate`, req)
 }
 
 /** 子图 type → 中文标签 */
