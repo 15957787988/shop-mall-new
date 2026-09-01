@@ -14,6 +14,10 @@
           <ReloadOutlined />
           批量重新生成
         </Button>
+        <Button size="small" @click="handleGroupRegenerate">
+          <ReloadOutlined />
+          重新生成套图
+        </Button>
         <Button size="small" :loading="downloading" @click="handleDownloadAll">
           <DownloadOutlined />
           下载
@@ -199,6 +203,10 @@ function handleRegenerateImage(image: SaleorImageItem) {
 async function handleBatchRegenerate() {
   if (failedImages.value.length < 2) return
   openRegenerateModal(failedImages.value.map((img) => img.id))
+}
+
+function handleGroupRegenerate() {
+  openRegenerateModal(props.group.images.map((img) => img.id))
 }
 
 function handleDownloadImage(image: SaleorImageItem) {

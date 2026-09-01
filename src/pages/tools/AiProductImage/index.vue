@@ -14,7 +14,7 @@
             v-model:results="results"
             :loading="loading"
             :refresh-results="() => fetchResults(true)"
-            @regenerated="fetchResults(true)"
+            @regenerated="handleRegenerated"
           />
         </main>
       </div>
@@ -38,6 +38,10 @@ async function handleGenerate(form: SaleorFormData, done: () => void) {
   } finally {
     done();
   }
+}
+
+function handleRegenerated() {
+  void fetchResults(true)
 }
 </script>
 
