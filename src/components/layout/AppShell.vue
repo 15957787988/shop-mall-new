@@ -1,9 +1,11 @@
 <template>
   <div class="app-shell">
-    <Sidebar :open="sidebarOpen" :on-close="() => (sidebarOpen = false)" />
+    <Sidebar v-if="!isCanvasEditor" :open="sidebarOpen" :on-close="() => (sidebarOpen = false)" />
 
     <div class="app-shell__main">
       <TopBar
+        v-if="!isCanvasEditor"
+        :floating="isCanvasIndex"
         :on-menu-click="() => (sidebarOpen = true)"
         :unread-count="0"
         :is-logged-in="isLoggedIn"
@@ -15,9 +17,9 @@
         :on-logout-click="handleLogout"
       />
 
-      <main :class="['app-shell__content', { 'app-shell__content--workspace': isToolWorkspace }]">
+      <main :class="['app-shell__content', { 'app-shell__content--workspace': isToolWorkspace, 'app-shell__content--canvas': isCanvasEditor, 'app-shell__content--gallery': isCanvasIndex }]">
         <slot />
-        <SiteFooter v-if="showFooter && !hideFooterOnToolPage" />
+        <SiteFooter v-if="showFooter && !hideFooterOnToolPage && !isCanvas" />
       </main>
     </div>
 
@@ -75,6 +77,9 @@ withDefaults(
 const route = useRoute()
 const hideFooterOnToolPage = computed(() => route.path.startsWith('/tools/'))
 const isToolWorkspace = computed(() => hideFooterOnToolPage.value)
+const isCanvas = computed(() => route.path === '/canvas' || route.path.startsWith('/canvas/'))
+const isCanvasEditor = computed(() => route.path === '/canvas')
+const isCanvasIndex = computed(() => route.path === '/canvas/index')
 
 const {
   loginModalOpen,
@@ -135,6 +140,7 @@ async function handleLogout() {
   overflow: hidden;
 
   &__main {
+    position: relative;
     display: flex;
     min-height: 0;
     min-width: 0;
@@ -148,8 +154,18 @@ async function handleLogout() {
     background: var(--color-surface-1);
     overflow: auto;
 
-    &--workspace {
+    &--workspace,
+    &--canvas {
       overflow: hidden;
+    }
+
+    &--gallery {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background-color: var(--color-surface-1);
+      background-image: radial-gradient(var(--color-border-whisper) 1px, transparent 1px);
+      background-size: 22px 22px;
     }
   }
 }

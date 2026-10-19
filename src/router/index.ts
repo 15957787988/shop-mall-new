@@ -36,6 +36,27 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/search/Search.vue'),
   },
   {
+    path: '/canvas/index',
+    name: 'CanvasIndex',
+    component: () => import('@/pages/canvas/index/index.vue'),
+  },
+  {
+    path: '/canvas/editor',
+    redirect: (to) => ({ path: '/canvas', query: to.query }),
+  },
+  {
+    path: '/canvas',
+    name: 'CanvasEditor',
+    component: () => import('@/pages/canvas/editor/index.vue'),
+    beforeEnter(to, _from, next) {
+      if (!to.query.projectId) {
+        next({ path: '/canvas/index', replace: true })
+        return
+      }
+      next()
+    },
+  },
+  {
     path: '/tools',
     name: 'Tools',
     component: () => import('@/pages/tools/Tools.vue'),

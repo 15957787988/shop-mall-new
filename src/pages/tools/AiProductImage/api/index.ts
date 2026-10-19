@@ -28,9 +28,11 @@ export interface ShopImageGroup {
 /** 生成请求 */
 export interface ShopImageGenerateReq {
   modelId: number
+  platform?: string
   title?: string
   language?: string
   size?: string
+  resolution?: string
   country?: string
   productSellingPoints?: string
   originalUrls: string[]

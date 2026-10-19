@@ -1,71 +1,52 @@
 <template>
-  <div
-    v-if="open"
-    class="sidebar__backdrop"
-    aria-hidden
-    @click="onClose"
-  />
+  <div v-if="open" class="sidebar__backdrop" aria-hidden @click="onClose" />
 
-  <aside :class="['sidebar', { 'sidebar--open': open }]">
+  <aside :class="['sidebar', { 'sidebar--open': open, 'sidebar--collapsed': collapsed }]">
     <div class="sidebar__brand">
       <router-link to="/" class="sidebar__brand-link" :title="BRAND_NAME" @click="onClose">
         <span class="sidebar__logo">{{ BRAND_LOGO_CHAR }}</span>
       </router-link>
       <button
         type="button"
-        class="sidebar__close-btn"
-        aria-label="关闭菜单"
-        @click="onClose"
+        class="sidebar__collapse"
+        :aria-label="collapsed ? '展开侧栏' : '收起侧栏'"
+        @click="collapsed = !collapsed"
       >
+        <MenuUnfoldOutlined v-if="collapsed" />
+        <MenuFoldOutlined v-else />
+      </button>
+      <button type="button" class="sidebar__close-btn" aria-label="关闭菜单" @click="onClose">
         <CloseOutlined />
       </button>
     </div>
 
     <nav class="sidebar__nav scroll-area">
-      <ul class="sidebar__main-list">
-        <li v-for="item in MAIN_NAV" :key="item.href">
-          <router-link
-            :to="item.href"
-            :title="item.label"
-            :class="['sidebar__nav-item', { 'sidebar__nav-item--active': isNavActive(route.path, item.href) }]"
-            @click="onClose"
-          >
-            <component :is="item.icon" class="sidebar__nav-icon" />
-            <span class="sidebar__nav-label">{{ item.label }}</span>
-          </router-link>
-        </li>
-      </ul>
-
-      <div ref="moreRef" class="sidebar__more">
-        <button
-          type="button"
-          title="更多"
-          :class="['sidebar__nav-item', 'sidebar__more-btn', { 'sidebar__nav-item--active': moreActive || moreOpen }]"
-          @click="moreOpen = !moreOpen"
-        >
-          <EllipsisOutlined class="sidebar__nav-icon" />
-          <span class="sidebar__nav-label">更多</span>
-        </button>
-
-        <div v-if="moreOpen" class="sidebar__more-menu">
-          <router-link
-            v-for="item in MORE_LINKS"
-            :key="item.href"
-            :to="item.href"
-            :class="['sidebar__more-link', { 'sidebar__more-link--active': isNavActive(route.path, item.href) }]"
-            @click="handleMoreLinkClick"
-          >
-            <component :is="item.icon" class="sidebar__more-link-icon" />
-            {{ item.label }}
-          </router-link>
-        </div>
-      </div>
+      <template v-for="(group, index) in NAV_GROUPS" :key="index">
+        <div v-if="index > 0" class="sidebar__divider" />
+        <ul class="sidebar__main-list">
+          <li v-for="item in group" :key="item.href">
+            <router-link
+              :to="item.href"
+              :title="item.label"
+              :class="[
+                'sidebar__nav-item',
+                { 'sidebar__nav-item--active': isNavActive(route.path, item.href) },
+              ]"
+              @click="onClose"
+            >
+              <component :is="item.icon" class="sidebar__nav-icon" />
+              <span class="sidebar__nav-label">{{ item.label }}</span>
+              <RightOutlined class="sidebar__chevron" />
+            </router-link>
+          </li>
+        </ul>
+      </template>
     </nav>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Component } from 'vue'
 import {
@@ -76,72 +57,66 @@ import {
   FolderOpenOutlined,
   ContainerOutlined,
   StarOutlined,
-  EllipsisOutlined,
   CreditCardOutlined,
+  PartitionOutlined,
   CloseOutlined,
+  PictureOutlined,
+  VideoCameraOutlined,
+  RightOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons-vue'
 import { BRAND_LOGO_CHAR, BRAND_NAME } from '@/lib/brand'
 
-const props = defineProps<{
+defineProps<{
   open: boolean
   onClose: () => void
 }>()
 
 const route = useRoute()
-const moreOpen = ref(false)
-const moreRef = ref<HTMLElement | null>(null)
+const collapsed = ref(localStorage.getItem('sidebar-collapsed') === '1')
 
-const MAIN_NAV: Array<{ href: string; label: string; icon: Component }> = [
-  { href: '/', label: '首页', icon: HomeOutlined },
-  { href: '/tools', label: '工具', icon: ToolOutlined },
-  { href: '/templates', label: '模板', icon: AppstoreOutlined },
-  { href: '/recent', label: '最近打开', icon: ClockCircleOutlined },
-  { href: '/space', label: '项目', icon: FolderOpenOutlined },
-  { href: '/agent-lib', label: '资产库', icon: ContainerOutlined },
-  { href: '/team', label: '帮我设计', icon: StarOutlined },
+watch(collapsed, (value) => {
+  localStorage.setItem('sidebar-collapsed', value ? '1' : '0')
+})
+
+interface NavItem {
+  href: string
+  label: string
+  icon: Component
+}
+
+const NAV_GROUPS: NavItem[][] = [
+  [{ href: '/', label: '首页', icon: HomeOutlined }],
+  [
+    { href: '/tools/ai-product-image', label: '商品套图', icon: PictureOutlined },
+    { href: '/tools/viral-videos', label: '视频制作', icon: VideoCameraOutlined },
+    { href: '/canvas/index', label: '无限画布', icon: PartitionOutlined },
+    { href: '/tools', label: '工具', icon: ToolOutlined },
+  ],
+  [{ href: '/templates', label: '模板', icon: AppstoreOutlined }],
+  [
+    { href: '/agent-lib', label: '我的资产', icon: ContainerOutlined },
+    { href: '/space', label: '我的作品', icon: FolderOpenOutlined },
+    { href: '/recent', label: '最近打开', icon: ClockCircleOutlined },
+  ],
+  [
+    { href: '/team', label: '帮我设计', icon: StarOutlined },
+    { href: '/pricing', label: '套餐', icon: CreditCardOutlined },
+  ],
 ]
 
-const MORE_LINKS: Array<{ href: string; label: string; icon: Component }> = [
-  { href: '/pricing', label: '套餐', icon: CreditCardOutlined },
-]
+const TOOL_LEAVES = ['/tools/ai-product-image', '/tools/viral-videos']
 
 function isNavActive(pathname: string, href: string) {
   if (href === '/') return pathname === '/'
+  if (href === '/canvas/index') return pathname === '/canvas' || pathname.startsWith('/canvas/')
+  if (href === '/tools') {
+    if (pathname === '/tools') return true
+    if (!pathname.startsWith('/tools/')) return false
+    return !TOOL_LEAVES.some((leaf) => pathname === leaf || pathname.startsWith(`${leaf}/`))
+  }
   return pathname === href || pathname.startsWith(`${href}/`)
-}
-
-const moreActive = computed(() =>
-  MORE_LINKS.some((item) => isNavActive(route.path, item.href)),
-)
-
-function handleDocClick(e: MouseEvent) {
-  if (moreRef.value && !moreRef.value.contains(e.target as Node)) {
-    moreOpen.value = false
-  }
-}
-
-watch(moreOpen, (isOpen) => {
-  if (isOpen) {
-    document.addEventListener('mousedown', handleDocClick)
-  } else {
-    document.removeEventListener('mousedown', handleDocClick)
-  }
-})
-
-watch(
-  () => route.path,
-  () => {
-    moreOpen.value = false
-  },
-)
-
-onUnmounted(() => {
-  document.removeEventListener('mousedown', handleDocClick)
-})
-
-function handleMoreLinkClick() {
-  moreOpen.value = false
-  props.onClose()
 }
 </script>
 
@@ -151,11 +126,12 @@ function handleMoreLinkClick() {
   inset: 0 auto 0 0;
   z-index: var(--z-sidebar);
   display: flex;
-  width: var(--sidebar-width);
+  width: 240px;
   flex-shrink: 0;
   flex-direction: column;
-  background: var(--color-surface-2);
-  transition: transform 0.2s var(--motion-ease);
+  background: var(--color-surface-0);
+  border-right: 1px solid var(--color-border-whisper);
+  transition: transform 0.2s var(--motion-ease), width 0.2s var(--motion-ease);
   transform: translateX(-100%);
 
   @media (min-width: 768px) {
@@ -179,17 +155,16 @@ function handleMoreLinkClick() {
   }
 
   &__brand {
-    position: relative;
     display: flex;
     flex-shrink: 0;
-    flex-direction: column;
     align-items: center;
-    padding: 12px 4px;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 16px 14px 8px;
   }
 
   &__brand-link {
     display: flex;
-    flex-direction: column;
     align-items: center;
     text-decoration: none;
   }
@@ -201,25 +176,45 @@ function handleMoreLinkClick() {
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 50%;
     background: var(--color-creative-violet);
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: #fff;
   }
 
+  &__collapse {
+    display: none;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-ink-tertiary);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-surface-2);
+      color: var(--color-ink-primary);
+    }
+
+    @media (min-width: 768px) {
+      display: flex;
+    }
+  }
+
   &__close-btn {
-    position: absolute;
-    right: 0;
-    top: 8px;
     display: flex;
     width: 32px;
     height: 32px;
     align-items: center;
     justify-content: center;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     background: transparent;
+    color: var(--color-ink-secondary);
     cursor: pointer;
 
     @media (min-width: 768px) {
@@ -231,7 +226,13 @@ function handleMoreLinkClick() {
     display: flex;
     flex: 1;
     flex-direction: column;
-    padding: 4px;
+    padding: 8px 10px 16px;
+  }
+
+  &__divider {
+    height: 1px;
+    margin: 8px 6px;
+    background: var(--color-border-whisper);
   }
 
   &__main-list {
@@ -246,13 +247,11 @@ function handleMoreLinkClick() {
   &__nav-item {
     display: flex;
     width: 100%;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
-    min-height: 56px;
-    border-radius: 8px;
-    padding: 8px 4px;
+    gap: 10px;
+    min-height: 42px;
+    border-radius: 12px;
+    padding: 0 12px;
     text-decoration: none;
     color: var(--color-ink-secondary);
     transition: color 0.2s var(--motion-ease), background-color 0.2s var(--motion-ease);
@@ -261,85 +260,77 @@ function handleMoreLinkClick() {
     cursor: pointer;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.7);
+      background: var(--color-surface-2);
       color: var(--color-ink-primary);
     }
 
-    &--active {
-      background: rgba(109, 40, 217, 0.08);
-      color: var(--color-creative-violet);
+    &:focus-visible {
+      outline: 2px solid var(--color-creative-violet);
+      outline-offset: 2px;
+    }
 
-      .sidebar__nav-icon {
-        color: var(--color-creative-violet);
+    &--active {
+      background: var(--color-surface-2);
+      color: var(--color-ink-primary);
+      font-weight: 600;
+
+      .sidebar__nav-icon,
+      .sidebar__chevron {
+        color: var(--color-ink-primary);
       }
     }
   }
 
   &__nav-icon {
     flex-shrink: 0;
-    font-size: 20px;
+    font-size: 18px;
   }
 
   &__nav-label {
-    max-width: 100%;
+    min-width: 0;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-align: center;
-    font-size: 10px;
-    line-height: 1.25;
-  }
-
-  &__more {
-    position: relative;
-    margin-top: auto;
-    padding-top: 8px;
-  }
-
-  &__more-btn {
-    width: 100%;
-  }
-
-  &__more-menu {
-    position: absolute;
-    bottom: 0;
-    left: 100%;
-    z-index: var(--z-dropdown);
-    margin-left: 4px;
-    width: 128px;
-    overflow: hidden;
-    border-radius: 8px;
-    border: 1px solid var(--color-border-whisper);
-    background: var(--color-surface-0);
-    padding: 4px 0;
-    box-shadow: var(--shadow-lift);
-  }
-
-  &__more-link {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 40px;
-    padding: 8px 12px;
-    font-size: 12px;
-    text-decoration: none;
-    color: var(--color-ink-secondary);
-    transition: color 0.2s var(--motion-ease), background-color 0.2s var(--motion-ease);
-
-    &:hover {
-      background: var(--color-surface-2);
-      color: var(--color-ink-primary);
-    }
-
-    &--active {
-      background: rgba(109, 40, 217, 0.05);
-      font-weight: 500;
-      color: var(--color-creative-violet);
-    }
-  }
-
-  &__more-link-icon {
     font-size: 14px;
+    line-height: 1.2;
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--color-ink-quaternary);
+  }
+
+  @media (min-width: 768px) {
+    &--collapsed {
+      width: 76px;
+
+      .sidebar__brand {
+        flex-direction: column;
+        padding: 16px 8px 8px;
+      }
+
+      .sidebar__nav {
+        padding-inline: 8px;
+      }
+
+      .sidebar__nav-label,
+      .sidebar__chevron {
+        display: none;
+      }
+
+      .sidebar__nav-item {
+        justify-content: center;
+        width: 44px;
+        margin-inline: auto;
+        padding: 0;
+      }
+
+      .sidebar__divider {
+        margin-inline: 10px;
+      }
+    }
   }
 }
 </style>

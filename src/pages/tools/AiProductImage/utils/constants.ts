@@ -1,15 +1,5 @@
-import { AI_IMAGE_MODELS, DEFAULT_SALEOR_MODEL_ID } from '@/constants/ai-model'
-
 /** 每张套图消耗积分 */
 export const POINTS_PER_IMAGE = 3;
-
-export { DEFAULT_SALEOR_MODEL_ID }
-
-/** 商品套图可选模型 */
-export const modelSelectOptions = AI_IMAGE_MODELS.map((item) => ({
-  label: item.name,
-  value: item.modelId,
-}))
 
 /** 子图类型 → 展示标签 */
 export const IMAGE_TYPE_LABELS: Record<number, string> = {
@@ -61,12 +51,8 @@ export const languageOptions = [
   { label: "无文字", value: "无文字" },
 ];
 
-export const ratioOptions = [
-  { label: "1:1", value: "1024x1024" },
-  { label: "4:3", value: "1152x1536" },
-  { label: "9:16", value: "1024x1792" },
-  { label: "16:9", value: "1792x1024" },
-];
+/** 模型列表未加载时的兜底比例（与多数模型默认一致） */
+export const FALLBACK_RATIO_OPTIONS = [{ label: "1:1", value: "1:1" }];
 
 export function defaultStructureConfig() {
   return [

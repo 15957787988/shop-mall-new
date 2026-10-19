@@ -23,11 +23,13 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'src'),
     },
+    // cnpm nests a second vue under @vue-flow; two copies crash the editor renderer
+    dedupe: ['vue'],
   },
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: '@import "@/assets/style/main.scss";',
+        additionalData: '@import "@/assets/style/main.scss"; @import "@/pages/canvas/styles/variables.scss";',
       },
     },
   },

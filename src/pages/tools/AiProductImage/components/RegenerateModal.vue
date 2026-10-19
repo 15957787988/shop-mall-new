@@ -13,15 +13,28 @@
     </p>
     <label class="regenerate-modal__field">
       <span>生成模型</span>
-      <Select v-model:value="selectedModelId" :options="modelSelectOptions" />
+      <Select
+        v-model:value="selectedModelId"
+        :options="modelSelectOptions"
+        :loading="modelsLoading"
+        placeholder="加载模型…"
+      />
     </label>
   </Modal>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { Modal, Select } from 'ant-design-vue'
-import { DEFAULT_SALEOR_MODEL_ID, modelSelectOptions } from '../utils/constants'
+import { DEFAULT_SALEOR_MODEL_ID } from '@/constants/ai-model'
+import { useProductImageModels } from '../hook/useProductImageModels'
+
+const {
+  modelSelectOptions,
+  loading: modelsLoading,
+  loadProductImageModels,
+  defaultModelId: resolveDefaultModelId,
+} = useProductImageModels()
 
 const props = defineProps<{
   open: boolean
@@ -36,12 +49,16 @@ const emit = defineEmits<{
 
 const selectedModelId = ref<number>(DEFAULT_SALEOR_MODEL_ID)
 
+onMounted(() => {
+  void loadProductImageModels()
+})
+
 watch(
   () => [props.open, props.defaultModelId] as const,
-  ([open, defaultModelId]) => {
-    if (open) {
-      selectedModelId.value = defaultModelId ?? DEFAULT_SALEOR_MODEL_ID
-    }
+  async ([open, groupModelId]) => {
+    if (!open) return
+    await loadProductImageModels()
+    selectedModelId.value = groupModelId ?? resolveDefaultModelId() ?? DEFAULT_SALEOR_MODEL_ID
   },
   { immediate: true },
 )

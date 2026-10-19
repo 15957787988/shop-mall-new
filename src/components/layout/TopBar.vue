@@ -1,5 +1,5 @@
 <template>
-  <header class="top-bar">
+  <header :class="['top-bar', { 'top-bar--floating': floating }]">
     <div class="top-bar__left">
       <button type="button" class="top-bar__menu-btn" aria-label="打开菜单" @click="onMenuClick">
         <MenuOutlined />
@@ -58,6 +58,7 @@ const props = defineProps<{
   onMessageClick: () => void
   onLoginClick: () => void
   onLogoutClick: () => void
+  floating?: boolean
 }>()
 
 const displayPoint = computed(() => props.userInfo?.point ?? 0)
@@ -107,6 +108,23 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
 
     @media (min-width: 768px) {
       display: none;
+    }
+  }
+
+  &--floating {
+    position: absolute;
+    top: 16px;
+    right: 28px;
+    z-index: 20;
+    width: auto;
+    height: auto;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+
+    @media (max-width: 767px) {
+      right: 12px;
+      left: 12px;
     }
   }
 

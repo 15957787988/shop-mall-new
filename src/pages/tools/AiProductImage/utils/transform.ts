@@ -35,6 +35,7 @@ export function formToGenerateReq(form: SaleorFormData): ShopImageGenerateReq {
     originalUrls: form.productImages.slice(0, 3),
     language: form.language,
     size: form.aspectRatio,
+    ...(form.resolution ? { resolution: form.resolution } : {}),
     country: form.country,
     productSellingPoints: form.sellingPoints.trim(),
     whiteBgCount: getCountByKey(structureConfig, "white"),

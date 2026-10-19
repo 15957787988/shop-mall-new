@@ -16,11 +16,3 @@ export const DEFAULT_SALEOR_MODEL_ID = 2
 /** AI 服饰穿戴生成模型 */
 export const MODEL_ID_WEAR = 2
 
-/** 商品套图可选图片模型 */
-export const AI_IMAGE_MODELS = [
-  { name: 'gpt2', modelId: 2 },
-  { name: 'Seedream-4', modelId: 6 },
-  { name: 'Seedream-4.5', modelId: 7 },
-  { name: 'seedream-5-0-lite', modelId: 8 },
-] as const
-

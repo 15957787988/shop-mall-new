@@ -41,12 +41,21 @@
             <Select v-model:value="form.language" :options="languageOptions" />
           </label>
           <label class="saleor-sidebar__field">
+            <span>生成模型</span>
+            <Select
+              v-model:value="form.modelId"
+              :options="modelSelectOptions"
+              :loading="modelsLoading"
+              placeholder="加载模型…"
+            />
+          </label>
+          <label class="saleor-sidebar__field">
             <span>图片比例</span>
             <Select v-model:value="form.aspectRatio" :options="ratioSelectOptions" />
           </label>
-          <label class="saleor-sidebar__field">
-            <span>生成模型</span>
-            <Select v-model:value="form.modelId" :options="modelSelectOptions" />
+          <label v-if="resolutionSelectOptions.length" class="saleor-sidebar__field">
+            <span>分辨率</span>
+            <Select v-model:value="form.resolution" :options="resolutionSelectOptions" />
           </label>
         </div>
       </section>
@@ -129,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue'
+import { reactive, computed, ref, watch, onMounted } from 'vue'
 import { Input, Select, Button, Radio, Spin, Popover } from 'ant-design-vue'
 import {
   PlusOutlined,
@@ -145,16 +154,25 @@ import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import {
   countryOptions,
   languageOptions,
-  ratioOptions,
+  FALLBACK_RATIO_OPTIONS,
   platformOptions,
   defaultStructureConfig,
   MIN_TOTAL_IMAGES,
   MAX_TOTAL_IMAGES,
   POINTS_PER_IMAGE,
-  DEFAULT_SALEOR_MODEL_ID,
-  modelSelectOptions,
 } from '../utils/constants'
+import { useProductImageModels } from '../hook/useProductImageModels'
 import type { SaleorFormData } from '../utils/types'
+
+const {
+  modelSelectOptions,
+  loading: modelsLoading,
+  loadProductImageModels,
+  ratioOptionsFor,
+  resolutionOptionsFor,
+  switchModel,
+  defaultModelId,
+} = useProductImageModels()
 
 const emit = defineEmits<{
   generate: [form: SaleorFormData, done: () => void]
@@ -179,17 +197,43 @@ const form = reactive<SaleorFormData>({
   platform: '阿里巴巴',
   country: '中国',
   language: '中文',
-  aspectRatio: '1024x1024',
+  aspectRatio: '1:1',
+  resolution: '',
   sellingPoints: '',
   structureMode: 'custom',
   structureConfig: defaultStructureConfig(),
-  modelId: DEFAULT_SALEOR_MODEL_ID,
+  modelId: 0,
 })
 
-const ratioSelectOptions = ratioOptions.map((opt) => ({
-  label: opt.label,
-  value: opt.value,
-}))
+const ratioSelectOptions = computed(() => {
+  const opts = ratioOptionsFor(form.modelId)
+  return opts.length ? opts : FALLBACK_RATIO_OPTIONS
+})
+
+const resolutionSelectOptions = computed(() => resolutionOptionsFor(form.modelId))
+
+function applyModel(id: number, prevId = 0) {
+  const next = switchModel(prevId, id, form)
+  if (next.modelId !== form.modelId) {
+    form.modelId = next.modelId
+  }
+  form.aspectRatio = next.aspectRatio
+  form.resolution = next.resolution
+}
+
+watch(
+  () => form.modelId,
+  (id, prev) => applyModel(id, prev ?? 0),
+)
+
+onMounted(async () => {
+  await loadProductImageModels()
+  if (!form.modelId) {
+    form.modelId = defaultModelId()
+  } else {
+    applyModel(form.modelId)
+  }
+})
 
 const totalImageCount = computed(() =>
   form.structureConfig.reduce((sum, item) => sum + item.count, 0)

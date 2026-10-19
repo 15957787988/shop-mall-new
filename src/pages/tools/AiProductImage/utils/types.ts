@@ -46,7 +46,10 @@ export interface SaleorFormData {
   platform: string;
   country: string;
   language: string;
+  /** 对应上游 size，如 1:1、16:9 */
   aspectRatio: string;
+  /** 对应上游 resolution，如 1k / 2K；无档位时为空 */
+  resolution: string;
   sellingPoints: string;
   structureMode: "smart" | "custom";
   structureConfig: StructureConfigItem[];
