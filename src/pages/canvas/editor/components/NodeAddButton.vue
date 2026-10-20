@@ -86,13 +86,12 @@ const menuOptions = computed(() => {
 const open = ref(false)
 const pickerStyle = ref({ top: '0px', left: '0px' })
 
-function toggle(e) {
-  e.stopPropagation()
+function toggle(el) {
   if (open.value) {
     open.value = false
     return
   }
-  const rect = e.currentTarget.getBoundingClientRect()
+  const rect = el.getBoundingClientRect()
   const PICKER_W = 160
   pickerStyle.value = {
     top: `${rect.top - 4}px`,
@@ -100,6 +99,54 @@ function toggle(e) {
   }
   open.value = true
   setTimeout(() => document.addEventListener('click', close, { once: true }), 0)
+}
+
+const DRAG_START = 5
+
+function onPointerDown(e) {
+  if (e.button !== 0) return
+  e.stopPropagation()
+  const startX = e.clientX
+  const startY = e.clientY
+  const btn = e.currentTarget
+  let moved = false
+
+  const cleanup = () => {
+    window.removeEventListener('pointermove', onMove)
+    window.removeEventListener('pointerup', onUp)
+  }
+
+  const onMove = (ev) => {
+    if (moved) return
+    if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < DRAG_START) return
+    moved = true
+    cleanup()
+    open.value = false
+    const handle = btn
+      .closest('.canvas-node')
+      ?.querySelector(isLeft.value ? '.vue-flow__handle-left' : '.vue-flow__handle-right')
+    if (!handle) return
+    handle.dispatchEvent(
+      new MouseEvent('mousedown', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: ev.clientX,
+        clientY: ev.clientY,
+        button: 0,
+        buttons: 1
+      })
+    )
+  }
+
+  const onUp = (ev) => {
+    cleanup()
+    ev.stopPropagation()
+    if (!moved) toggle(btn)
+  }
+
+  window.addEventListener('pointermove', onMove)
+  window.addEventListener('pointerup', onUp)
 }
 
 function close() {
@@ -164,9 +211,10 @@ function create(e, type, disabled) {
   <button
     class="node-add-btn"
     :class="{ 'node-add-btn--left': isLeft }"
-    @click="toggle"
+    @pointerdown="onPointerDown"
     @mousedown.stop
-    :title="isLeft ? '基于本节点创建上一个' : '基于本节点创建下一个'"
+    @click.stop
+    :title="isLeft ? '点击创建上一节点，拖出连线' : '点击创建下一节点，拖出连线'"
     >+</button
   >
 

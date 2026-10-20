@@ -2,8 +2,8 @@
   <PageContainer>
     <RecommendedTools />
     <CanvasEntry />
-    <HomeContentTabs />
-    <CaseShowcaseCarousel />
+    <!-- <HomeContentTabs />
+    <CaseShowcaseCarousel /> -->
   </PageContainer>
 </template>
 

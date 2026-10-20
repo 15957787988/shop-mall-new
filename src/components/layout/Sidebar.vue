@@ -4,7 +4,7 @@
   <aside :class="['sidebar', { 'sidebar--open': open, 'sidebar--collapsed': collapsed }]">
     <div class="sidebar__brand">
       <router-link to="/" class="sidebar__brand-link" :title="BRAND_NAME" @click="onClose">
-        <span class="sidebar__logo">{{ BRAND_LOGO_CHAR }}</span>
+        <!-- <span class="sidebar__logo">{{ BRAND_LOGO_CHAR }}</span>1 -->
       </router-link>
       <button
         type="button"
@@ -62,6 +62,8 @@ import {
   CloseOutlined,
   PictureOutlined,
   VideoCameraOutlined,
+  HighlightOutlined,
+  PlayCircleOutlined,
   RightOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -91,6 +93,8 @@ const NAV_GROUPS: NavItem[][] = [
   [
     { href: '/tools/ai-product-image', label: '商品套图', icon: PictureOutlined },
     { href: '/tools/viral-videos', label: '视频制作', icon: VideoCameraOutlined },
+    { href: '/ai/image', label: 'AI制图', icon: HighlightOutlined },
+    { href: '/ai/video', label: 'AI视频', icon: PlayCircleOutlined },
     { href: '/canvas/index', label: '无限画布', icon: PartitionOutlined },
     { href: '/tools', label: '工具', icon: ToolOutlined },
   ],

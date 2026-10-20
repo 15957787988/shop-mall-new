@@ -44,7 +44,7 @@
         <PictureOutlined />
       </div>
       <div class="image-upload__empty-title">上传图片</div>
-      <div class="image-upload__empty-desc">同一产品，最多{{ maxCount }}张</div>
+      <div class="image-upload__empty-desc">{{ emptyDesc || `同一产品，最多${maxCount}张` }}</div>
     </button>
 
     <Upload
@@ -89,6 +89,7 @@ const props = withDefaults(
     fileType?: string[]
     requireLogin?: boolean
     fileSize?: number
+    emptyDesc?: string
   }>(),
   {
     maxCount: 3,

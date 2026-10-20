@@ -62,6 +62,12 @@
 
     <!-- ── Prompt area ── -->
     <div class="prompt-wrap">
+      <div
+        ref="promptHighlightRef"
+        class="prompt-highlight"
+        aria-hidden="true"
+        v-html="promptHtml"
+      />
       <textarea
         ref="promptInputRef"
         v-model="promptText"
@@ -69,6 +75,7 @@
         class="prompt-input"
         :placeholder="PROMPT_PLACEHOLDER"
         @input="onPromptInput"
+        @scroll="syncPromptHighlight"
         @keydown="onPromptKeydown"
         @focus="onPromptFocus"
         @blur="onPromptBlur"
@@ -1003,9 +1010,114 @@ function getKind(type) {
 }
 
 const promptInputRef = ref(null)
+const promptHighlightRef = ref(null)
 const promptFocused = ref(false)
 
 const PROMPT_PLACEHOLDER = '描述你想生成的内容，可 @ 引用上方资产...'
+
+function escapeHtml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function mentionAssets() {
+  return displayAssets.value
+    .filter((asset) => asset.label && !asset.uploading)
+    .slice()
+    .sort((a, b) => b.label.length - a.label.length)
+}
+
+function mentionPattern(items) {
+  return new RegExp(`@(${items.map((asset) => escapeRegExp(asset.label)).join('|')})`, 'g')
+}
+
+/** `@标签` 以及紧跟的一个空格，当成一整段 */
+function mentionTokenRanges(text) {
+  const items = mentionAssets()
+  if (!text || !items.length) return []
+  const ranges = []
+  for (const match of text.matchAll(mentionPattern(items))) {
+    const start = match.index ?? 0
+    let end = start + match[0].length
+    if (text[end] === ' ') end += 1
+    ranges.push({ start, end, label: match[1] })
+  }
+  return ranges
+}
+
+const promptHtml = computed(() => {
+  const text = promptText.value || ''
+  if (!text) return ''
+  const items = mentionAssets()
+  if (!items.length) return escapeHtml(text)
+  const kindOf = new Map(items.map((asset) => [asset.label, asset.kind || 'text']))
+  let html = ''
+  let last = 0
+  for (const match of text.matchAll(mentionPattern(items))) {
+    const index = match.index ?? 0
+    html += escapeHtml(text.slice(last, index))
+    const label = match[1]
+    const rawKind = kindOf.get(label)
+    const kind = ['image', 'video', 'audio', 'text', 'document'].includes(rawKind) ? rawKind : 'text'
+    html += `<span class="mention-chip mention-chip--${kind}">@${escapeHtml(label)}</span>`
+    last = index + match[0].length
+  }
+  html += escapeHtml(text.slice(last))
+  return html
+})
+
+function removeMentionTokens(event) {
+  if (event.key !== 'Backspace' && event.key !== 'Delete') return false
+  if (event.metaKey || event.ctrlKey || event.altKey) return false
+  const textarea = getTextarea()
+  if (!textarea) return false
+  const text = promptText.value || ''
+  const ranges = mentionTokenRanges(text)
+  if (!ranges.length) return false
+
+  let start = textarea.selectionStart ?? 0
+  let end = textarea.selectionEnd ?? start
+  if (start === end) {
+    const hit = ranges.find((range) =>
+      event.key === 'Backspace'
+        ? range.start < start && start <= range.end
+        : range.start <= start && start < range.end
+    )
+    if (!hit) return false
+    start = hit.start
+    end = hit.end
+  } else {
+    let nextStart = start
+    let nextEnd = end
+    for (const range of ranges) {
+      if (range.start >= end || range.end <= start) continue
+      nextStart = Math.min(nextStart, range.start)
+      nextEnd = Math.max(nextEnd, range.end)
+    }
+    if (nextStart === start && nextEnd === end) return false
+    start = nextStart
+    end = nextEnd
+  }
+
+  event.preventDefault()
+  promptText.value = text.slice(0, start) + text.slice(end)
+  nextTick(() => {
+    textarea.focus()
+    textarea.setSelectionRange(start, start)
+    detectMention(promptText.value)
+  })
+  return true
+}
+
+function syncPromptHighlight(event) {
+  const el = promptHighlightRef.value
+  if (!el) return
+  el.scrollTop = event.target.scrollTop
+  el.scrollLeft = event.target.scrollLeft
+}
 
 // ── @mention dropdown ─────────────────────────────────────────────────────────
 const mentionActive = ref(false)
@@ -1185,6 +1297,7 @@ function onPromptBlur() {
 }
 
 function onPromptKeydown(e) {
+  if (removeMentionTokens(e)) return
   if (mentionActive.value && mentionItems.value.length) {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -3006,26 +3119,89 @@ const panelStyle = computed(() => {
   position: relative;
   margin: 0 14px 8px;
   min-width: 0;
+  background: #20201f;
+  border: 1px solid #45453f;
+  border-radius: $radius-md;
+
+  &:focus-within {
+    border-color: #9aaeff;
+    box-shadow: 0 0 0 2px rgba(147, 151, 165, 0.16);
+  }
+}
+
+.prompt-highlight,
+.prompt-input {
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+.prompt-highlight {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: #f1f0ed;
+
+  :deep(.mention-chip) {
+    border-radius: 4px;
+    padding: 0 3px;
+    margin: 0 -3px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  :deep(.mention-chip--image) {
+    color: #8fd0b0;
+    background: rgba(66, 184, 131, 0.22);
+  }
+
+  :deep(.mention-chip--video) {
+    color: #e2c98a;
+    background: rgba(181, 143, 63, 0.28);
+  }
+
+  :deep(.mention-chip--audio) {
+    color: #f0b48a;
+    background: rgba(255, 140, 75, 0.2);
+  }
+
+  :deep(.mention-chip--text) {
+    color: #b7c4ff;
+    background: rgba($accent-primary, 0.28);
+  }
+
+  :deep(.mention-chip--document) {
+    color: #d2cdc4;
+    background: rgba(184, 178, 169, 0.2);
+  }
 }
 
 .prompt-input {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   resize: none;
   min-height: 56px;
   max-height: 280px;
-  padding: 8px 10px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #f1f0ed;
-  -webkit-text-fill-color: #f1f0ed;
-  background: #20201f;
-  border: 1px solid #45453f;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background: transparent;
+  border: none;
   border-radius: $radius-md;
   box-shadow: none;
   caret-color: $accent-primary;
-  font-family: inherit;
-  box-sizing: border-box;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   &::placeholder {
     color: #9aaeff;
@@ -3034,9 +3210,6 @@ const panelStyle = computed(() => {
   }
 
   &:focus {
-    border-color: #9aaeff;
-    box-shadow: 0 0 0 2px rgba(147, 151, 165, 0.16);
-    background: #20201f;
     outline: none;
   }
 }

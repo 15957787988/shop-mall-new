@@ -75,7 +75,9 @@ withDefaults(
 )
 
 const route = useRoute()
-const hideFooterOnToolPage = computed(() => route.path.startsWith('/tools/'))
+const hideFooterOnToolPage = computed(
+  () => route.path.startsWith('/tools/') || route.path.startsWith('/ai/'),
+)
 const isToolWorkspace = computed(() => hideFooterOnToolPage.value)
 const isCanvas = computed(() => route.path === '/canvas' || route.path.startsWith('/canvas/'))
 const isCanvasEditor = computed(() => route.path === '/canvas')

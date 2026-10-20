@@ -1,5 +1,5 @@
 <template>
-  <div class="app-shell" @keydown="onKeydown" tabindex="0">
+  <div class="app-shell" tabindex="0">
     <!-- ─── Top bar ─────────────────────────────────────────────────── -->
     <div class="canvas-topbar">
       <div class="topbar-left">
@@ -138,6 +138,10 @@
           @move-end="onViewportMoveEnd"
         >
           <!-- Dot-only background (science/tech feel) -->
+          <template #edge-default="edgeProps">
+            <FlowEdge v-bind="edgeProps" />
+          </template>
+
           <Background
             v-if="showGrid"
             :variant="BackgroundVariant.Dots"
@@ -302,6 +306,7 @@ import VideoNode from './components/VideoNode.vue'
 import AudioNode from './components/AudioNode.vue'
 import NoteNode from './components/NoteNode.vue'
 import GroupNode from './components/GroupNode.vue'
+import FlowEdge from './components/FlowEdge.vue'
 
 const rawNodeTypes = {
   textNode: markRaw(TextNode),
@@ -1211,6 +1216,7 @@ onMounted(async () => {
   window.addEventListener('beforeunload', flushCanvasState)
   document.addEventListener('visibilitychange', onVisibilityChange)
   window.addEventListener('focus', syncFromRemoteIfNeeded)
+  window.addEventListener('keydown', onKeydown)
 })
 
 onBeforeUnmount(() => {
@@ -1225,6 +1231,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', flushCanvasState)
   document.removeEventListener('visibilitychange', onVisibilityChange)
   window.removeEventListener('focus', syncFromRemoteIfNeeded)
+  window.removeEventListener('keydown', onKeydown)
 })
 
 async function usePersonalAsset(asset) {
@@ -1579,8 +1586,14 @@ function onKeydown(e) {
     selectAll()
   }
   if (canEdit.value && (e.key === 'Delete' || e.key === 'Backspace')) {
+    const nodeIds = new Set(store.selectedNodes.map((node) => node.id))
+    const edgeIds = store.selectedEdges
+      .filter((edge) => !nodeIds.has(edge.source) && !nodeIds.has(edge.target))
+      .map((edge) => edge.id)
+    if (!nodeIds.size && !edgeIds.length) return
     e.preventDefault()
-    store.confirmRemoveSelectedNodes()
+    if (edgeIds.length) store.handleEdgesChange(edgeIds.map((id) => ({ type: 'remove', id })))
+    if (nodeIds.size) store.confirmRemoveSelectedNodes()
   }
 }
 </script>
@@ -1963,40 +1976,56 @@ html.canvas-overscroll-lock body {
   border-color: $accent-green !important;
 }
 
-// ── Edges — flowing ant-line animation ────────────────────────────────────────
+// ── Edges ─────────────────────────────────────────────────────────────────────
 .vue-flow__edge-path {
-  stroke: #5b5953 !important;
-  stroke-width: 1.25;
-  stroke-dasharray: 5 5;
-  filter: none;
+  stroke: transparent !important;
+  stroke-width: 0 !important;
+  fill: none;
 }
 
 .vue-flow__edge .vue-flow__edge-text {
   fill: $text-secondary;
 }
 
-.vue-flow__edge.animated .vue-flow__edge-path {
-  stroke-dasharray: 5 5;
-  animation: none;
+.flow-quiet,
+.flow-run {
+  fill: none;
+  pointer-events: none;
 }
 
-.canvas-wrap.is-video-playing .vue-flow__edge.animated .vue-flow__edge-path {
+.flow-quiet {
+  stroke: #5b5953;
+  stroke-width: 1.25;
+  stroke-dasharray: 5 5;
+}
+
+.vue-flow__edge.animated path.flow-quiet {
+  animation: none;
+  stroke-dasharray: 5 5;
+}
+
+.flow-run {
+  stroke: rgba(77, 168, 255, 0.85);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 42 78;
+  animation: flow-run 1.3s linear infinite;
+}
+
+.vue-flow__edge.animated path.flow-run {
+  stroke-dasharray: 42 78;
+  animation: flow-run 1.3s linear infinite;
+}
+
+.canvas-wrap.is-video-playing .flow-run,
+.canvas-wrap.is-video-playing .vue-flow__edge.animated path.flow-run {
   animation-play-state: paused;
 }
 
-@keyframes flow-edge {
-  from {
-    stroke-dashoffset: 24;
-  }
+@keyframes flow-run {
   to {
-    stroke-dashoffset: 0;
+    stroke-dashoffset: -120;
   }
-}
-
-.vue-flow__edge.selected .vue-flow__edge-path {
-  stroke: #8e8a82 !important;
-  stroke-width: 1.5;
-  filter: none;
 }
 
 .vue-flow__node.asset-drop-target {

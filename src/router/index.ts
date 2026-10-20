@@ -72,6 +72,16 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/tools/ViralVideos/index.vue'),
   },
   {
+    path: '/ai/image',
+    name: 'AiImage',
+    component: () => import('@/pages/ai/image/ImagePage.vue'),
+  },
+  {
+    path: '/ai/video',
+    name: 'AiVideo',
+    component: () => import('@/pages/ai/video/VideoPage.vue'),
+  },
+  {
     path: '/tools/try-on',
     name: 'TryOn',
     component: () => import('@/pages/tools/TryOn/index.vue'),
