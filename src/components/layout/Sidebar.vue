@@ -91,11 +91,11 @@ interface NavItem {
 const NAV_GROUPS: NavItem[][] = [
   [{ href: '/', label: '首页', icon: HomeOutlined }],
   [
+    { href: '/canvas/index', label: '无限画布', icon: PartitionOutlined },
     { href: '/tools/ai-product-image', label: '商品套图', icon: PictureOutlined },
-    { href: '/tools/viral-videos', label: '视频制作', icon: VideoCameraOutlined },
+    // { href: '/tools/viral-videos', label: '视频制作', icon: VideoCameraOutlined },
     { href: '/ai/image', label: 'AI制图', icon: HighlightOutlined },
     { href: '/ai/video', label: 'AI视频', icon: PlayCircleOutlined },
-    { href: '/canvas/index', label: '无限画布', icon: PartitionOutlined },
     { href: '/tools', label: '工具', icon: ToolOutlined },
   ],
   [{ href: '/templates', label: '模板', icon: AppstoreOutlined }],

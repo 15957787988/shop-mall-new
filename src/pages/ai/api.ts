@@ -36,11 +36,11 @@ export function loadStudioModels(kind: StudioKind) {
   return fetchCommonAiModels(type)
 }
 
-export function pageStudioWorks(kind: StudioKind, pageNo: number) {
+export function pageStudioWorks(kind: StudioKind, pageNo: number, pageSize = PAGE_SIZE) {
   const url = kind === 'image' ? '/admin-api/ai/image/my-page' : '/admin-api/ai/video/my-page'
   return http.get<PageResult<StudioWork>>(url, {
     pageNo,
-    pageSize: PAGE_SIZE,
+    pageSize,
     excludeCanvas: true,
   })
 }
@@ -48,6 +48,39 @@ export function pageStudioWorks(kind: StudioKind, pageNo: number) {
 export function getStudioWork(kind: StudioKind, id: number) {
   const url = kind === 'image' ? '/admin-api/ai/image/get-my' : '/admin-api/ai/video/get-my'
   return http.get<StudioWork | null>(url, { id })
+}
+
+export function deleteStudioWork(kind: StudioKind, id: number) {
+  const url = kind === 'image' ? '/admin-api/ai/image/delete-my' : '/admin-api/ai/video/delete-my'
+  return http.delete<boolean>(url, { id })
+}
+
+function fileExt(url: string, fallback: string) {
+  const match = /\.([a-z0-9]{2,5})$/i.exec(url.split(/[?#]/)[0] || '')
+  return (match?.[1] || fallback).toLowerCase()
+}
+
+export function studioFileName(kind: StudioKind, id: number, url: string) {
+  return `${kind}-${id}.${fileExt(url, kind === 'video' ? 'mp4' : 'png')}`
+}
+
+/** 优先保存为本地文件。跨域无法读取时改为新窗口打开，方便另存。 */
+export async function downloadStudioFile(url: string, fileName: string) {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error('下载失败')
+    const blob = await res.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = objectUrl
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(objectUrl)
+  } catch {
+    window.open(url, '_blank', 'noopener')
+  }
 }
 
 export function submitStudioImage(body: {

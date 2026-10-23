@@ -45,9 +45,22 @@ watch(
 )
 
 function playFromCover() {
+  if (!props.selected) return
   coverVisible.value = false
   videoRef.value?.play()
 }
+
+function onVideoPlay(e) {
+  coverVisible.value = false
+  if (!props.selected) e?.target?.pause()
+}
+
+watch(
+  () => props.selected,
+  (selected) => {
+    if (!selected) videoRef.value?.pause()
+  }
+)
 
 const VIDEO_ACCEPT = 'video/mp4,video/quicktime,.mp4,.mov'
 
@@ -300,7 +313,7 @@ const wrapStyle = computed(() =>
             preload="auto"
             @loadedmetadata="onVideoMeta"
             @loadeddata="paintPausedFrame($event.target)"
-            @play="coverVisible = false"
+            @play="onVideoPlay"
           />
           <img
             v-if="coverVisible && data.poster"

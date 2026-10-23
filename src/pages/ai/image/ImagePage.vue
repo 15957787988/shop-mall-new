@@ -55,6 +55,7 @@
         </div>
 
         <div class="studio__footer">
+          <Button block @click="historyOpen = true">查看历史</Button>
           <Button
             type="primary"
             block
@@ -79,26 +80,54 @@
           :ref="(el) => setCardEl(item.id, el)"
           class="studio__card"
         >
-          <header class="studio__card-head">
-            <span class="studio__card-model">{{ item.modelName || item.model || '生成结果' }}</span>
-            <span
-              v-if="statusLabel(item)"
-              class="studio__card-status"
-              :data-fail="item.status === 30"
-            >
-              {{ statusLabel(item) }}
-            </span>
-            <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
-          </header>
-          <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
-          <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
-            {{ item.errorMessage }}
-          </p>
-          <div class="studio__media">
-            <img v-if="imageSrc(item)" :src="imageSrc(item)" alt="" />
-            <span v-else-if="isPending(item)" class="studio__media-wait"
-              >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
-            >
+          <div class="studio__card-body">
+            <header class="studio__card-head">
+              <span class="studio__card-model">{{ item.modelName || item.model || '生成结果' }}</span>
+              <span
+                v-if="statusLabel(item)"
+                class="studio__card-status"
+                :data-fail="item.status === 30"
+              >
+                {{ statusLabel(item) }}
+              </span>
+              <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
+            </header>
+            <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
+            <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
+              {{ item.errorMessage }}
+            </p>
+            <div class="studio__media">
+              <Image
+                v-if="imageSrc(item)"
+                :src="imageSrc(item)"
+                alt="生成结果"
+              />
+              <span v-else-if="isPending(item)" class="studio__media-wait"
+                >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
+              >
+            </div>
+            <div class="studio__actions">
+              <button
+                type="button"
+                class="studio__action"
+                title="下载"
+                aria-label="下载"
+                :disabled="!imageSrc(item) || downloadingId === item.id"
+                @click="handleDownload(item)"
+              >
+                <DownloadOutlined />
+              </button>
+              <button
+                type="button"
+                class="studio__action studio__action--danger"
+                title="删除"
+                aria-label="删除"
+                :disabled="deletingId === item.id"
+                @click="handleDelete(item)"
+              >
+                <DeleteOutlined />
+              </button>
+            </div>
           </div>
         </article>
         <button
@@ -125,21 +154,27 @@
         </button>
       </aside>
     </div>
+    <HistoryModal v-model:open="historyOpen" kind="image" />
   </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Button, Input, Select } from 'ant-design-vue'
+import { DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { Button, Image, Input, Modal, Select } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
+import HistoryModal from '../HistoryModal.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import type { CommonAiModelItem } from '@/service/api/ai-model'
 import {
+  deleteStudioWork,
+  downloadStudioFile,
   getStudioWork,
   loadStudioModels,
   pageStudioWorks,
+  studioFileName,
   submitStudioImage,
   type StudioWork,
 } from '../api'
@@ -156,12 +191,15 @@ const aspect = ref('')
 const resolution = ref('')
 const refImages = ref<string[]>([])
 const submitting = ref(false)
+const historyOpen = ref(false)
 
 const works = ref<StudioWork[]>([])
 const total = ref(0)
 const pageNo = ref(1)
 const listLoading = ref(false)
 const activeId = ref<number>()
+const downloadingId = ref<number>()
+const deletingId = ref<number>()
 const listEl = ref<HTMLElement | null>(null)
 const cardEls = new Map<number, HTMLElement>()
 let pollTimer = 0
@@ -325,6 +363,44 @@ function setCardEl(id: number, el: unknown) {
 function scrollTo(id: number) {
   activeId.value = id
   cardEls.get(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+async function handleDownload(item: StudioWork) {
+  const url = imageSrc(item)
+  if (!url || downloadingId.value) return
+  downloadingId.value = item.id
+  try {
+    await downloadStudioFile(url, studioFileName('image', item.id, url))
+  } catch (error: unknown) {
+    addToast(error instanceof Error ? error.message : '下载失败', 'error')
+  } finally {
+    downloadingId.value = undefined
+  }
+}
+
+function handleDelete(item: StudioWork) {
+  Modal.confirm({
+    title: '删除这条作品？',
+    content: '删除后无法恢复。',
+    okText: '删除',
+    okType: 'danger',
+    cancelText: '取消',
+    async onOk() {
+      deletingId.value = item.id
+      try {
+        await deleteStudioWork('image', item.id)
+        works.value = works.value.filter((row) => row.id !== item.id)
+        total.value = Math.max(0, total.value - 1)
+        cardEls.delete(item.id)
+        if (activeId.value === item.id) activeId.value = works.value[0]?.id
+      } catch (error: unknown) {
+        addToast(error instanceof Error ? error.message : '删除失败', 'error')
+        throw error
+      } finally {
+        deletingId.value = undefined
+      }
+    },
+  })
 }
 
 async function handleGenerate() {

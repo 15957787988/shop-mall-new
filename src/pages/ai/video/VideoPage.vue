@@ -65,6 +65,7 @@
         </div>
 
         <div class="studio__footer">
+          <Button block @click="historyOpen = true">查看历史</Button>
           <Button
             type="primary"
             block
@@ -84,32 +85,56 @@
           还没有作品。左侧填写后生成，画布里的结果不会出现在这里。
         </div>
         <article v-for="item in works" :key="item.id" class="studio__card">
-          <header class="studio__card-head">
-            <span class="studio__card-model">{{ item.modelName || item.model || '生成结果' }}</span>
-            <span
-              v-if="statusLabel(item)"
-              class="studio__card-status"
-              :data-fail="item.status === 30"
-            >
-              {{ statusLabel(item) }}
-            </span>
-            <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
-          </header>
-          <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
-          <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
-            {{ item.errorMessage }}
-          </p>
-          <div class="studio__media">
-            <video
-              v-if="item.status === 20 && item.videoUrl"
-              :src="item.videoUrl"
-              :poster="item.previewUrl || item.lastFrameUrl || undefined"
-              controls
-              playsinline
-            />
-            <span v-else-if="isPending(item)" class="studio__media-wait"
-              >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
-            >
+          <div class="studio__card-body">
+            <header class="studio__card-head">
+              <span class="studio__card-model">{{ item.modelName || item.model || '生成结果' }}</span>
+              <span
+                v-if="statusLabel(item)"
+                class="studio__card-status"
+                :data-fail="item.status === 30"
+              >
+                {{ statusLabel(item) }}
+              </span>
+              <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
+            </header>
+            <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
+            <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
+              {{ item.errorMessage }}
+            </p>
+            <div class="studio__media">
+              <video
+                v-if="item.status === 20 && item.videoUrl"
+                :src="item.videoUrl"
+                :poster="item.previewUrl || item.lastFrameUrl || undefined"
+                controls
+                playsinline
+              />
+              <span v-else-if="isPending(item)" class="studio__media-wait"
+                >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
+              >
+            </div>
+            <div class="studio__actions">
+              <button
+                type="button"
+                class="studio__action"
+                title="下载"
+                aria-label="下载"
+                :disabled="!videoSrc(item) || downloadingId === item.id"
+                @click="handleDownload(item)"
+              >
+                <DownloadOutlined />
+              </button>
+              <button
+                type="button"
+                class="studio__action studio__action--danger"
+                title="删除"
+                aria-label="删除"
+                :disabled="deletingId === item.id"
+                @click="handleDelete(item)"
+              >
+                <DeleteOutlined />
+              </button>
+            </div>
           </div>
         </article>
         <button
@@ -123,22 +148,28 @@
         </button>
       </main>
     </div>
+    <HistoryModal v-model:open="historyOpen" kind="video" />
   </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Button, Input, Select, Slider } from 'ant-design-vue'
+import { DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
+import HistoryModal from '../HistoryModal.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import type { CommonAiModelItem } from '@/service/api/ai-model'
 import {
   buildVideoParams,
+  deleteStudioWork,
+  downloadStudioFile,
   getStudioWork,
   loadStudioModels,
   pageStudioWorks,
+  studioFileName,
   submitStudioVideo,
   type StudioWork,
 } from '../api'
@@ -156,11 +187,14 @@ const resolution = ref('')
 const duration = ref(5)
 const refImages = ref<string[]>([])
 const submitting = ref(false)
+const historyOpen = ref(false)
 
 const works = ref<StudioWork[]>([])
 const total = ref(0)
 const pageNo = ref(1)
 const listLoading = ref(false)
+const downloadingId = ref<number>()
+const deletingId = ref<number>()
 const listEl = ref<HTMLElement | null>(null)
 let pollTimer = 0
 let pageSeq = 0
@@ -216,6 +250,10 @@ function statusLabel(item: StudioWork) {
   if (item.status === 30) return '失败'
   if (isPending(item)) return '生成中'
   return ''
+}
+
+function videoSrc(item: StudioWork) {
+  return item.status === 20 && item.videoUrl ? item.videoUrl : ''
 }
 
 function formatTime(value: StudioWork['createTime']) {
@@ -318,6 +356,42 @@ async function refreshPending() {
       }
     })
   )
+}
+
+async function handleDownload(item: StudioWork) {
+  const url = videoSrc(item)
+  if (!url || downloadingId.value) return
+  downloadingId.value = item.id
+  try {
+    await downloadStudioFile(url, studioFileName('video', item.id, url))
+  } catch (error: unknown) {
+    addToast(error instanceof Error ? error.message : '下载失败', 'error')
+  } finally {
+    downloadingId.value = undefined
+  }
+}
+
+function handleDelete(item: StudioWork) {
+  Modal.confirm({
+    title: '删除这条作品？',
+    content: '删除后无法恢复。',
+    okText: '删除',
+    okType: 'danger',
+    cancelText: '取消',
+    async onOk() {
+      deletingId.value = item.id
+      try {
+        await deleteStudioWork('video', item.id)
+        works.value = works.value.filter((row) => row.id !== item.id)
+        total.value = Math.max(0, total.value - 1)
+      } catch (error: unknown) {
+        addToast(error instanceof Error ? error.message : '删除失败', 'error')
+        throw error
+      } finally {
+        deletingId.value = undefined
+      }
+    },
+  })
 }
 
 async function handleGenerate() {
