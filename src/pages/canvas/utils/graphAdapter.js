@@ -14,6 +14,7 @@ const TYPE_TO_KIND = {
   audioUploadNode: 'audio',
   noteNode: 'note',
   groupNode: 'group',
+  shotListNode: 'breakdown',
 }
 
 const DEFAULT_DIMS = {
@@ -27,10 +28,11 @@ const DEFAULT_DIMS = {
   audioUploadNode: { width: 280, height: 140 },
   noteNode: { width: 180, height: 120 },
   groupNode: { width: 420, height: 280 },
+  shotListNode: { width: 760, height: 420 },
 }
 
 /** 高度由内容撑开，不锁 style.height */
-export const AUTO_HEIGHT_NODE_TYPES = new Set(['imageNode', 'imageUploadNode', 'imageGenNode'])
+export const AUTO_HEIGHT_NODE_TYPES = new Set(['imageNode', 'imageUploadNode', 'imageGenNode', 'shotListNode'])
 
 /** 空态/占位时 header + placeholder 的近似高度，仅作保存 fallback */
 const IMAGE_EMPTY_HEIGHT = 152
@@ -55,6 +57,7 @@ function nodeSize(node) {
 }
 
 function kindToVueType(kind, meta = {}) {
+  if (kind === 'breakdown') return 'shotListNode'
   if (kind === 'text') return 'textNode'
   if (kind === 'note') return 'noteNode'
   if (kind === 'group') return 'groupNode'
@@ -105,6 +108,10 @@ export function vueNodeToGraphNode(node) {
     duration: Number(node.data?.duration) || 0,
     color: node.data?.color || '',
     scope: node.data?.scope || '',
+    sourceNodeId: node.data?.sourceNodeId || '',
+    breakdownId: node.data?.breakdownId || '',
+    breakdownVersion: Number(node.data?.breakdownVersion) || 0,
+    shotsSummary: node.data?.shotsSummary || null,
   }
   return {
     id: node.id,
@@ -165,6 +172,11 @@ export function graphNodeToVueNode(gNode) {
       duration: Number(meta.duration) || 0,
       color: meta.color || (gNode.kind === 'note' ? '#f5c542' : undefined),
       scope: meta.scope || undefined,
+      sourceNodeId: meta.sourceNodeId || '',
+      breakdownId: meta.breakdownId || '',
+      breakdownStage: meta.breakdownId ? 'queued' : 'idle',
+      breakdownVersion: Number(meta.breakdownVersion) || 0,
+      shotsSummary: meta.shotsSummary || null,
     },
   }
 }

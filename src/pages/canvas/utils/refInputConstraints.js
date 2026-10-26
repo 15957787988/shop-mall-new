@@ -244,6 +244,7 @@ export function canAcceptRefInput({ targetType, sourceKind, counts, limits }) {
  * 创建下一/上一节点菜单：选项是否因参考约束禁用（按空配额预判）
  */
 export function isCreateOptionDisabled(sourceType, targetType, counts, limits) {
+  if (targetType === 'shotListNode') return !String(sourceType || '').includes('video')
   const sourceKind = getRefSourceKind(sourceType)
   const targetMode = getRefTargetMode(targetType)
 
@@ -280,6 +281,14 @@ export function validateRefEdge({
   edgeRole
 }) {
   if (edgeRole === 'generation-output') return { ok: true }
+  if (targetType === 'shotListNode') {
+    if (!String(sourceType || '').includes('video')) {
+      return { ok: false, reason: '拉片节点只能连接视频' }
+    }
+    const incoming = (edges || []).filter((edge) => edge.target === targetId).length
+    if (incoming >= 1) return { ok: false, reason: '拉片节点只能连接一个视频' }
+    return { ok: true }
+  }
   const sourceKind = getRefSourceKind(sourceType)
   const sourceNode = (nodes || []).find((n) => n.id === sourceId)
   const targetNode = (nodes || []).find((n) => n.id === targetId)

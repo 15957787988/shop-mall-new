@@ -258,6 +258,20 @@ export const useFlowStore = defineStore('flow', () => {
       position: pos,
       data: { label: '视频节点', src: '', poster: '' }
     }),
+    shotListNode: (pos) => ({
+      id: uid('shots'),
+      type: 'shotListNode',
+      position: pos,
+      style: { width: '760px' },
+      data: {
+        label: '拉片',
+        sourceNodeId: '',
+        breakdownId: '',
+        breakdownStage: 'idle',
+        breakdownVersion: 0,
+        shotsSummary: null
+      }
+    }),
     audioUploadNode: (pos) => ({
       id: uid('audio'),
       type: 'audioUploadNode',
@@ -375,7 +389,7 @@ export const useFlowStore = defineStore('flow', () => {
     _dirtyHandler?.(kind)
   }
 
-  const TRANSIENT_DATA_KEYS = new Set(['generating'])
+  const TRANSIENT_DATA_KEYS = new Set(['generating', 'breakdownStage'])
   const CONTENT_DATA_KEYS = new Set([
     'prompt',
     'content',
@@ -383,7 +397,8 @@ export const useFlowStore = defineStore('flow', () => {
     'label',
     'settings',
     'assetWall',
-    'color'
+    'color',
+    'shotsSummary'
   ])
 
   function setActivePanelNode(id) {

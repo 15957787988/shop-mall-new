@@ -22,6 +22,11 @@ function act(action) {
       <template v-if="targetType === 'node'">
         <div class="ctx-header">节点操作</div>
         <button class="ctx-item" @click="act('duplicate')"><span>⧉</span> 复制节点</button>
+        <button
+          v-if="String(target?.type || '').includes('video') && target?.data?.src"
+          class="ctx-item"
+          @click="act('breakdown')"
+        ><span>🎞</span> 拉片</button>
         <div class="ctx-divider" />
         <button class="ctx-item danger" @click="act('delete')"><span>✕</span> 删除节点</button>
       </template>

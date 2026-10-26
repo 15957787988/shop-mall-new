@@ -189,7 +189,7 @@
           @close="mediaPanel = ''"
           @locate="locateHistoryNode"
         />
-        <NodeActionBar v-if="!mediaPanel" :readonly="!canEdit" />
+        <NodeActionBar v-if="!mediaPanel" :readonly="!canEdit" @breakdown="startBreakdownFromVideo" />
       </div> </div
     ><!-- /canvas-body -->
 
@@ -303,6 +303,7 @@ import { useGenerationHistory, GENERATION_HISTORY } from '../composables/useGene
 import TextNode from './components/TextNode.vue'
 import ImageNode from './components/ImageNode.vue'
 import VideoNode from './components/VideoNode.vue'
+import ShotListNode from './components/ShotListNode.vue'
 import AudioNode from './components/AudioNode.vue'
 import NoteNode from './components/NoteNode.vue'
 import GroupNode from './components/GroupNode.vue'
@@ -316,6 +317,7 @@ const rawNodeTypes = {
   videoNode: markRaw(VideoNode),
   videoUploadNode: markRaw(VideoNode),
   videoGenNode: markRaw(VideoNode),
+  shotListNode: markRaw(ShotListNode),
   audioUploadNode: markRaw(AudioNode),
   noteNode: markRaw(NoteNode),
   groupNode: markRaw(GroupNode)
@@ -742,6 +744,7 @@ const EDGE_DROP_TYPES = [
   { type: 'textNode', icon: 'T', label: '文本节点', color: '#B5B3AC' },
   { type: 'imageGenNode', icon: '🎨', label: '图片节点', color: '#8e8a82' },
   { type: 'videoGenNode', icon: '🎬', label: '视频节点', color: '#B58F3F' },
+  { type: 'shotListNode', icon: '🎞', label: '拉片节点', color: '#B58F3F' },
   { type: 'audioUploadNode', icon: '🎧', label: '音频节点', color: '#C4A484' },
   { type: 'noteNode', icon: '📝', label: '便签', color: '#8e8a82' }
 ]
@@ -829,6 +832,7 @@ function createFromEdgeDrop(e, type, disabled) {
       imageGenNode: 200,
       videoUploadNode: 244,
       videoGenNode: 244,
+      shotListNode: 760,
       audioUploadNode: 280,
       noteNode: 180
     }[type] ?? 220
@@ -847,7 +851,52 @@ function createFromEdgeDrop(e, type, disabled) {
       target: newNode.id,
       targetHandle: 'tl'
     })
+    if (type === 'shotListNode') {
+      const source = store.nodes.find((node) => node.id === src.nodeId)
+      store.updateNodeData(newNode.id, {
+        sourceNodeId: src.nodeId,
+        label: `${source?.data?.label || '视频'} · 拉片`,
+        breakdownStage: source?.data?.src ? 'queued' : 'idle'
+      })
+    }
   }
+}
+
+function startBreakdownFromVideo(videoNodeId) {
+  if (!canEdit.value) return
+  const video = nodes.value.find((node) => node.id === videoNodeId)
+  if (!video?.data?.src) {
+    ElMessage.warning('先上传或生成视频')
+    return
+  }
+  const existing = nodes.value.find(
+    (node) => node.type === 'shotListNode' && node.data?.sourceNodeId === videoNodeId
+  )
+  if (existing) {
+    store.nodes = store.nodes.map((node) => ({ ...node, selected: node.id === existing.id }))
+    ElMessage.info('已打开这条视频的拉片')
+    return
+  }
+  const width = parseFloat(video.style?.width) || video.dimensions?.width || 244
+  const created = store.addNodeOfType(
+    'shotListNode',
+    { x: (video.position?.x || 0) + width + 80, y: video.position?.y || 0 },
+    getNodes.value
+  )
+  if (!created) return
+  store.updateNodeData(created.id, {
+    sourceNodeId: videoNodeId,
+    label: `${video.data?.label || '视频'} · 拉片`,
+    breakdownStage: 'queued'
+  })
+  store.addEdge({
+    id: `edge-${videoNodeId}-${created.id}-${Date.now()}`,
+    source: videoNodeId,
+    sourceHandle: 'sr',
+    target: created.id,
+    targetHandle: 'tl'
+  })
+  store.nodes = store.nodes.map((node) => ({ ...node, selected: node.id === created.id }))
 }
 
 // ─── Fit view ──────────────────────────────────────────────────────────────────
@@ -1541,7 +1590,8 @@ function onCtxAction(action) {
   const { target, targetType } = ctxMenu.value
   const pos = ctxDropPos.value
   if (targetType === 'node' && target) {
-    if (action === 'delete') store.confirmRemoveNodeById(target.id)
+    if (action === 'breakdown') startBreakdownFromVideo(target.id)
+    else if (action === 'delete') store.confirmRemoveNodeById(target.id)
     else if (action === 'duplicate') {
       const orig = nodes.value.find((n) => n.id === target.id)
       if (orig) {

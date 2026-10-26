@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { Download, View, FullScreen } from '../../shims/icons'
+import { Download, View, FullScreen, VideoCamera } from '../../shims/icons'
 import { storeToRefs } from 'pinia'
 import { useVueFlow } from '@vue-flow/core'
 import { useFlowStore } from '../../stores/flowStore'
@@ -11,6 +11,7 @@ import { useCanvasVideo } from '../../composables/useCanvasVideo'
 import { applyPlaybackPosition } from '../../utils/canvasPlayback'
 
 const props = defineProps({ readonly: Boolean })
+const emit = defineEmits(['breakdown'])
 const store = useFlowStore()
 const message = useMessage()
 const { nodes, activePanelNodeId } = storeToRefs(store)
@@ -165,6 +166,12 @@ async function doDownload() {
   await imageDownloader.download({ picUrl: src, prompt: prompt || 'image' })
 }
 
+function startBreakdown() {
+  const id = mediaNode.value?.id
+  if (!id || !hasMedia.value || props.readonly) return
+  emit('breakdown', id)
+}
+
 function openExpand() {
   const node = textNode.value
   if (!node) return
@@ -204,6 +211,14 @@ function saveExpand() {
         >
         <button class="nab-btn" title="预览" :disabled="!hasMedia" @click="openPreview"
           ><View class="nab-icon" aria-hidden="true" />预览</button
+        >
+        <button
+          v-if="isVideo"
+          class="nab-btn nab-btn-primary"
+          title="拉片"
+          :disabled="!hasMedia || readonly"
+          @click="startBreakdown"
+          ><VideoCamera class="nab-icon" aria-hidden="true" />拉片</button
         >
       </template>
     </div>
