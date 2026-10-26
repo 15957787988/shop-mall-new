@@ -1,5 +1,12 @@
 <template>
-  <div class="image-upload">
+  <div
+    class="image-upload"
+    :class="{ 'is-dragging': drag && dragging }"
+    @dragenter="onDragEnter"
+    @dragover="onDragOver"
+    @dragleave="onDragLeave"
+    @drop="onDrop"
+  >
     <div v-if="images.length > 0" class="image-upload__grid">
       <div
         v-for="(img, index) in images"
@@ -35,7 +42,7 @@
       </div>
       <button v-if="canUpload" type="button" class="image-upload__add" @click="triggerSelect">
         <UploadOutlined />
-        <span>添加</span>
+        <span>{{ drag && dragging ? '松开添加' : '添加' }}</span>
       </button>
     </div>
 
@@ -43,7 +50,9 @@
       <div class="image-upload__empty-icon">
         <PictureOutlined />
       </div>
-      <div class="image-upload__empty-title">上传图片</div>
+      <div class="image-upload__empty-title">{{
+        drag ? (dragging ? '松开上传' : '点击或拖拽上传') : '上传图片'
+      }}</div>
       <div class="image-upload__empty-desc">{{ emptyDesc || `同一产品，最多${maxCount}张` }}</div>
     </button>
 
@@ -90,6 +99,7 @@ const props = withDefaults(
     requireLogin?: boolean
     fileSize?: number
     emptyDesc?: string
+    drag?: boolean
   }>(),
   {
     maxCount: 3,
@@ -98,6 +108,7 @@ const props = withDefaults(
     primaryIndex: 0,
     fileType: () => ['image/jpeg', 'image/png', 'image/webp'],
     requireLogin: false,
+    drag: false,
   }
 )
 
@@ -122,6 +133,8 @@ const images = ref<UploadedImage[]>(
 const fileList = ref<UploadProps['fileList']>([])
 const uploadRef = ref<{ $el: HTMLElement } | null>(null)
 const lastSyncedUrls = ref('')
+const dragDepth = ref(0)
+const dragging = computed(() => dragDepth.value > 0)
 
 const canUpload = computed(() => images.value.length < props.maxCount)
 const remainingCount = computed(() => Math.max(0, props.maxCount - images.value.length))
@@ -229,6 +242,48 @@ async function customRequest(options: UploadRequestOption) {
   }
 }
 
+function onDragEnter(event: DragEvent) {
+  if (!props.drag) return
+  event.preventDefault()
+  dragDepth.value += 1
+}
+
+function onDragOver(event: DragEvent) {
+  if (!props.drag) return
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
+}
+
+function onDragLeave() {
+  if (!props.drag) return
+  dragDepth.value = Math.max(0, dragDepth.value - 1)
+}
+
+function onDrop(event: DragEvent) {
+  dragDepth.value = 0
+  if (!props.drag) return
+  event.preventDefault()
+  const files = Array.from(event.dataTransfer?.files ?? [])
+  if (!files.length) return
+  if (!canUpload.value) {
+    showLimitToast()
+    return
+  }
+  const batch = files.map((file) => {
+    const tagged = file as File & { uid: string }
+    tagged.uid = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    return tagged
+  })
+  batch.forEach((file) => {
+    if (beforeUpload?.(file, batch) !== true) return
+    void customRequest({
+      file,
+      onSuccess() {},
+      onError() {},
+    } as UploadRequestOption)
+  })
+}
+
 function handleRemove(index: number) {
   const img = images.value[index]
   if (img.previewUrl && !img.url) {
@@ -258,6 +313,14 @@ function handlePrimaryClick(index: number, url: string) {
 <style scoped lang="scss">
 .image-upload {
   position: relative;
+
+  &.is-dragging {
+    .image-upload__empty,
+    .image-upload__add {
+      border-color: var(--color-creative-violet);
+      background: rgba(109, 40, 217, 0.05);
+    }
+  }
 
   &__header {
     display: flex;

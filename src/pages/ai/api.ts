@@ -8,9 +8,10 @@ export type { CommonAiModelItem }
 
 const PAGE_SIZE = 10
 
-/** 与画布 POST /ai/video/common/generate 的 type 一致 */
+/** 与画布 POST /ai/video/common/generate 的 type 一致。2 = 全能参考（图/视频/音频混合） */
 const VideoGenType = {
   MULTI_IMAGE: 1,
+  MIXED: 2,
   TEXT: 3,
   FRAME: 4,
 } as const
@@ -97,17 +98,48 @@ export function submitStudioImage(body: {
   })
 }
 
-/** 仅文生 / 参考图。不传 canvasProjectId，记录留在列表。 */
+function countLimit(primary: unknown, secondary: unknown, fallback: number) {
+  const first = Number(primary)
+  if (Number.isFinite(first) && first >= 0) return first
+  const second = Number(secondary)
+  if (Number.isFinite(second) && second >= 0) return second
+  return fallback
+}
+
+function httpUrls(list: string[] | undefined, max: number) {
+  const urls = (list ?? []).filter((url) => /^https?:/.test(url))
+  return [...new Set(urls)].slice(0, max)
+}
+
+/**
+ * 文生 / 参考图 / 全能参考。不传 canvasProjectId，记录留在列表。
+ * 有参考视频或参考音频时 type=2，对齐画布 buildCommonVideoParams。
+ */
 export function buildVideoParams(input: {
   prompt: string
   aspect: string
   duration: number
   resolution: string
   refImages: string[]
+  refVideos?: string[]
+  refAudios?: string[]
+  mediaLimits?: Record<string, number> | null
 }) {
   const text = input.prompt.trim()
-  const images = input.refImages.filter((url) => /^https?:/.test(url))
-  if (!text && !images.length) return null
+  const limits = input.mediaLimits
+  const images = httpUrls(
+    input.refImages,
+    countLimit(limits?.platformMaxImages, limits?.maxImages, 9),
+  )
+  const videos = httpUrls(
+    input.refVideos,
+    countLimit(limits?.platformMaxVideos, limits?.maxVideos, 3),
+  )
+  const audios = httpUrls(
+    input.refAudios,
+    countLimit(limits?.platformMaxAudios, limits?.maxAudios, 3),
+  )
+  if (!text && !images.length && !videos.length && !audios.length) return null
 
   const params: Record<string, unknown> = {
     resolution: input.resolution || '720p',
@@ -115,7 +147,14 @@ export function buildVideoParams(input: {
     duration: input.duration || 5,
     generateAudio: true,
   }
-  if (images.length === 2 && !text) {
+
+  if (videos.length || audios.length) {
+    params.type = VideoGenType.MIXED
+    params.prompt = text || '根据参考素材生成'
+    if (images.length) params.imageUrls = images
+    if (videos.length) params.videoUrls = videos
+    if (audios.length) params.audioUrls = audios
+  } else if (images.length === 2 && !text) {
     params.type = VideoGenType.FRAME
     params.imageUrls = images
   } else if (images.length) {
@@ -128,6 +167,44 @@ export function buildVideoParams(input: {
   }
   return params
 }
+
+function assertVideoParams() {
+  const base = {
+    prompt: '猫',
+    aspect: '16:9',
+    duration: 5,
+    resolution: '720p',
+    refImages: [] as string[],
+  }
+  const text = buildVideoParams(base)
+  const mixed = buildVideoParams({
+    ...base,
+    prompt: '',
+    refImages: ['https://cdn/a.png'],
+    refVideos: ['https://cdn/a.mp4'],
+    refAudios: ['https://cdn/a.mp3', 'https://cdn/a.mp3'],
+  })
+  const frame = buildVideoParams({
+    ...base,
+    prompt: '',
+    refImages: ['https://cdn/a.png', 'https://cdn/b.png'],
+  })
+  const empty = buildVideoParams({ ...base, prompt: '  ' })
+  if (text?.type !== VideoGenType.TEXT || text.prompt !== '猫') throw new Error('text params')
+  if (
+    mixed?.type !== VideoGenType.MIXED ||
+    mixed.prompt !== '根据参考素材生成' ||
+    !Array.isArray(mixed.videoUrls) ||
+    !Array.isArray(mixed.audioUrls) ||
+    mixed.audioUrls.length !== 1
+  ) {
+    throw new Error('omni params')
+  }
+  if (frame?.type !== VideoGenType.FRAME) throw new Error('frame params')
+  if (empty !== null) throw new Error('empty params')
+}
+
+if (import.meta.env?.DEV) assertVideoParams()
 
 export function submitStudioVideo(body: {
   modelId: number

@@ -44,6 +44,7 @@
             <h3 class="studio__label">参考图</h3>
             <ImageUpload
               :key="`${modelId ?? 0}-${maxRefs}`"
+              drag
               require-login
               :max-count="maxRefs"
               :file-size="10"
