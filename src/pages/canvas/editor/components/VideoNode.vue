@@ -18,7 +18,7 @@ const props = defineProps({
   id: String,
   type: String,
   data: Object,
-  selected: Boolean
+  selected: Boolean,
 })
 
 const store = useFlowStore()
@@ -45,22 +45,13 @@ watch(
 )
 
 function playFromCover() {
-  if (!props.selected) return
   coverVisible.value = false
   videoRef.value?.play()
 }
 
-function onVideoPlay(e) {
+function onVideoPlay() {
   coverVisible.value = false
-  if (!props.selected) e?.target?.pause()
 }
-
-watch(
-  () => props.selected,
-  (selected) => {
-    if (!selected) videoRef.value?.pause()
-  }
-)
 
 const VIDEO_ACCEPT = 'video/mp4,video/quicktime,.mp4,.mov'
 
@@ -134,7 +125,7 @@ async function applyMediaUrl(url, name = '', duration = 0, completed = false) {
     outputValue: url,
     fileName: fileName.value,
     genError: '',
-    ...(label ? { label } : {})
+    ...(label ? { label } : {}),
   }
   if (Number.isFinite(duration) && duration > 0) {
     patch.duration = duration
@@ -307,7 +298,7 @@ const wrapStyle = computed(() =>
             ref="videoRef"
             :src="data.src"
             :poster="data.poster || undefined"
-            class="node-video"
+            class="node-video nodrag nopan nowheel"
             controls
             playsinline
             preload="auto"
@@ -318,8 +309,9 @@ const wrapStyle = computed(() =>
           <img
             v-if="coverVisible && data.poster"
             :src="data.poster"
-            class="node-poster"
+            class="node-poster nodrag nopan nowheel"
             alt=""
+            referrerpolicy="no-referrer"
             @click.stop="playFromCover"
             @error="coverVisible = false"
           />
@@ -376,7 +368,6 @@ const wrapStyle = computed(() =>
 </template>
 
 <style lang="scss" scoped>
-
 .video-node {
   width: 244px;
   position: relative;

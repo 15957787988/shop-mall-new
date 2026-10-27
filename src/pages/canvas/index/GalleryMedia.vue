@@ -4,6 +4,7 @@
       v-if="near && posterUrl && !imageFailed"
       :src="posterUrl"
       alt=""
+      referrerpolicy="no-referrer"
       decoding="async"
       @load="finishImage"
       @error="failImage"

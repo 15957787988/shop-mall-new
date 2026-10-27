@@ -87,7 +87,7 @@ const barStyle = computed(() => {
     top: `${bounds.top + live.position.y * zoom + vpY}px`,
     left: `${bounds.left + live.position.x * zoom + vpX}px`,
     transform: `scale(${zoom}) translateY(-${BAR_GAP}px)`,
-    transformOrigin: 'top left'
+    transformOrigin: 'top left',
   }
 })
 
@@ -191,20 +191,18 @@ function saveExpand() {
     <div v-if="barNode" class="node-action-bar" :style="barStyle" @mousedown.stop @click.stop>
       <template v-if="textNode">
         <span class="nab-meta">{{ textCharCount }} 字</span>
-        <button class="nab-btn nab-btn-primary" title="查看文本" @click="openExpand"
-          ><FullScreen class="nab-icon" aria-hidden="true" />{{
-            readonly ? '查看' : '展开'
-          }}</button
-        >
+        <button class="nab-btn nab-btn-primary" title="查看文本" @click="openExpand">
+          <FullScreen class="nab-icon" aria-hidden="true" />{{ readonly ? '查看' : '展开' }}
+        </button>
       </template>
       <template v-else>
         <!-- <button class="nab-btn nab-btn-danger" title="删除节点" @click="deleteNode">🗑 删除</button> -->
-        <button class="nab-btn" title="下载" :disabled="!hasMedia" @click="doDownload"
-          ><Download class="nab-icon" aria-hidden="true" />下载</button
-        >
-        <button class="nab-btn" title="预览" :disabled="!hasMedia" @click="openPreview"
-          ><View class="nab-icon" aria-hidden="true" />预览</button
-        >
+        <button class="nab-btn" title="下载" :disabled="!hasMedia" @click="doDownload">
+          <Download class="nab-icon" aria-hidden="true" />下载
+        </button>
+        <button class="nab-btn" title="预览" :disabled="!hasMedia" @click="openPreview">
+          <View class="nab-icon" aria-hidden="true" />预览
+        </button>
       </template>
     </div>
 
@@ -226,7 +224,7 @@ function saveExpand() {
         class="preview-media"
         @loadedmetadata="restorePreviewPosition"
       />
-      <img v-else :src="previewUrl" alt="预览" class="preview-media" />
+      <img v-else :src="previewUrl" alt="预览" class="preview-media" referrerpolicy="no-referrer" />
     </a-modal>
 
     <a-modal
@@ -252,7 +250,6 @@ function saveExpand() {
 </template>
 
 <style lang="scss" scoped>
-
 .node-action-bar {
   position: fixed;
   z-index: 200;
@@ -331,7 +328,6 @@ function saveExpand() {
 </style>
 
 <style lang="scss">
-
 .text-expand-dialog {
   .el-dialog__body {
     padding-top: 8px;

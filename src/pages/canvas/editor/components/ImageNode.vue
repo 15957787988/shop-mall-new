@@ -188,6 +188,7 @@ function onLocalFileChange(e) {
             :src="data.src"
             :alt="data.alt || '图片'"
             class="node-image"
+            referrerpolicy="no-referrer"
             @load="onImageLoad"
             @error="(e) => e.target.classList.add('img-error')"
           />

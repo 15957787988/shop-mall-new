@@ -13,7 +13,7 @@ const props = defineProps({
   refreshKey: { type: Number, default: 0 },
   nodeIds: { type: Array, default: () => [] },
   recoverableVideoTaskIds: { type: Array, default: () => [] },
-  useVideo: { type: Function, default: null }
+  useVideo: { type: Function, default: null },
 })
 const emit = defineEmits(['close', 'locate', 'count'])
 const pager = useMediaPager((id, params) => generationApi.list(id, params))
@@ -121,16 +121,18 @@ function download(item) {
 
 <template>
   <aside class="history-panel" :aria-label="title" @pointerdown.stop @wheel.stop @keydown.stop>
-    <header
-      ><h2>{{ title }}</h2
-      ><button type="button" class="icon-button" aria-label="关闭生成记录" @click="emit('close')"
-        ><Close /></button
-    ></header>
+    <header>
+      <h2>{{ title }}</h2>
+      <button type="button" class="icon-button" aria-label="关闭生成记录" @click="emit('close')">
+        <Close />
+      </button>
+    </header>
     <div class="history-list" :aria-busy="loading">
       <p v-if="loading && !items.length" class="empty-state" role="status">正在加载…</p>
-      <div v-else-if="!items.length && !error" class="empty-state"
-        ><strong>暂无生成记录</strong><p>在当前画布成功生成的图片和视频会保存在这里。</p></div
-      >
+      <div v-else-if="!items.length && !error" class="empty-state">
+        <strong>暂无生成记录</strong>
+        <p>在当前画布成功生成的图片和视频会保存在这里。</p>
+      </div>
       <div class="history-grid">
         <button
           v-for="item in items"
@@ -145,6 +147,7 @@ function download(item) {
               v-if="item.kind === 'image' || item.poster"
               :src="item.kind === 'image' ? item.url : item.poster"
               alt=""
+              referrerpolicy="no-referrer"
               loading="lazy"
             />
             <span v-else class="video-placeholder"><VideoPlay /></span>
@@ -154,20 +157,21 @@ function download(item) {
           <small v-if="!hasNode(item)">原节点已删除</small>
         </button>
       </div>
-      <div v-if="error" class="load-error" role="alert"
-        >历史加载失败
-        <button type="button" @click="items.length ? pager.loadMore() : pager.refresh()"
-          >重试</button
-        ></div
-      >
+      <div v-if="error" class="load-error" role="alert">
+        历史加载失败
+        <button type="button" @click="items.length ? pager.loadMore() : pager.refresh()">
+          重试
+        </button>
+      </div>
       <button
         v-else-if="hasMore"
         type="button"
         class="load-more"
         :disabled="loading"
         @click="pager.loadMore()"
-        >{{ loading ? '加载中…' : '更多记录' }}</button
       >
+        {{ loading ? '加载中…' : '更多记录' }}
+      </button>
     </div>
     <footer>仅自己可见 · {{ allCount }} 个成果</footer>
     <a-modal
@@ -205,6 +209,7 @@ function download(item) {
               v-else
               :src="previewState.media.url"
               alt="生成成果"
+              referrerpolicy="no-referrer"
               @load="onMediaReady"
               @error="playbackError = true"
             />
@@ -216,16 +221,18 @@ function download(item) {
           >
             <VideoPlay v-if="preview.kind === 'video'" /><Picture v-else />
             <strong>{{ playbackError ? '暂时无法预览' : '文件暂不可用' }}</strong>
-            <p>{{
-              playbackError
-                ? previewState.media?.downloadable
-                  ? '文件加载失败，请重试；也可以下载到本地查看。'
-                  : '文件加载失败，请重试或在新窗口打开原文件。'
-                : previewState.error
-            }}</p>
-            <button type="button" class="preview-button" @click="retryPreview"
-              ><RefreshRight />重新加载</button
-            >
+            <p>
+              {{
+                playbackError
+                  ? previewState.media?.downloadable
+                    ? '文件加载失败，请重试；也可以下载到本地查看。'
+                    : '文件加载失败，请重试或在新窗口打开原文件。'
+                  : previewState.error
+              }}
+            </p>
+            <button type="button" class="preview-button" @click="retryPreview">
+              <RefreshRight />重新加载
+            </button>
           </div>
           <div
             v-else-if="
@@ -243,9 +250,9 @@ function download(item) {
             <span>{{
               preview.modelName || (preview.kind === 'video' ? '生成视频' : '生成图片')
             }}</span>
-            <p v-if="previewState.status === 'ready' && !previewState.media.downloadable"
-              >此历史文件尚未转存，可预览或打开原文件。</p
-            >
+            <p v-if="previewState.status === 'ready' && !previewState.media.downloadable">
+              此历史文件尚未转存，可预览或打开原文件。
+            </p>
             <p v-else>删除节点后仍保留记录。删除原作品或画布后，文件可能无法访问。</p>
           </div>
           <div class="preview-actions">
@@ -271,8 +278,9 @@ function download(item) {
               @click="
                 perform(`use:${preview.id}`, () => useVideo({ ...preview, ...previewState.media }))
               "
-              >使用此视频</button
             >
+              使用此视频
+            </button>
             <button
               type="button"
               class="preview-button is-primary"
@@ -282,8 +290,9 @@ function download(item) {
                 busy.has(`download:${preview.id}`)
               "
               @click="download(preview)"
-              ><Download />{{ busy.has(`download:${preview.id}`) ? '下载中…' : '下载文件' }}</button
             >
+              <Download />{{ busy.has(`download:${preview.id}`) ? '下载中…' : '下载文件' }}
+            </button>
           </div>
         </div>
       </div>

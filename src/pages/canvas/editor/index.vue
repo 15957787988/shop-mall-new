@@ -299,6 +299,7 @@ import NodeActionBar from './components/NodeActionBar.vue'
 import AssetLibraryPanel from './components/AssetLibraryPanel.vue'
 import GenerationHistoryPanel from './components/GenerationHistoryPanel.vue'
 import { useGenerationHistory, GENERATION_HISTORY } from '../composables/useGenerationHistory'
+import { useCanvasReferrerPolicy } from '../composables/useCanvasReferrerPolicy'
 
 import TextNode from './components/TextNode.vue'
 import ImageNode from './components/ImageNode.vue'
@@ -307,6 +308,8 @@ import AudioNode from './components/AudioNode.vue'
 import NoteNode from './components/NoteNode.vue'
 import GroupNode from './components/GroupNode.vue'
 import FlowEdge from './components/FlowEdge.vue'
+
+useCanvasReferrerPolicy()
 
 const rawNodeTypes = {
   textNode: markRaw(TextNode),

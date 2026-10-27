@@ -12,7 +12,7 @@ watch(url, () => { failed.value = false })
 </script>
 
 <template>
-  <img v-if="url && !failed" :src="url" alt="视频封面" loading="lazy" decoding="async" @error="failed = true" />
+  <img v-if="url && !failed" :src="url" alt="视频封面" referrerpolicy="no-referrer" loading="lazy" decoding="async" @error="failed = true" />
   <span v-else class="video-poster-placeholder" aria-label="视频暂无可用封面">视频</span>
 </template>
 

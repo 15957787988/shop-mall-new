@@ -139,7 +139,7 @@ function handleGenerate(frame, e) {
         @click="handleClick(frame, $event)"
         :title="fmtTime(frame.time)"
       >
-        <img :src="frame.dataUrl" class="thumb-img" draggable="false" />
+        <img :src="frame.dataUrl" class="thumb-img" referrerpolicy="no-referrer" draggable="false" />
         <span class="thumb-time">{{ fmtTime(frame.time) }}</span>
         <button
           v-if="onGenerateImage && hoveredIdx === idx"

@@ -195,6 +195,7 @@ function quickInsert(asset) {
               v-if="resolveThumb(asset)"
               :src="resolveThumb(asset)"
               :alt="asset.name || 'asset'"
+              referrerpolicy="no-referrer"
             />
             <div v-else class="asset-fallback">{{
               resolveAssetKind(asset) === 'video' ? '视频' : '图片'

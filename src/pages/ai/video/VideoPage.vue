@@ -137,13 +137,30 @@
               {{ item.errorMessage }}
             </p>
             <div class="studio__media">
-              <video
-                v-if="item.status === 20 && item.videoUrl"
-                :src="item.videoUrl"
-                preload="auto"
-                controls
-                playsinline
-              />
+              <button
+                v-if="videoSrc(item)"
+                type="button"
+                class="studio__poster"
+                aria-label="播放"
+                @click="openPreview(item)"
+              >
+                <img
+                  v-if="poster(item) && !brokenPosters[item.id]"
+                  :src="poster(item)"
+                  alt=""
+                  @error="brokenPosters[item.id] = true"
+                />
+                <video
+                  v-else
+                  :src="videoSrc(item)"
+                  muted
+                  playsinline
+                  preload="metadata"
+                  tabindex="-1"
+                  @loadedmetadata="paintThumb"
+                />
+                <span class="studio__play" aria-hidden="true" />
+              </button>
               <span v-else-if="isPending(item)" class="studio__media-wait"
                 >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
               >
@@ -184,12 +201,49 @@
       </main>
     </div>
     <HistoryModal v-model:open="historyOpen" kind="video" />
+    <Modal
+      v-model:open="previewOpen"
+      :footer="null"
+      width="1080px"
+      centered
+      destroy-on-close
+      wrap-class-name="studio-preview"
+    >
+      <div v-if="previewItem" class="studio-preview__body">
+        <div class="studio-preview__stage">
+          <video :src="videoSrc(previewItem)" controls autoplay playsinline />
+          <div class="studio-preview__bar">
+            <button
+              type="button"
+              :disabled="downloadingId === previewItem.id"
+              @click="handleDownload(previewItem)"
+            >
+              <DownloadOutlined />
+              下载
+            </button>
+          </div>
+        </div>
+        <aside class="studio-preview__prompt">
+          <h3>提示词</h3>
+          <div class="studio-preview__text">{{ previewItem.prompt || '无提示词' }}</div>
+          <button
+            type="button"
+            class="studio-preview__copy"
+            :disabled="!previewItem.prompt"
+            @click="copyPrompt(previewItem.prompt)"
+          >
+            <CopyOutlined />
+            复制
+          </button>
+        </aside>
+      </div>
+    </Modal>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
@@ -234,6 +288,9 @@ const pageNo = ref(1)
 const listLoading = ref(false)
 const downloadingId = ref<number>()
 const deletingId = ref<number>()
+const previewOpen = ref(false)
+const previewItem = ref<StudioWork>()
+const brokenPosters = reactive<Record<number, boolean>>({})
 const listEl = ref<HTMLElement | null>(null)
 let pollTimer = 0
 let pageSeq = 0
@@ -315,6 +372,40 @@ function statusLabel(item: StudioWork) {
 
 function videoSrc(item: StudioWork) {
   return item.status === 20 && item.videoUrl ? item.videoUrl : ''
+}
+
+function poster(item: StudioWork) {
+  const cover = item.previewUrl || item.lastFrameUrl || ''
+  if (!cover || cover === item.videoUrl) return ''
+  if (/\.(mp4|webm|mov|m4v|ogg)$/i.test(cover.split(/[?#]/)[0])) return ''
+  return cover
+}
+
+function paintThumb(event: Event) {
+  const el = event.target
+  if (!(el instanceof HTMLVideoElement) || el.currentTime > 0) return
+  try {
+    el.currentTime = 0.1
+  } catch {
+    // 元数据未就绪时保持黑帧，点击仍可进预览
+  }
+}
+
+function openPreview(item: StudioWork) {
+  if (!videoSrc(item)) return
+  previewItem.value = item
+  previewOpen.value = true
+}
+
+async function copyPrompt(text?: string) {
+  const value = text?.trim()
+  if (!value) return
+  try {
+    await navigator.clipboard.writeText(value)
+    addToast('已复制', 'success')
+  } catch {
+    addToast('复制失败', 'error')
+  }
 }
 
 function formatTime(value: StudioWork['createTime']) {

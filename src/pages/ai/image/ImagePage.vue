@@ -98,11 +98,15 @@
               {{ item.errorMessage }}
             </p>
             <div class="studio__media">
-              <Image
+              <button
                 v-if="imageSrc(item)"
-                :src="imageSrc(item)"
-                alt="生成结果"
-              />
+                type="button"
+                class="studio__poster"
+                aria-label="查看"
+                @click="openPreview(item)"
+              >
+                <img :src="imageSrc(item)" alt="生成结果" />
+              </button>
               <span v-else-if="isPending(item)" class="studio__media-wait"
                 >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
               >
@@ -156,13 +160,50 @@
       </aside>
     </div>
     <HistoryModal v-model:open="historyOpen" kind="image" />
+    <Modal
+      v-model:open="previewOpen"
+      :footer="null"
+      width="1080px"
+      centered
+      destroy-on-close
+      wrap-class-name="studio-preview"
+    >
+      <div v-if="previewItem" class="studio-preview__body">
+        <div class="studio-preview__stage">
+          <img :src="imageSrc(previewItem)" alt="生成结果" />
+          <div class="studio-preview__bar">
+            <button
+              type="button"
+              :disabled="downloadingId === previewItem.id"
+              @click="handleDownload(previewItem)"
+            >
+              <DownloadOutlined />
+              下载
+            </button>
+          </div>
+        </div>
+        <aside class="studio-preview__prompt">
+          <h3>提示词</h3>
+          <div class="studio-preview__text">{{ previewItem.prompt || '无提示词' }}</div>
+          <button
+            type="button"
+            class="studio-preview__copy"
+            :disabled="!previewItem.prompt"
+            @click="copyPrompt(previewItem.prompt)"
+          >
+            <CopyOutlined />
+            复制
+          </button>
+        </aside>
+      </div>
+    </Modal>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
-import { Button, Image, Input, Modal, Select } from 'ant-design-vue'
+import { CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { Button, Input, Modal, Select } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import HistoryModal from '../HistoryModal.vue'
@@ -201,6 +242,8 @@ const listLoading = ref(false)
 const activeId = ref<number>()
 const downloadingId = ref<number>()
 const deletingId = ref<number>()
+const previewOpen = ref(false)
+const previewItem = ref<StudioWork>()
 const listEl = ref<HTMLElement | null>(null)
 const cardEls = new Map<number, HTMLElement>()
 let pollTimer = 0
@@ -254,6 +297,23 @@ function imageSrc(item: StudioWork) {
   if (!first) return ''
   if (typeof first === 'string') return first
   return first.url || ''
+}
+
+function openPreview(item: StudioWork) {
+  if (!imageSrc(item)) return
+  previewItem.value = item
+  previewOpen.value = true
+}
+
+async function copyPrompt(text?: string) {
+  const value = text?.trim()
+  if (!value) return
+  try {
+    await navigator.clipboard.writeText(value)
+    addToast('已复制', 'success')
+  } catch {
+    addToast('复制失败', 'error')
+  }
 }
 
 function formatTime(value: StudioWork['createTime']) {

@@ -78,6 +78,7 @@ function time(value) {
             v-if="kind === 'image' || item.poster"
             :src="kind === 'image' ? item.url : item.poster"
             alt=""
+            referrerpolicy="no-referrer"
             loading="lazy"
           />
           <span v-else class="video-placeholder">▶ 视频</span>

@@ -214,7 +214,7 @@
               :enabled="pageActive"
               controls
             />
-            <img v-else :src="detail.previewUrl || detail.cover" alt="" />
+            <img v-else :src="detail.previewUrl || detail.cover" alt="" referrerpolicy="no-referrer" />
           </div>
           <div class="detail-info">
             <h2 class="detail-title">{{ detail.title }}</h2>
@@ -261,6 +261,10 @@ import GalleryMedia from './GalleryMedia.vue'
 import Icon from '../shims/Icon.vue'
 import PreviewVideo from './PreviewVideo.vue'
 import { isVideoUrl } from '../utils/galleryMedia'
+import { useCanvasReferrerPolicy } from '../composables/useCanvasReferrerPolicy'
+
+useCanvasReferrerPolicy()
+
 const fetchTemplateCategories = templateApi.categories
 const fetchTemplateList = templateApi.list
 

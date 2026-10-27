@@ -29,7 +29,7 @@
             <span class="asset-loading">⏳</span>
           </template>
           <template v-else-if="asset.kind === 'image' && asset.thumb">
-            <img :src="asset.thumb" class="asset-img" />
+            <img :src="asset.thumb" class="asset-img" referrerpolicy="no-referrer" />
           </template>
           <template v-else-if="asset.kind === 'video' && asset.url">
             <VideoPoster
@@ -99,6 +99,7 @@
             v-if="asset.kind === 'image' && (asset.thumb || asset.url)"
             :src="asset.thumb || asset.url"
             class="mention-drop-thumb"
+            referrerpolicy="no-referrer"
           />
           <span v-else class="mention-drop-icon">
             {{ asset.kind === 'video' ? '🎬' : asset.kind === 'audio' ? '🎧' : '📝' }}
