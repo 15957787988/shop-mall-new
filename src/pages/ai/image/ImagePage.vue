@@ -75,12 +75,7 @@
         <div v-else-if="!works.length" class="studio__empty">
           还没有作品。左侧填写后生成，画布里的结果不会出现在这里。
         </div>
-        <article
-          v-for="item in works"
-          :key="item.id"
-          :ref="(el) => setCardEl(item.id, el)"
-          class="studio__card"
-        >
+        <article v-for="item in works" :key="item.id" class="studio__card">
           <div class="studio__card-body">
             <header class="studio__card-head">
               <span class="studio__card-model">{{ item.modelName || item.model || '生成结果' }}</span>
@@ -145,19 +140,6 @@
           {{ listLoading ? '加载中…' : '加载更多' }}
         </button>
       </main>
-
-      <aside v-if="thumbs.length" class="studio__thumbs scroll-area">
-        <button
-          v-for="item in thumbs"
-          :key="item.id"
-          type="button"
-          class="studio__thumb"
-          :class="{ 'studio__thumb--active': item.id === activeId }"
-          @click="scrollTo(item.id)"
-        >
-          <img :src="imageSrc(item)" alt="" />
-        </button>
-      </aside>
     </div>
     <HistoryModal v-model:open="historyOpen" kind="image" />
     <Modal
@@ -239,13 +221,11 @@ const works = ref<StudioWork[]>([])
 const total = ref(0)
 const pageNo = ref(1)
 const listLoading = ref(false)
-const activeId = ref<number>()
 const downloadingId = ref<number>()
 const deletingId = ref<number>()
 const previewOpen = ref(false)
 const previewItem = ref<StudioWork>()
 const listEl = ref<HTMLElement | null>(null)
-const cardEls = new Map<number, HTMLElement>()
 let pollTimer = 0
 let pageSeq = 0
 
@@ -279,7 +259,6 @@ const pointsText = computed(() => {
 })
 const canSubmit = computed(() => Boolean(!submitting.value && modelId.value && prompt.value.trim()))
 const hasMore = computed(() => works.value.length < total.value)
-const thumbs = computed(() => works.value.filter((item) => imageSrc(item)))
 
 function isPending(item: StudioWork) {
   return item.status === 0 || item.status === 10 || item.status === 11 || item.status === 12
@@ -373,7 +352,6 @@ async function fetchPage(reset: boolean) {
     works.value = reset ? list : works.value.concat(list)
     total.value = page.total ?? works.value.length
     pageNo.value = nextPage
-    if (!activeId.value && works.value[0]) activeId.value = works.value[0].id
     schedulePoll()
   } catch (error: unknown) {
     if (seq !== pageSeq) return
@@ -416,16 +394,6 @@ async function refreshPending() {
   )
 }
 
-function setCardEl(id: number, el: unknown) {
-  if (el instanceof HTMLElement) cardEls.set(id, el)
-  else cardEls.delete(id)
-}
-
-function scrollTo(id: number) {
-  activeId.value = id
-  cardEls.get(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
 async function handleDownload(item: StudioWork) {
   const url = imageSrc(item)
   if (!url || downloadingId.value) return
@@ -452,8 +420,6 @@ function handleDelete(item: StudioWork) {
         await deleteStudioWork('image', item.id)
         works.value = works.value.filter((row) => row.id !== item.id)
         total.value = Math.max(0, total.value - 1)
-        cardEls.delete(item.id)
-        if (activeId.value === item.id) activeId.value = works.value[0]?.id
       } catch (error: unknown) {
         addToast(error instanceof Error ? error.message : '删除失败', 'error')
         throw error

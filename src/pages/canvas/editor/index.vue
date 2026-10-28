@@ -78,7 +78,7 @@
       <div
         ref="canvasRef"
         class="canvas-wrap"
-        :class="{ 'is-viewport-pending': !viewportReady, 'is-video-playing': videoPlaying }"
+        :class="{ 'is-viewport-pending': !viewportReady }"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
         @drop="onDrop"
@@ -329,10 +329,7 @@ const router = useRouter()
 const store = useFlowStore()
 const projectStore = useProjectStore()
 const { nodes, edges, snapEnabled, gridSize, showGrid } = storeToRefs(store)
-const videoPlaying = ref(false)
-const playback = createCanvasPlayback((playing) => {
-  videoPlaying.value = playing
-})
+const playback = createCanvasPlayback()
 provide(CANVAS_PLAYBACK, playback)
 
 // The project endpoint authorizes the owner before any mutation is enabled.
@@ -2018,11 +2015,6 @@ html.canvas-overscroll-lock body {
 .vue-flow__edge.animated path.flow-run {
   stroke-dasharray: 42 78;
   animation: flow-run 1.3s linear infinite;
-}
-
-.canvas-wrap.is-video-playing .flow-run,
-.canvas-wrap.is-video-playing .vue-flow__edge.animated path.flow-run {
-  animation-play-state: paused;
 }
 
 @keyframes flow-run {

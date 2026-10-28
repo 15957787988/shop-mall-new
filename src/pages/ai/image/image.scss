@@ -236,36 +236,6 @@
     color: var(--color-ink-secondary);
   }
 
-  &__thumbs {
-    display: flex;
-    width: 76px;
-    flex-shrink: 0;
-    flex-direction: column;
-    gap: 8px;
-    overflow: auto;
-  }
-
-  &__thumb {
-    width: 64px;
-    height: 64px;
-    flex-shrink: 0;
-    overflow: hidden;
-    border: 2px solid transparent;
-    border-radius: 8px;
-    padding: 0;
-    background: var(--color-surface-2);
-    cursor: pointer;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    &--active {
-      border-color: var(--color-creative-violet);
-    }
-  }
 }
 
 .studio-preview {
@@ -407,12 +377,6 @@
 
     &__results {
       min-height: 480px;
-    }
-
-    &__thumbs {
-      flex-direction: row;
-      width: 100%;
-      height: 76px;
     }
   }
 }
