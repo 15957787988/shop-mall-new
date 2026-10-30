@@ -89,6 +89,7 @@
               <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
             </header>
             <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
+            <StudioParams :work="item" />
             <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
               {{ item.errorMessage }}
             </p>
@@ -167,6 +168,7 @@
         <aside class="studio-preview__prompt">
           <h3>提示词</h3>
           <div class="studio-preview__text">{{ previewItem.prompt || '无提示词' }}</div>
+          <StudioParams :work="previewItem" inset />
           <button
             type="button"
             class="studio-preview__copy"
@@ -189,6 +191,7 @@ import { Button, Input, Modal, Select } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import HistoryModal from '../HistoryModal.vue'
+import StudioParams from '../StudioParams.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import type { CommonAiModelItem } from '@/service/api/ai-model'

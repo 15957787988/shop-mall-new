@@ -7,6 +7,15 @@
     </div>
 
     <div class="top-bar__actions">
+      <button
+        v-if="isLoggedIn"
+        type="button"
+        class="top-bar__detail-btn"
+        @click="chargeOpen = true"
+      >
+        积分明细
+      </button>
+
       <div v-if="isLoggedIn" class="top-bar__credit-pill">
         <button
           type="button"
@@ -39,13 +48,15 @@
         @logout="onLogoutClick"
       />
     </div>
+    <CreditDetailModal :open="chargeOpen" @close="chargeOpen = false" />
   </header>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { MenuOutlined, StarOutlined, BellOutlined } from '@ant-design/icons-vue'
 import UserMenu from '@/components/features/UserMenu.vue'
+import CreditDetailModal from '@/components/features/CreditDetailModal.vue'
 import type { MemberInfo } from '@/components/layout/api'
 
 const props = defineProps<{
@@ -61,6 +72,7 @@ const props = defineProps<{
   floating?: boolean
 }>()
 
+const chargeOpen = ref(false)
 const displayPoint = computed(() => props.userInfo?.point ?? 0)
 const displayUserName = computed(() => props.userInfo?.nickname)
 const displayUserAvatar = computed(() => props.userInfo?.avatar)
@@ -136,6 +148,23 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
 
     @media (min-width: 640px) {
       gap: 8px;
+    }
+  }
+
+  &__detail-btn {
+    height: 32px;
+    border: 1px solid var(--color-border-whisper);
+    border-radius: 9999px;
+    background: var(--color-surface-0);
+    padding: 0 12px;
+    box-shadow: var(--shadow-soft);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-ink-primary);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--color-creative-violet);
     }
   }
 

@@ -22,6 +22,11 @@ export interface StudioWork {
   prompt?: string
   model?: string
   modelName?: string
+  ratio?: string
+  resolution?: string
+  duration?: number
+  cost?: number
+  points?: number
   errorMessage?: string
   createTime?: string | number | number[]
   picUrl?: string
