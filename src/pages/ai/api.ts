@@ -90,6 +90,7 @@ export async function downloadStudioFile(url: string, fileName: string) {
 }
 
 export function submitStudioImage(body: {
+  idempotencyKey?: string
   modelId: number
   model?: string
   prompt: string
@@ -100,6 +101,7 @@ export function submitStudioImage(body: {
   return http.post<number>('/admin-api/ai/image/common/generations', {
     ...body,
     responseFormat: 'url',
+    idempotencyKey: body.idempotencyKey || crypto.randomUUID(),
   })
 }
 
@@ -212,11 +214,15 @@ function assertVideoParams() {
 if (import.meta.env?.DEV) assertVideoParams()
 
 export function submitStudioVideo(body: {
+  idempotencyKey?: string
   modelId: number
   model?: string
   params: Record<string, unknown>
 }) {
-  return http.post<number>('/admin-api/ai/video/common/generate', body)
+  return http.post<number>('/admin-api/ai/video/common/generate', {
+    ...body,
+    idempotencyKey: body.idempotencyKey || crypto.randomUUID(),
+  })
 }
 
 export { PAGE_SIZE }

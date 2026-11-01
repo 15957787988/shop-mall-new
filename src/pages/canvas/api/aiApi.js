@@ -130,6 +130,8 @@ export async function pollImageTask(imageId, onProgress) {
 export async function submitImageTask({
   canvasProjectId,
   canvasNodeId,
+  canvasRequestId,
+  idempotencyKey,
   prompt,
   modelId,
   model,
@@ -138,7 +140,8 @@ export async function submitImageTask({
   refImages = [],
 }) {
   const data = {
-    ...(canvasProjectId ? { canvasProjectId, canvasNodeId } : {}),
+    idempotencyKey: idempotencyKey || canvasRequestId || crypto.randomUUID(),
+    ...(canvasProjectId ? { canvasProjectId, canvasNodeId, canvasRequestId } : {}),
     modelId,
     prompt,
     aspectRatio: aspect || '1:1',
@@ -319,6 +322,7 @@ export async function submitVideoTask({
   canvasProjectId,
   canvasNodeId,
   canvasRequestId,
+  idempotencyKey,
   prompt,
   aspect,
   duration,
@@ -348,7 +352,11 @@ export async function submitVideoTask({
 
   const videoId = await request.post({
     url: '/ai/video/common/generate',
-    data: { ...data, ...(canvasProjectId ? { canvasProjectId, canvasNodeId, canvasRequestId } : {}) },
+    data: {
+      ...data,
+      idempotencyKey: idempotencyKey || canvasRequestId || crypto.randomUUID(),
+      ...(canvasProjectId ? { canvasProjectId, canvasNodeId, canvasRequestId } : {}),
+    },
     retry: false,
   })
   const id = pickVideoId(videoId)
