@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { reactive, computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Button, Checkbox, Input, Spin } from 'ant-design-vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
 import { uploadFile } from '@/components/UploadFile/api'
@@ -168,8 +168,8 @@ function handleWindowScroll() {
   hideModelPreview()
 }
 
-onMounted(async () => {
-  window.addEventListener('scroll', handleWindowScroll, true)
+async function loadWearOptions() {
+  optionsLoading.value = true
   try {
     const options = await getWearOptions()
     libraryModels.value = options.models
@@ -180,6 +180,15 @@ onMounted(async () => {
   } finally {
     optionsLoading.value = false
   }
+}
+
+watch(isLoggedIn, (loggedIn) => {
+  if (loggedIn && !libraryModels.value.length) void loadWearOptions()
+})
+
+onMounted(() => {
+  window.addEventListener('scroll', handleWindowScroll, true)
+  void loadWearOptions()
 })
 
 onBeforeUnmount(() => {

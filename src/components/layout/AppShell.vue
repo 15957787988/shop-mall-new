@@ -64,6 +64,7 @@ import PointDetailModal from '@/components/features/PointDetailModal.vue'
 import VipModal from '@/components/features/VipModal.vue'
 import PointsPurchaseModal from '@/components/features/PointsPurchaseModal.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useLiveMemberInfo } from '@/composables/useLiveMemberInfo'
 
 withDefaults(
   defineProps<{
@@ -73,6 +74,8 @@ withDefaults(
     showFooter: true,
   },
 )
+
+useLiveMemberInfo()
 
 const route = useRoute()
 const hideFooterOnToolPage = computed(

@@ -62,6 +62,7 @@
             block
             size="large"
             :disabled="!canSubmit"
+            :title="currentModel?.pricing?.note"
             :loading="submitting"
             @click="handleGenerate"
           >
@@ -193,6 +194,7 @@ import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import HistoryModal from '../HistoryModal.vue'
 import StudioParams from '../StudioParams.vue'
 import { useAuth } from '@/composables/useAuth'
+import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useToast } from '@/composables/useToast'
 import type { CommonAiModelItem } from '@/service/api/ai-model'
 import {
@@ -252,15 +254,9 @@ const maxRefs = computed(() => {
   const n = Number(raw)
   return Number.isFinite(n) && n >= 0 ? n : 9
 })
-const pointsText = computed(() => {
-  const model = currentModel.value
-  if (!model) return ''
-  const base = model.pointsPerUse ?? 0
-  const scale = Number(model.resolutionScales?.[resolution.value])
-  const points = base * (Number.isFinite(scale) && scale > 0 ? scale : 1)
-  return points > 0 ? ` · ${points} 算力` : ''
-})
-const canSubmit = computed(() => Boolean(!submitting.value && modelId.value && prompt.value.trim()))
+const estimatedPoints = computed(() => estimateModelPoints(currentModel.value, { resolution: resolution.value, ratio: aspect.value }))
+const pointsText = computed(() => ` · ${formatModelPoints(estimatedPoints.value)}`)
+const canSubmit = computed(() => Boolean(!submitting.value && modelId.value && prompt.value.trim() && estimatedPoints.value != null))
 const hasMore = computed(() => works.value.length < total.value)
 
 function isPending(item: StudioWork) {
@@ -457,6 +453,16 @@ async function handleGenerate() {
     submitting.value = false
   }
 }
+
+watch(isLoggedIn, (loggedIn) => {
+  if (!loggedIn) {
+    works.value = []
+    total.value = 0
+    return
+  }
+  if (!models.value.length || modelsError.value) void loadModels()
+  void fetchPage(true)
+})
 
 onMounted(() => {
   void loadModels()

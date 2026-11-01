@@ -326,6 +326,7 @@ const rawNodeTypes = {
 
 const route = useRoute()
 const router = useRouter()
+const { isLoggedIn, openLogin } = useAuth()
 const store = useFlowStore()
 const projectStore = useProjectStore()
 const { nodes, edges, snapEnabled, gridSize, showGrid } = storeToRefs(store)
@@ -966,7 +967,7 @@ async function loadProject(projectId) {
   saveConflict.value = false
   try {
     if (!getAccessToken()) {
-      useAuth().openLogin()
+      openLogin()
       return null
     }
     if (route.query.shareToken) throw new Error('画布分享链接已不再支持，请从我的画布打开')
@@ -1203,6 +1204,16 @@ function unbindCanvasGestureGuards() {
     root.removeEventListener(type, onCanvasGesture, { capture: true })
   }
 }
+
+watch(isLoggedIn, async (loggedIn) => {
+  if (!loggedIn) return
+  userPointsStore.fetchUserPoints()
+  if (pageLoaded.value) return
+  loadedViewport = await loadProject(route.query.projectId)
+  if (editorDisposed) return
+  viewportRestoreStarted = false
+  await tryRestoreViewport()
+})
 
 onMounted(async () => {
   store.registerLiveNodesGetter(() => getNodes.value)

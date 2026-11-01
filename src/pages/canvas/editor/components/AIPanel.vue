@@ -260,9 +260,8 @@
 
       <!-- Right: points + submit -->
       <div class="toolbar-right">
-        <span v-if="currentMode !== 'text'" class="points-estimate">
-          <span class="points-prefix">+ 预计</span>
-          {{ estimatedPoints }} 积分
+        <span v-if="currentMode !== 'text'" class="points-estimate" :title="currentModel?.pricing?.note">
+          {{ estimatedPoints }}
         </span>
         <button
           class="submit-btn"
@@ -290,6 +289,7 @@
 </template>
 
 <script setup>
+import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 /**
  * AIPanel — floating AI input panel at canvas bottom center
  * 资产墙 + 富文本提示词 + 多模态工具栏
@@ -327,6 +327,7 @@ import { useUserPointsStore } from '../../shims/points'
 import { useUserStore } from '../../shims/user'
 import { useMessage } from '../../shims/message'
 import { getAccessToken } from '@/lib/auth/storage'
+import { useAuth } from '@/composables/useAuth'
 import {
   submitImageTask,
   pollImageTask,
@@ -397,6 +398,7 @@ watch(
 
 const flowStore = useFlowStore()
 const userPointsStore = useUserPointsStore()
+const { isLoggedIn } = useAuth()
 const userStore = useUserStore()
 const message = useMessage()
 const { nodes, edges, activePanelNodeId } = storeToRefs(flowStore)
@@ -1388,6 +1390,13 @@ async function loadCommonVideoModels() {
   if (currentMode.value === 'video') applyUploadLimitsForMode('video')
 }
 
+watch(isLoggedIn, (loggedIn) => {
+  if (!loggedIn) return
+  userPointsStore.fetchUserPoints()
+  if (!gptImageModels.value.length) loadGptImageModels().catch(() => {})
+  if (!commonVideoModels.value.length) loadCommonVideoModels().catch(() => {})
+})
+
 onMounted(() => {
   if (getAccessToken()) {
     userPointsStore.fetchUserPoints()
@@ -1876,34 +1885,25 @@ async function validateVideoRefImages(urls) {
 }
 
 // ── Points estimate ───────────────────────────────────────────────────────────
-function resolutionScaleOf(model, res) {
-  const n = Number(model?.resolutionScales?.[res])
-  return Number.isFinite(n) && n > 0 ? n : 1
-}
-
 function currentEstimatedPoints() {
   if (currentMode.value === 'image') {
-    const m = currentModel.value
-    if (!m) return 0
-    return (m.costPoint ?? 0) * resolutionScaleOf(m, imageRes.value) * imageCount.value
+    return estimateModelPoints(currentModel.value, {
+      resolution: imageRes.value, ratio: imageRatio.value, count: imageCount.value,
+    })
   }
   if (currentMode.value === 'video') {
-    if (!videoCostPoint.value) return 0
-    const m = currentModel.value
-    if (!m) return 0
-    return (
-      videoCostPoint.value *
-      resolutionScaleOf(m, videoRes.value) *
-      videoDurationNum.value *
-      videoCount.value
-    )
+    return estimateModelPoints(currentModel.value, {
+      resolution: videoRes.value, ratio: videoRatio.value, duration: videoDurationNum.value,
+      referenceVideo: collectRefVideos().length > 0, count: videoCount.value, generateAudio: true,
+    })
   }
   return 0.05
 }
 
-const estimatedPoints = computed(() => currentEstimatedPoints().toFixed(2))
+const estimatedPoints = computed(() => formatModelPoints(currentEstimatedPoints()))
 
 const canGenerate = computed(() => {
+  if (currentMode.value !== 'text' && currentEstimatedPoints() == null) return false
   if (buildGenerationPrompt(promptText.value, displayAssets.value, nodes.value)) return true
   if (currentMode.value === 'image') return collectRefImages().length > 0
   if (currentMode.value === 'video') {

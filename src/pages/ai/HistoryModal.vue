@@ -23,7 +23,21 @@
               class="hist__play"
               @click="openPreview(item)"
             >
-              <img v-if="poster(item)" :src="poster(item)" alt="" />
+              <img
+                v-if="poster(item) && !brokenPosters[item.id]"
+                :src="poster(item)"
+                alt=""
+                @error="brokenPosters[item.id] = true"
+              />
+              <video
+                v-else
+                :src="mediaUrl(item)"
+                muted
+                playsinline
+                preload="metadata"
+                tabindex="-1"
+                @loadedmetadata="paintThumb"
+              />
               <PlayCircleOutlined />
             </button>
             <span v-else class="hist__wait">{{ statusText(item) }}</span>
@@ -63,7 +77,14 @@
     width="720px"
     destroy-on-close
   >
-    <video v-if="previewItem && mediaUrl(previewItem)" :src="mediaUrl(previewItem)" controls autoplay playsinline />
+    <video
+      v-if="previewItem && mediaUrl(previewItem)"
+      class="hist__preview"
+      :src="mediaUrl(previewItem)"
+      controls
+      autoplay
+      playsinline
+    />
     <div v-if="previewItem" class="hist__preview-actions">
       <Button type="primary" :loading="downloadingId === previewItem.id" @click="handleDownload(previewItem)">
         下载
@@ -73,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { DownloadOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
 import { Button, Image, Modal, Pagination, Spin } from 'ant-design-vue'
 import { useToast } from '@/composables/useToast'
@@ -103,6 +124,7 @@ const loadError = ref('')
 const downloadingId = ref<number>()
 const previewOpen = ref(false)
 const previewItem = ref<StudioWork>()
+const brokenPosters = reactive<Record<number, boolean>>({})
 let seq = 0
 
 function mediaUrl(item: StudioWork) {
@@ -114,7 +136,20 @@ function mediaUrl(item: StudioWork) {
 }
 
 function poster(item: StudioWork) {
-  return item.previewUrl || item.lastFrameUrl || ''
+  const cover = item.previewUrl || item.lastFrameUrl || ''
+  if (!cover || cover === item.videoUrl) return ''
+  if (/\.(mp4|webm|mov|m4v|ogg)$/i.test(cover.split(/[?#]/)[0])) return ''
+  return cover
+}
+
+function paintThumb(event: Event) {
+  const el = event.target
+  if (!(el instanceof HTMLVideoElement) || el.currentTime > 0) return
+  try {
+    el.currentTime = 0.1
+  } catch {
+    // 元数据未就绪时保持黑帧，点击仍可进预览
+  }
 }
 
 function statusText(item: StudioWork) {
@@ -233,10 +268,13 @@ watch(open, (visible) => {
   background: transparent;
   cursor: pointer;
 
-  img {
+  img,
+  video {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none;
+    background: #000;
   }
 
   .anticon {
@@ -301,7 +339,7 @@ watch(open, (visible) => {
   margin-top: 12px;
 }
 
-video {
+.hist__preview {
   display: block;
   width: 100%;
   max-height: 60vh;

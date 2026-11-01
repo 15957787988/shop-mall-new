@@ -68,6 +68,7 @@ export function mapCommonModel(item, icon) {
     platform: item.platform,
     ratio: item.ratio,
     resolution: item.resolution,
+    pricing: item.pricing || null,
     resolutionScales: item.resolutionScales || {},
     mediaLimits: item.mediaLimits || null,
     minTotalVideoDuration: pickDuration(item, 'minTotalVideoDuration'),

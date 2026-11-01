@@ -8,6 +8,8 @@ interface MemberUserRespVO {
   mobile: string
   sex: number
   point: number
+  frozenPoints: number
+  availablePoints: number
   experience: number
   level: MemberLevelInfo | null
   brokerageEnabled: boolean | null
@@ -33,6 +35,8 @@ export interface MemberInfo {
   mobile: string
   sex: number
   point: number
+  frozenPoints: number
+  availablePoints: number
   experience: number
   level: MemberLevelInfo | null
   brokerageEnabled: boolean | null
@@ -55,6 +59,8 @@ function mapMemberUserToInfo(user: MemberUserRespVO): MemberInfo {
     mobile: user.mobile,
     sex: user.sex,
     point: user.point,
+    frozenPoints: user.frozenPoints ?? 0,
+    availablePoints: user.availablePoints ?? user.point,
     experience: user.experience,
     level: user.level,
     brokerageEnabled: user.brokerageEnabled,

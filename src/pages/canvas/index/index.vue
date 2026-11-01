@@ -268,9 +268,9 @@ useCanvasReferrerPolicy()
 const fetchTemplateCategories = templateApi.categories
 const fetchTemplateList = templateApi.list
 
-const canBrowseTemplates = computed(() => !!getAccessToken())
 const router = useRouter()
-const { openLogin } = useAuth()
+const { openLogin, isLoggedIn } = useAuth()
+const canBrowseTemplates = computed(() => isLoggedIn.value)
 const projectStore = useProjectStore()
 const {
   projects,
@@ -547,6 +547,16 @@ watch(keyword, () => {
     resetGalleryScroll()
     loadTemplates(true)
   }, 300)
+})
+
+watch(isLoggedIn, (loggedIn) => {
+  if (!loggedIn) return
+  if (activeTab.value === 'templates') {
+    loadCategories()
+    loadTemplates(true)
+    return
+  }
+  projectStore.fetchProjects(true).catch(() => {})
 })
 
 onMounted(() => {

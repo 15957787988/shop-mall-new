@@ -13,27 +13,24 @@ const loadError = ref<string | null>(null)
 let loadPromise: Promise<void> | null = null
 
 async function loadProductImageModels() {
-  if (models.value.length) {
-    return
+  if (models.value.length) return
+  if (!loadPromise) {
+    loadPromise = (async () => {
+      loading.value = true
+      loadError.value = null
+      try {
+        const list = await fetchCommonAiModels(CommonModelType.IMAGE)
+        models.value = list.map(mapProductImageModel)
+      } catch (e: unknown) {
+        loadError.value = e instanceof Error ? e.message : '模型列表加载失败'
+        models.value = []
+      } finally {
+        loading.value = false
+      }
+    })()
   }
-  if (loadPromise) {
-    await loadPromise
-    return
-  }
-  loadPromise = (async () => {
-    loading.value = true
-    loadError.value = null
-    try {
-      const list = await fetchCommonAiModels(CommonModelType.IMAGE)
-      models.value = list.map(mapProductImageModel)
-    } catch (e: unknown) {
-      loadError.value = e instanceof Error ? e.message : '模型列表加载失败'
-      models.value = []
-    } finally {
-      loading.value = false
-    }
-  })()
   await loadPromise
+  if (!models.value.length) loadPromise = null
 }
 
 export function useProductImageModels() {

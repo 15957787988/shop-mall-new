@@ -104,6 +104,7 @@
             block
             size="large"
             :disabled="!canSubmit"
+            :title="currentModel?.pricing?.note"
             :loading="submitting"
             @click="handleGenerate"
           >
@@ -254,6 +255,7 @@ import UploadFile from '@/components/UploadFile/src/UploadFile.vue'
 import HistoryModal from '../HistoryModal.vue'
 import StudioParams from '../StudioParams.vue'
 import { useAuth } from '@/composables/useAuth'
+import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useToast } from '@/composables/useToast'
 import type { CommonAiModelItem } from '@/service/api/ai-model'
 import {
@@ -317,8 +319,8 @@ function bound(model: CommonAiModelItem | undefined, key: string, fallback: numb
   return Number.isFinite(n) && n > 0 ? n : fallback
 }
 
-const durationMin = computed(() => bound(currentModel.value, 'minTotalVideoDuration', 4))
-const durationMax = computed(() => bound(currentModel.value, 'maxTotalVideoDuration', 15))
+const durationMin = computed(() => currentModel.value?.pricing?.minDuration ?? bound(currentModel.value, 'minTotalVideoDuration', 4))
+const durationMax = computed(() => currentModel.value?.pricing?.maxDuration ?? bound(currentModel.value, 'maxTotalVideoDuration', 15))
 const sliderMax = computed(() => Math.max(durationMin.value, durationMax.value))
 
 function countLimit(primary: unknown, secondary: unknown, fallback: number) {
@@ -344,16 +346,10 @@ const maxAudios = computed(() => {
 const maxVideoDuration = computed(() => bound(currentModel.value, 'maxTotalVideoDuration', 15))
 const maxAudioDuration = computed(() => bound(currentModel.value, 'maxTotalAudioDuration', 15))
 const showRefs = computed(() => maxRefs.value > 0 || maxVideos.value > 0 || maxAudios.value > 0)
-const pointsText = computed(() => {
-  const model = currentModel.value
-  if (!model) return ''
-  const base = model.pointsPerUse ?? 0
-  const scale = Number(model.resolutionScales?.[resolution.value])
-  const points = base * (Number.isFinite(scale) && scale > 0 ? scale : 1)
-  return points > 0 ? ` · ${points} 算力` : ''
-})
+const estimatedPoints = computed(() => estimateModelPoints(currentModel.value, { resolution: resolution.value, ratio: aspect.value, duration: duration.value, referenceVideo: refVideos.value.length > 0, generateAudio: true }))
+const pointsText = computed(() => ` · ${formatModelPoints(estimatedPoints.value)}`)
 const canSubmit = computed(() => {
-  if (submitting.value || !modelId.value) return false
+  if (submitting.value || !modelId.value || estimatedPoints.value == null) return false
   return Boolean(
     prompt.value.trim() ||
       refImages.value.length ||
@@ -746,6 +742,16 @@ async function handleGenerate() {
     submitting.value = false
   }
 }
+
+watch(isLoggedIn, (loggedIn) => {
+  if (!loggedIn) {
+    works.value = []
+    total.value = 0
+    return
+  }
+  if (!models.value.length || modelsError.value) void loadModels()
+  void fetchPage(true)
+})
 
 onMounted(() => {
   void loadModels()

@@ -7,27 +7,20 @@
     </div>
 
     <div class="top-bar__actions">
-      <button
-        v-if="isLoggedIn"
-        type="button"
-        class="top-bar__detail-btn"
-        @click="chargeOpen = true"
-      >
-        积分明细
-      </button>
-
       <div v-if="isLoggedIn" class="top-bar__credit-pill">
+        <button type="button" class="top-bar__detail-btn" @click="chargeOpen = true">
+          积分明细
+        </button>
+        <span class="top-bar__credit-divider" aria-hidden="true" />
         <button
           type="button"
           class="top-bar__credit-btn"
           aria-label="消费明细"
-          @click="onPointDetailClick"
+          @click="chargeOpen = true"
         >
           <StarOutlined class="top-bar__credit-icon" />
           <span class="top-bar__credit-value tabular-nums">{{ displayPoint }}</span>
         </button>
-        <span class="top-bar__credit-divider" aria-hidden="true" />
-        <button type="button" class="top-bar__vip-btn" @click="onVipClick">开通会员</button>
       </div>
 
       <button
@@ -151,23 +144,6 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
     }
   }
 
-  &__detail-btn {
-    height: 32px;
-    border: 1px solid var(--color-border-whisper);
-    border-radius: 9999px;
-    background: var(--color-surface-0);
-    padding: 0 12px;
-    box-shadow: var(--shadow-soft);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--color-ink-primary);
-    cursor: pointer;
-
-    &:hover {
-      color: var(--color-creative-violet);
-    }
-  }
-
   &__credit-pill {
     display: flex;
     height: 32px;
@@ -179,6 +155,7 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
     box-shadow: var(--shadow-soft);
   }
 
+  &__detail-btn,
   &__credit-btn,
   &__vip-btn {
     display: inline-flex;
@@ -192,6 +169,18 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
     // &:hover {
     //   background: var(--color-surface-2);
     // }
+  }
+
+  &__detail-btn {
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-ink-primary);
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--color-creative-violet);
+    }
   }
 
   &__credit-btn {

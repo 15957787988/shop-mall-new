@@ -1,4 +1,5 @@
 import http from '@/service/http'
+import type { ModelPricing } from '@/lib/modelPricing'
 
 /** /admin-api/ai/model/common/list 的 type：2=图片 */
 export const CommonModelType = {
@@ -12,6 +13,7 @@ export interface CommonAiModelItem {
   name?: string
   model?: string
   platform?: string
+  pricing?: ModelPricing | null
   pointsPerUse?: number
   ratio?: string[]
   resolution?: string[]
@@ -26,6 +28,7 @@ export interface ProductImageModelOption {
   platform?: string
   ratios: string[]
   resolutions: string[]
+  pricing?: ModelPricing | null
   pointsPerUse: number
   maxRefImages?: number
 }
@@ -58,6 +61,7 @@ export function mapProductImageModel(item: CommonAiModelItem): ProductImageModel
     platform: item.platform,
     ratios,
     resolutions,
+    pricing: item.pricing,
     pointsPerUse: item.pointsPerUse ?? 0,
     maxRefImages: pickMaxRefImages(item.mediaLimits),
   }

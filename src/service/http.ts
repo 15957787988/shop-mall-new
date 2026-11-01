@@ -18,6 +18,11 @@ export interface HttpRequestOptions {
 }
 
 let onUnauthorized: (() => void) | null = null
+let onPointsChanged: (() => void) | null = null
+
+export function setOnPointsChanged(cb: (() => void) | null) {
+  onPointsChanged = cb
+}
 
 export function setOnUnauthorized(cb: (() => void) | null) {
   onUnauthorized = cb
@@ -104,6 +109,10 @@ axios.interceptors.request.use(
 axios.interceptors.response.use(
   (res) => {
   //  NProgress.done()
+    const path = (res.config.url || '').split('?')[0]
+    const billable = /\/ai\/(?:image|video)\/(?:common\/(?:generations|generate)|get-my|my-page)$/.test(path)
+      || /\/ai\/shop\/image-group\/(?:generate|regenerate|get|page)$/.test(path)
+    if (billable && res.data?.code === 0) onPointsChanged?.()
     return res
   },
   (error) => {

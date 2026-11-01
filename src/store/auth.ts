@@ -21,6 +21,7 @@ import {
   clearUserInfoCache,
 } from '@/lib/auth/storage'
 import { initTenantFromStorage } from '@/lib/auth/tenant'
+import { createSessionRefresh } from '@/lib/sessionRefresh'
 
 export type LoginModalMode = 'login' | 'bind-mobile'
 
@@ -51,18 +52,21 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const fetchUserInfo = async () => {
+  const refreshMember = createSessionRefresh<MemberInfo>({
+    session: () => {
+      const token = getAccessToken()
+      return token ? `${sessionVersion.value}:${token}` : null
+    },
+    load: getMemberInfo,
+    apply: persistUserInfo,
+  })
+
+  const fetchUserInfo = (followUp = false) => {
     if (!getAccessToken()) {
       persistUserInfo(null)
-      return
+      return Promise.resolve(null)
     }
-    try {
-      persistUserInfo(await getMemberInfo())
-    } catch {
-      if (!userInfo.value) {
-        persistUserInfo(null)
-      }
-    }
+    return refreshMember(followUp)
   }
 
   const applyLoginSession = (resp: LoginResp) => {
@@ -87,6 +91,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const finishLogin = (resp: LoginResp) => {
+    persistUserInfo(null)
     applyLoginSession(resp)
     closeLogin()
     sessionVersion.value += 1
@@ -111,6 +116,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const logout = async () => {
+    sessionVersion.value += 1
     try {
       await apiLogout()
     } catch {
@@ -183,6 +189,7 @@ export const useAuthStore = defineStore('auth', () => {
     loginModalMode: computed(() => loginModalMode.value),
     userInfo: computed(() => userInfo.value),
     userPoint: computed(() => userInfo.value?.point ?? 0),
+    availablePoint: computed(() => userInfo.value?.availablePoints ?? userInfo.value?.point ?? 0),
     fetchUserInfo,
     openLogin,
     openBindMobile,

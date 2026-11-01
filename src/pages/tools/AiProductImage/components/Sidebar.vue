@@ -226,13 +226,21 @@ watch(
   (id, prev) => applyModel(id, prev ?? 0),
 )
 
-onMounted(async () => {
+async function ensureModels() {
   await loadProductImageModels()
-  if (!form.modelId) {
+  const options = modelSelectOptions.value
+  if (!options.length) return
+  if (!options.some((item) => item.value === form.modelId)) {
     form.modelId = defaultModelId()
-  } else {
-    applyModel(form.modelId)
   }
+}
+
+watch(isLoggedIn, (loggedIn) => {
+  if (loggedIn) void ensureModels()
+})
+
+onMounted(() => {
+  void ensureModels()
 })
 
 const totalImageCount = computed(() =>
