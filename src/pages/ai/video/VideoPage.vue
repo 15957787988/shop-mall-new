@@ -58,6 +58,7 @@
               <ImageUpload
                 :key="`${modelId ?? 0}-image-${maxRefs}`"
                 drag
+                preview
                 require-login
                 :max-count="maxRefs"
                 :file-size="10"
@@ -229,6 +230,7 @@
           <h3>提示词</h3>
           <div class="studio-preview__text">{{ previewItem.prompt || '无提示词' }}</div>
           <StudioParams :work="previewItem" inset />
+          <StudioReferences :work="previewItem" />
           <button
             type="button"
             class="studio-preview__copy"
@@ -251,9 +253,16 @@ import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
+import {
+  validateAiImageConstraints,
+  formatAiImageValidationError,
+} from '@/pages/canvas/shims/imageConstraints'
+import { isSeedance, assertSeedanceDimensions } from '@/pages/canvas/utils/seedanceConstraints'
+import { readReferenceVideoMetadata } from '@/pages/canvas/utils/videoReferencePreflight'
 import UploadFile from '@/components/UploadFile/src/UploadFile.vue'
 import HistoryModal from '../HistoryModal.vue'
 import StudioParams from '../StudioParams.vue'
+import StudioReferences from '../StudioReferences.vue'
 import { useAuth } from '@/composables/useAuth'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useToast } from '@/composables/useToast'
@@ -514,8 +523,10 @@ async function assertRefVideos(urls: string[], model: CommonAiModelItem) {
   const min = minSingleVideoDuration(model)
   let total = 0
   for (let index = 0; index < urls.length; index += 1) {
-    const value = await readUrlDuration(urls[index], 'video')
     const name = `视频${index + 1}`
+    const metadata = await readReferenceVideoMetadata(urls[index])
+    if (isSeedance(model)) assertSeedanceDimensions(metadata.width, metadata.height, true, name)
+    const value = metadata.duration
     if (!Number.isFinite(value) || value <= 0) {
       throw new Error(`无法读取参考视频「${name}」时长，请重新上传或更换素材`)
     }
@@ -713,6 +724,15 @@ async function handleGenerate() {
   if (!canSubmit.value || !modelId.value || !currentModel.value) return
   submitting.value = true
   try {
+    if (isSeedance(currentModel.value)) {
+      for (let i = 0; i < refImages.value.length; i += 1) {
+        const result = await validateAiImageConstraints(refImages.value[i])
+        if (!result.valid)
+          throw new Error(
+            `参考图不合格：${formatAiImageValidationError(result, `参考图${i + 1}`)}；宽高需300–6000px，宽高比需0.4–2.5`
+          )
+      }
+    }
     if (refVideos.value.length) await assertRefVideos(refVideos.value, currentModel.value)
     if (refAudios.value.length) await assertRefAudios(refAudios.value, maxAudioDuration.value)
     const params = buildVideoParams({

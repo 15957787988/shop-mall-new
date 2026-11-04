@@ -6,7 +6,6 @@
         v-if="canShowAssetUpload()"
         :can-add="true"
         :accept="mediaAccept"
-        :video-image-constraints="currentMode === 'video'"
         :max-images="uploadRemainders.images"
         :max-videos="uploadRemainders.videos"
         :max-audios="uploadRemainders.audios"
@@ -290,6 +289,7 @@
 
 <script setup>
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
+import { isSeedance } from '../../utils/seedanceConstraints.js'
 /**
  * AIPanel — floating AI input panel at canvas bottom center
  * 资产墙 + 富文本提示词 + 多模态工具栏
@@ -2736,7 +2736,7 @@ async function generate() {
       //   flowStore.updateNodeData(node.id, { generating: false }, getNodes.value)
       //   return
       // }
-      if (!(await scope.wait(validateVideoRefImages(refImages)))) {
+      if (isSeedance(model) && !(await scope.wait(validateVideoRefImages(refImages)))) {
         if (!scope.isActive()) return
         flowStore.updateNodeData(node.id, { generating: false }, getNodes.value)
         return

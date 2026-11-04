@@ -21,7 +21,16 @@
         @click="handlePrimaryClick(index, img.url)"
         @keydown.enter.space.prevent="handlePrimaryClick(index, img.url)"
       >
-        <img :src="img.previewUrl" :alt="`Upload ${index + 1}`" class="image-upload__preview" />
+        <img
+          :src="img.previewUrl"
+          :alt="`图片 ${index + 1}`"
+          class="image-upload__preview"
+          :class="{ 'image-upload__preview--zoom': preview }"
+          :tabindex="preview ? 0 : undefined"
+          @click="onThumbClick(index, $event)"
+          @keydown.enter.prevent="onThumbKey(index)"
+          @keydown.space.prevent="onThumbKey(index)"
+        />
         <span
           v-if="enablePrimary && primaryIndex === index && img.url"
           class="image-upload__primary-badge"
@@ -56,6 +65,23 @@
       <div class="image-upload__empty-desc">{{ emptyDesc || `同一产品，最多${maxCount}张` }}</div>
     </button>
 
+    <Modal
+      v-if="preview"
+      v-model:open="previewVisible"
+      :footer="null"
+      centered
+      width="720px"
+      title="预览"
+      destroy-on-close
+    >
+      <img v-if="previewSrc" :src="previewSrc" alt="" class="image-upload__lightbox" />
+      <div v-if="images.length > 1" class="image-upload__lightbox-nav">
+        <button type="button" @click="stepPreview(-1)">上一张</button>
+        <span>{{ previewIndex + 1 }} / {{ images.length }}</span>
+        <button type="button" @click="stepPreview(1)">下一张</button>
+      </div>
+    </Modal>
+
     <Upload
       ref="uploadRef"
       v-model:file-list="fileList"
@@ -73,7 +99,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Spin, Upload } from 'ant-design-vue'
+import { Modal, Spin, Upload } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
 import { UploadOutlined, PictureOutlined, CloseOutlined } from '@ant-design/icons-vue'
 import { uploadFile } from '@/components/UploadFile/api'
@@ -100,6 +126,7 @@ const props = withDefaults(
     fileSize?: number
     emptyDesc?: string
     drag?: boolean
+    preview?: boolean
   }>(),
   {
     maxCount: 3,
@@ -109,6 +136,7 @@ const props = withDefaults(
     fileType: () => ['image/jpeg', 'image/png', 'image/webp'],
     requireLogin: false,
     drag: false,
+    preview: false,
   }
 )
 
@@ -135,6 +163,9 @@ const uploadRef = ref<{ $el: HTMLElement } | null>(null)
 const lastSyncedUrls = ref('')
 const dragDepth = ref(0)
 const dragging = computed(() => dragDepth.value > 0)
+const previewVisible = ref(false)
+const previewIndex = ref(0)
+const previewSrc = computed(() => images.value[previewIndex.value]?.previewUrl ?? '')
 
 const canUpload = computed(() => images.value.length < props.maxCount)
 const remainingCount = computed(() => Math.max(0, props.maxCount - images.value.length))
@@ -303,6 +334,29 @@ function handleRemove(index: number) {
   }
 }
 
+function openPreview(index: number) {
+  if (!props.preview || !images.value[index]?.previewUrl) return
+  previewIndex.value = index
+  previewVisible.value = true
+}
+
+function stepPreview(delta: number) {
+  const total = images.value.length
+  if (total < 2) return
+  previewIndex.value = (previewIndex.value + delta + total) % total
+}
+
+function onThumbClick(index: number, event: MouseEvent) {
+  if (!props.preview) return
+  event.stopPropagation()
+  openPreview(index)
+}
+
+function onThumbKey(index: number) {
+  if (!props.preview) return
+  openPreview(index)
+}
+
 function handlePrimaryClick(index: number, url: string) {
   if (props.enablePrimary && url) {
     emit('primaryChange', index)
@@ -381,6 +435,39 @@ function handlePrimaryClick(index: number, url: string) {
     width: 100%;
     height: 100%;
     object-fit: cover;
+
+    &--zoom {
+      cursor: zoom-in;
+    }
+  }
+
+  &__lightbox {
+    display: block;
+    width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+  }
+
+  &__lightbox-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+
+    button {
+      border: 1px solid var(--color-border-whisper);
+      border-radius: 999px;
+      background: var(--color-surface-0);
+      padding: 4px 12px;
+      color: var(--color-ink-primary);
+      cursor: pointer;
+    }
+
+    span {
+      font-size: 13px;
+      color: var(--color-ink-secondary);
+    }
   }
 
   &__primary-badge {

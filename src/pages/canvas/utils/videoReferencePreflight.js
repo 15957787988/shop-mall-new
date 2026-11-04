@@ -1,3 +1,5 @@
+import { isSeedance, assertSeedanceDimensions } from './seedanceConstraints.js'
+
 export function submittedVideoReferences(urls, maxVideos) {
   if (!Array.isArray(urls)) return []
   return [...new Set(urls.filter((url) => typeof url === 'string' && /^https?:/.test(url)))].slice(
@@ -23,10 +25,16 @@ export function resolveMinSingleVideoDuration(model) {
   return seedance25 ? Math.max(1.8, value) : value
 }
 
-export function readReferenceVideoDuration(url, signal) {
+/** @returns {Promise<{ duration: number, width: number, height: number }>} */
+export function readReferenceVideoMetadata(source, signal) {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video')
+    const local = typeof source !== 'string'
+    const url = local ? URL.createObjectURL(source) : source
+    const timer = setTimeout(() => finish(new Error('读取参考视频信息超时，请更换素材')), 10000)
     const cleanup = () => {
+      clearTimeout(timer)
+      if (local) URL.revokeObjectURL(url)
       video.onloadedmetadata = null
       video.onerror = null
       signal?.removeEventListener('abort', abort)
@@ -44,21 +52,26 @@ export function readReferenceVideoDuration(url, signal) {
     }
     signal?.addEventListener('abort', abort, { once: true })
     video.preload = 'metadata'
-    video.onloadedmetadata = () => finish(null, video.duration)
+    video.onloadedmetadata = () =>
+      finish(null, { duration: video.duration, width: video.videoWidth, height: video.videoHeight })
     video.onerror = () => finish(new Error('无法读取参考视频时长，请重新上传或更换素材'))
     video.src = url
   })
 }
 
+export async function readReferenceVideoDuration(url, signal) {
+  return (await readReferenceVideoMetadata(url, signal)).duration
+}
+
 /** Fresh metadata on every attempt avoids stale durations after same-URL replacements. */
 export function createVideoReferencePreflight({
-  readDuration = readReferenceVideoDuration,
-  timeoutMs = 10000
+  readDuration = readReferenceVideoMetadata,
+  timeoutMs = 10000,
 } = {}) {
   return {
     async validate(urls, model, { signal, names = [] } = {}) {
       const min = resolveMinSingleVideoDuration(model)
-      if (!urls.length || min === 0) return 0
+      if (!urls.length || (min === 0 && !isSeedance(model))) return 0
       const controller = new AbortController()
       const cancel = () => controller.abort()
       if (signal?.aborted) throw new Error('视频校验已取消')
@@ -87,10 +100,23 @@ export function createVideoReferencePreflight({
               })
               let duration
               try {
-                duration = await Promise.race([readDuration(urls[i], controller.signal), cancelled])
+                const metadata = await Promise.race([
+                  readDuration(urls[i], controller.signal),
+                  cancelled,
+                ])
+                if (isSeedance(model))
+                  assertSeedanceDimensions(
+                    metadata?.width,
+                    metadata?.height,
+                    true,
+                    `参考视频「${name}」`
+                  )
+                duration = typeof metadata === 'number' ? metadata : metadata.duration
               } catch (error) {
                 if (controller.signal.aborted) throw aborted()
-                throw new Error(`无法读取参考视频「${name}」时长，请重新上传或更换素材`)
+                throw new Error(
+                  error.message || `无法读取参考视频「${name}」信息，请重新上传或更换素材`
+                )
               } finally {
                 controller.signal.removeEventListener('abort', stop)
               }
@@ -99,7 +125,9 @@ export function createVideoReferencePreflight({
                 throw new Error(`无法读取参考视频「${name}」时长，请重新上传或更换素材`)
               if (duration < min)
                 throw new Error(
-                  `参考视频「${name}」时长${String(duration)}秒，当前模型要求每个参考视频至少 ${min} 秒，请更换素材`
+                  `参考视频「${name}」时长${String(
+                    duration
+                  )}秒，当前模型要求每个参考视频至少 ${min} 秒，请更换素材`
                 )
               durations[i] = duration
             }
@@ -124,6 +152,6 @@ export function createVideoReferencePreflight({
         signal?.removeEventListener('abort', cancel)
         controller.abort()
       }
-    }
+    },
   }
 }

@@ -170,6 +170,7 @@
           <h3>提示词</h3>
           <div class="studio-preview__text">{{ previewItem.prompt || '无提示词' }}</div>
           <StudioParams :work="previewItem" inset />
+          <StudioReferences :work="previewItem" />
           <button
             type="button"
             class="studio-preview__copy"
@@ -193,6 +194,7 @@ import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import HistoryModal from '../HistoryModal.vue'
 import StudioParams from '../StudioParams.vue'
+import StudioReferences from '../StudioReferences.vue'
 import { useAuth } from '@/composables/useAuth'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useToast } from '@/composables/useToast'

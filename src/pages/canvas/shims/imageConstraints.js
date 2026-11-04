@@ -19,14 +19,15 @@ export function checkAiImageDimensions(width, height) {
 function measureAiImage(src, revoke) {
   return new Promise((resolve) => {
     const img = new Image()
-    img.onload = () => {
+    const finish = (result) => {
+      clearTimeout(timer)
+      img.onload = img.onerror = null
       revoke?.()
-      resolve(checkAiImageDimensions(img.width, img.height))
+      resolve(result)
     }
-    img.onerror = () => {
-      revoke?.()
-      resolve({ valid: false, ratio: 0, width: 0, height: 0 })
-    }
+    const timer = setTimeout(() => finish({ valid: false, ratio: 0, width: 0, height: 0 }), 10000)
+    img.onload = () => finish(checkAiImageDimensions(img.naturalWidth, img.naturalHeight))
+    img.onerror = () => finish({ valid: false, ratio: 0, width: 0, height: 0 })
     img.src = src
   })
 }

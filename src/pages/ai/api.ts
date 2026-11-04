@@ -35,6 +35,9 @@ export interface StudioWork {
   previewUrl?: string
   lastFrameUrl?: string
   progress?: string
+  referenceImageUrls?: string[]
+  referenceVideoUrls?: string[]
+  referenceAudioUrls?: string[]
 }
 
 export function loadStudioModels(kind: StudioKind) {

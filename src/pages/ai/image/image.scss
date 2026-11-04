@@ -300,6 +300,8 @@
 
   &__prompt {
     display: flex;
+    min-height: 0;
+    overflow-y: auto;
     width: 320px;
     flex-shrink: 0;
     flex-direction: column;
@@ -316,7 +318,7 @@
 
   &__text {
     flex: 1;
-    min-height: 0;
+    min-height: 80px;
     overflow: auto;
     padding: 0 16px 12px;
     font-size: 13px;
