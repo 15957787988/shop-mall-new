@@ -12,6 +12,7 @@
               placeholder="加载模型…"
               class="studio__control"
             />
+            <p v-if="currentModel?.pricing?.billingSource === 'LOCAL_TARIFF'" class="studio__hint">{{ currentModel.pricing.note }}</p>
             <p v-if="modelsError" class="studio__error">{{ modelsError }}</p>
             <p v-else-if="!modelsLoading && !models.length" class="studio__hint">暂无可用模型</p>
           </section>
@@ -21,7 +22,7 @@
             <Input.TextArea
               v-model:value="prompt"
               :rows="6"
-              :maxlength="2000"
+              :maxlength="30000"
               placeholder="描述想要生成的画面"
             />
           </section>
@@ -312,7 +313,8 @@ let pageSeq = 0
 const currentModel = computed(() => models.value.find((item) => item.id === modelId.value))
 const modelOptions = computed(() =>
   models.value.map((item) => ({
-    label: item.name || item.model || String(item.id),
+    label: `${item.name || item.model || String(item.id)}${item.disabledReason ? `（${item.disabledReason}）` : ''}`,
+    disabled: item.disabled === true,
     value: item.id,
   }))
 )
@@ -355,10 +357,10 @@ const maxAudios = computed(() => {
 const maxVideoDuration = computed(() => bound(currentModel.value, 'maxTotalVideoDuration', 15))
 const maxAudioDuration = computed(() => bound(currentModel.value, 'maxTotalAudioDuration', 15))
 const showRefs = computed(() => maxRefs.value > 0 || maxVideos.value > 0 || maxAudios.value > 0)
-const estimatedPoints = computed(() => estimateModelPoints(currentModel.value, { resolution: resolution.value, ratio: aspect.value, duration: duration.value, referenceVideo: refVideos.value.length > 0, generateAudio: true }))
+const estimatedPoints = computed(() => estimateModelPoints(currentModel.value, { resolution: resolution.value, ratio: aspect.value, duration: duration.value, imageCount: refImages.value.length, referenceVideo: refVideos.value.length > 0, generateAudio: true }))
 const pointsText = computed(() => ` · ${formatModelPoints(estimatedPoints.value)}`)
 const canSubmit = computed(() => {
-  if (submitting.value || !modelId.value || estimatedPoints.value == null) return false
+  if (submitting.value || !modelId.value || currentModel.value?.disabled || estimatedPoints.value == null) return false
   return Boolean(
     prompt.value.trim() ||
       refImages.value.length ||
@@ -615,7 +617,7 @@ async function loadModels() {
   modelsError.value = ''
   try {
     models.value = await loadStudioModels('video')
-    modelId.value = models.value[0]?.id
+    modelId.value = models.value.find((item) => !item.disabled)?.id
     syncModelFields()
   } catch (error: unknown) {
     models.value = []

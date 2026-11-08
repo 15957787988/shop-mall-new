@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { Modal } from 'ant-design-vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -67,6 +68,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/tools/AiProductImage/index.vue'),
   },
   {
+    path: '/tools/video-replicate',
+    name: 'VideoReplicate',
+    component: () => import('@/pages/tools/VideoReplicate/index.vue'),
+  },
+  {
     path: '/tools/viral-videos',
     name: 'ViralVideos',
     component: () => import('@/pages/tools/ViralVideos/index.vue'),
@@ -120,6 +126,18 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+router.onError((error, to) => {
+  console.error('页面导航失败', error)
+  if (!/Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Loading chunk .* failed/i.test(error.message)) return
+  Modal.confirm({
+    title: '页面资源加载失败',
+    content: '可能是开发服务更新或页面版本变化。重新加载可获取最新页面；当前未提交的内容会清空。',
+    okText: '重新加载目标页面',
+    cancelText: '留在当前页',
+    onOk: () => window.location.assign(to.fullPath),
+  })
 })
 
 export default router

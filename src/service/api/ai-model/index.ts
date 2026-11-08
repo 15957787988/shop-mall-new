@@ -13,6 +13,8 @@ export interface CommonAiModelItem {
   name?: string
   model?: string
   platform?: string
+  disabled?: boolean
+  disabledReason?: string
   pricing?: ModelPricing | null
   pointsPerUse?: number
   ratio?: string[]
@@ -36,11 +38,13 @@ export interface ProductImageModelOption {
 export async function fetchCommonAiModels(
   type: number,
   platform?: string,
+  includePending = false,
 ): Promise<CommonAiModelItem[]> {
   const params: Record<string, string | number> = { type }
   if (platform) {
     params.platform = platform
   }
+  if (includePending) params.includePending = 'true'
   const list = await http.get<CommonAiModelItem[]>('/admin-api/ai/model/common/list', params)
   return Array.isArray(list) ? list : []
 }

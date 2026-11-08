@@ -42,7 +42,7 @@ export interface StudioWork {
 
 export function loadStudioModels(kind: StudioKind) {
   const type = kind === 'image' ? CommonModelType.IMAGE : CommonModelType.VIDEO
-  return fetchCommonAiModels(type)
+  return fetchCommonAiModels(type, undefined, kind === 'video')
 }
 
 export function pageStudioWorks(kind: StudioKind, pageNo: number, pageSize = PAGE_SIZE) {

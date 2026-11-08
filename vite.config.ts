@@ -18,6 +18,11 @@ export default defineConfig({
       ext: '.gz',
     }),
   ],
+  // 提前扫描懒加载页面，减少切页时发现新依赖导致的二次预构建。
+  optimizeDeps: {
+    entries: ['index.html', 'src/pages/**/*.vue'],
+    include: ['vue', 'vue-router', 'pinia', 'ant-design-vue', '@ant-design/icons-vue'],
+  },
   // 配置别名
   resolve: {
     alias: {

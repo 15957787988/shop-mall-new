@@ -111,6 +111,7 @@ axios.interceptors.response.use(
   //  NProgress.done()
     const path = (res.config.url || '').split('?')[0]
     const billable = /\/ai\/(?:image|video)\/(?:common\/(?:generations|generate)|get-my|my-page)$/.test(path)
+      || /\/ai\/video\/replicate\/tasks(?:\/\d+)?$/.test(path)
       || /\/ai\/shop\/image-group\/(?:generate|regenerate|get|page)$/.test(path)
     if (billable && res.data?.code === 0) onPointsChanged?.()
     return res

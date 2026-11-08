@@ -96,6 +96,7 @@ const NAV_GROUPS: NavItem[][] = [
     // { href: '/tools/viral-videos', label: '视频制作', icon: VideoCameraOutlined },
     { href: '/ai/image', label: 'AI制图', icon: HighlightOutlined },
     { href: '/ai/video', label: 'AI视频', icon: PlayCircleOutlined },
+    { href: '/tools/video-replicate', label: '爆款复刻', icon: VideoCameraOutlined },
     { href: '/tools', label: '工具', icon: ToolOutlined },
   ],
   [{ href: '/templates', label: '模板', icon: AppstoreOutlined }],
@@ -110,7 +111,7 @@ const NAV_GROUPS: NavItem[][] = [
   ],
 ]
 
-const TOOL_LEAVES = ['/tools/ai-product-image', '/tools/viral-videos']
+const TOOL_LEAVES = ['/tools/ai-product-image', '/tools/viral-videos', '/tools/video-replicate']
 
 function isNavActive(pathname: string, href: string) {
   if (href === '/') return pathname === '/'
