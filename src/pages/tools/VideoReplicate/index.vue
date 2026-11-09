@@ -277,7 +277,7 @@
             }}
           </div>
           <StudioParams :work="previewWork" inset />
-          <StudioReferences :work="previewWork" />
+          <StudioReferences :work="previewWork" :source-video-url="previewTask.sourceVideoUrl" />
           <button
             type="button"
             class="studio-preview__copy"

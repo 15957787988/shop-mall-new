@@ -1,17 +1,25 @@
 <template>
   <details
-    v-if="images.length || videos.length || audios.length"
+    v-if="sourceVideoUrl || images.length || videos.length || audios.length"
     class="references"
     open
     @toggle="toggle"
   >
     <summary>
       参考素材
+      <span v-if="sourceVideoUrl">原视频 1</span>
       <span v-if="images.length">图片 {{ images.length }}</span>
       <span v-if="videos.length">视频 {{ videos.length }}</span>
       <span v-if="audios.length">音频 {{ audios.length }}</span>
     </summary>
     <div v-if="expanded" class="references__content">
+      <section v-if="sourceVideoUrl">
+        <h4>原参考视频（仅用于分析）</h4>
+        <div class="references__media">
+          <a :href="sourceVideoUrl" target="_blank" rel="noopener noreferrer">原参考视频 · 打开</a>
+          <video :src="sourceVideoUrl" controls playsinline preload="metadata" aria-label="原参考视频（仅用于分析）" />
+        </div>
+      </section>
       <section v-if="images.length">
         <h4>参考图（{{ images.length }}）</h4>
         <Image.PreviewGroup>
@@ -59,7 +67,7 @@ import { computed, ref } from 'vue'
 import { Image } from 'ant-design-vue'
 import type { StudioWork } from './api'
 
-const props = defineProps<{ work: StudioWork }>()
+const props = defineProps<{ work: StudioWork; sourceVideoUrl?: string }>()
 const expanded = ref(true)
 const images = computed(() => props.work.referenceImageUrls || [])
 const videos = computed(() => props.work.referenceVideoUrls || [])
