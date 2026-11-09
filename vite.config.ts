@@ -50,6 +50,7 @@ export default defineConfig({
         //target: "http://10.8.0.18:48080",
         target: "http://localhost:8082",
         changeOrigin: true,
+        ws: true,
       },
     },
   },

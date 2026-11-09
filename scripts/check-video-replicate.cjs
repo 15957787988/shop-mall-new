@@ -16,26 +16,26 @@ let creates = 0
 let records = []
 let detailRequests = 0
 let delayedList
-const api = {
-  async createReplicateTask(materials, settings, key) {
-    creates += 1
-    assert.ok(key)
-    assert.equal(settings.duration, 5)
-    assert.equal(settings.ratio, '9:16')
-    assert.equal(materials.videoUrl, 'https://media.test/long-source.mp4')
-    records = [
-      {
-        id: 1,
-        status: 'QUEUED',
-        canvasTaskId: null,
-        sourceVideoUrl: materials.videoUrl,
-        resultUrl: null,
-        errorMessage: null,
-        createdAt: '2026-11-06T13:00:00',
-      },
-    ]
-    return 1
+let destination = ''
+let lostResponse = false
+const entries = []
+const createdByKey = new Map()
+const workspaceApi = {
+  async getAgentConfiguration() { return { configured: true, chatModels: [{ id: 'doubao-test', name: '豆包' }] } },
+  async readVideoMetadata() { return { width: 1080, height: 1920, duration: 25 } },
+  async resolveAssets(urls) { return urls.map((url, index) => ({ id: index + 101, url, mediaType: index ? 'image' : 'video' })) },
+  async bootstrapWorkspace(entry) {
+    entries.push(JSON.parse(JSON.stringify(entry)))
+    assert.equal(entry.generation.duration, 5)
+    assert.equal(entry.generation.ratio, '9:16')
+    assert.equal(entry.sourceMetadata.duration, 25, '原视频时长与生成时长独立保存')
+    assert.ok(entry.clientRequestId)
+    if (!createdByKey.has(entry.clientRequestId)) { creates += 1; createdByKey.set(entry.clientRequestId, creates) }
+    if (lostResponse) { lostResponse = false; throw new Error('创建成功但响应丢失') }
+    return { workspaceId: createdByKey.get(entry.clientRequestId), conversationId: 1, runId: 1 }
   },
+}
+const api = {
   async pageReplicateTasks() {
     if (delayedList) return delayedList
     return { list: records.map((item) => ({ ...item })), total: records.length }
@@ -71,6 +71,8 @@ function mount() {
           onBeforeUnmount: (fn) => unmounted.push(fn),
         }
       if (name === './api') return api
+      if (name === 'vue-router') return { useRouter: () => ({ push: async (path) => { destination = path } }) }
+      if (name.endsWith('/workspaces/api')) return workspaceApi
       if (name.endsWith('/useAuth'))
         return { useAuth: () => ({ isLoggedIn: loggedIn, sessionVersion, openLogin() {} }) }
       if (name.endsWith('/useToast')) return { useToast: () => ({ addToast() {} }) }
@@ -93,7 +95,7 @@ function mount() {
         return {
           estimateModelPoints: (_model, params) => {
             assert.equal(params.referenceVideo, false)
-            return 1
+            return _model ? 1 : null
           },
           formatModelPoints: () => '1',
         }
@@ -134,10 +136,12 @@ async function flush() {
   await vue.nextTick()
   assert.equal(first.state.canAnalyze.value, true)
   await first.state.analyze()
-  assert.equal(first.state.activeTask.value.status, 'QUEUED')
+  assert.equal(destination, '/workspaces/1', '新复刻入口创建工作区后跳转，后台无需浏览器继续驱动')
+  assert.equal(entries[0].sourceVideoIds[0], 101)
+  assert.equal(records.length, 0, '新工作区不冒充旧版复刻日志')
   first.leave()
   records[0] = {
-    ...records[0],
+    id: 1, createdAt: '2026-11-06T13:00:00', sourceVideoUrl: 'https://media.test/old.mp4',
     status: 'SUCCESS',
     canvasTaskId: 88,
     resultUrl: 'https://media.test/result.mp4',
@@ -177,6 +181,21 @@ async function flush() {
   assert.equal(Object.keys(second.state.works.value).length, 0)
   assert.equal(second.state.previewOpen.value, false)
   second.leave()
+  loggedIn.value = true
+  sessionVersion.value += 1
+  delayedList = undefined
+  const retry = mount()
+  await retry.ready()
+  retry.state.modelId.value = 9
+  retry.state.materials.videoUrl = 'https://media.test/long-source.mp4'
+  await vue.nextTick()
+  lostResponse = true
+  await retry.state.analyze()
+  assert.ok(retry.state.error.value, '创建响应丢失时保留错误和可重试入口')
+  await retry.state.analyze()
+  assert.equal(JSON.stringify(entries[1]), JSON.stringify(entries[2]), '创建响应丢失后重用完全相同的 hypitEntry 和幂等键')
+  assert.equal(creates, 2, '网络重试没有创建第三个工作区')
+  retry.leave()
   console.log(
     'Video replicate: task restore after navigation, no duplicate submit, source-only analysis pricing, account isolation passed'
   )

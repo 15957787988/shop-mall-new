@@ -17,6 +17,11 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/space/Space.vue'),
   },
   {
+    path: '/workspaces/:id',
+    name: 'AgentWorkspace',
+    component: () => import('@/pages/workspaces/WorkspacePage.vue'),
+  },
+  {
     path: '/team',
     name: 'Team',
     component: () => import('@/pages/team/Team.vue'),

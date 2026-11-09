@@ -114,6 +114,8 @@
             <p v-if="materialsError" class="replicate__error" role="alert">{{ materialsError }}</p>
             <fieldset :disabled="submitting" class="replicate__settings">
               <legend>生成设置</legend>
+              <label>创作要求<Input.TextArea v-model:value="creativePrompt" :maxlength="12000" :rows="3" /></label>
+              <label>对话模型<Select v-model:value="chatModel" :options="chatModels" placeholder="加载对话模型" /></label>
               <label
                 >视频模型<Select
                   v-model:value="modelId"
@@ -136,6 +138,8 @@
                   :max="durationMax"
                   :step="1"
               /></label>
+              <label>图片准备模型（可选，授权生成1张参考图）<Select v-model:value="imageModelId" allow-clear :options="imageModelOptions" placeholder="不额外生成图片" /></label>
+              <label>本轮媒体积分预算<InputNumber v-model:value="budgetPoints" :min="0.0001" :max="1000000000" :precision="4" /></label>
             </fieldset>
           </div>
           <div class="replicate__form-footer">
@@ -157,7 +161,8 @@
             <h2>
               复刻记录 <span v-if="total">{{ total }}</span>
             </h2>
-            <Button size="small" :loading="historyLoading" @click="refreshHistory">刷新</Button>
+            <router-link to="/space">打开创作工作区</router-link>
+            <Button size="small" :loading="historyLoading" @click="refreshHistory">刷新旧版记录</Button>
           </header>
           <p v-if="historyError" class="replicate__error" role="alert">{{ historyError }}</p>
           <div v-if="!tasks.length" class="studio__empty">
@@ -294,13 +299,15 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { Button, Input, Modal, Pagination, Select, Slider, Spin } from 'ant-design-vue'
+import { Button, Input, InputNumber, Modal, Pagination, Select, Slider, Spin } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
 import { CopyOutlined, DownloadOutlined, VideoCameraOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import UploadFile from '@/components/UploadFile/src/UploadFile.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import { useAuth } from '@/composables/useAuth'
-import { createReplicateTask, pageReplicateTasks, type ReplicateMaterials, type ReplicateTask, type ReplacementKind } from './api'
+import { pageReplicateTasks, type ReplicateMaterials, type ReplicateTask, type ReplacementKind } from './api'
+import { bootstrapWorkspace, resolveAssets, getAgentConfiguration, readVideoMetadata, type HypitEntry } from '@/pages/workspaces/api'
 import { downloadStudioFile, getStudioWork, loadStudioModels, studioFileName, type StudioWork } from '@/pages/ai/api'
 import StudioParams from '@/pages/ai/StudioParams.vue'
 import '@/pages/ai/video/video.scss'
@@ -313,6 +320,24 @@ import { isSeedance } from '@/pages/canvas/utils/seedanceConstraints'
 
 const { isLoggedIn, sessionVersion, openLogin } = useAuth()
 const { addToast } = useToast()
+const router = useRouter()
+const creativePrompt = ref('保留原视频的镜头顺序、动作和节奏，按素材对应关系替换人物、产品和场景，分析完整原片并直接生成新视频。')
+const chatModel = ref<string>()
+const chatModels = ref<{ label: string; value: string }[]>([])
+const imageModels = ref<CommonAiModelItem[]>([])
+const imageModelId = ref<number>()
+const imageModelOptions = computed(() => imageModels.value.map((item) => ({ label: item.name || item.model || String(item.id), value: item.id })))
+const budgetPoints = ref<number>()
+async function loadAgentOptions() {
+  if (!isLoggedIn.value) return
+  try {
+    const [configuration, images] = await Promise.all([getAgentConfiguration(), loadStudioModels('image')])
+    chatModels.value = configuration.chatModels.map((item) => ({ label: item.name, value: item.id }))
+    chatModel.value = configuration.chatModels[0]?.id
+    imageModels.value = images
+    if (!configuration.configured) error.value = '对话模型尚未配置密钥，任务可保存，执行前需要配置 mall.ark.api-key'
+  } catch (e: unknown) { error.value = e instanceof Error ? e.message : 'Agent 配置加载失败' }
+}
 const materials = reactive<ReplicateMaterials>({ videoUrl: '', replacements: [] })
 const roles: { kind: ReplacementKind; label: string; description: string }[] = [
   { kind: 'character', label: '人物', description: '例如：开场右侧女性，之后走到镜头前的同一人' },
@@ -366,6 +391,12 @@ const estimatedPoints = computed(() =>
   })
 )
 const pointsText = computed(() => formatModelPoints(estimatedPoints.value))
+watch([estimatedPoints, imageModelId], ([points]) => {
+  if (points === null) return
+  const image = imageModels.value.find((item) => item.id === imageModelId.value)
+  const extra = image ? estimateModelPoints(image, { resolution: image.resolution?.[0], ratio: '1:1', imageCount: imageCount.value }) : 0
+  budgetPoints.value = Number((points + (extra || 0)).toFixed(4))
+})
 const videos = computed(() => (materials.videoUrl ? [materials.videoUrl] : []))
 const maxImages = computed(() =>
   Math.min(
@@ -400,6 +431,8 @@ const canAnalyze = computed(
     Boolean(currentModel.value) &&
     !currentModel.value?.disabled &&
     estimatedPoints.value !== null &&
+    Boolean(creativePrompt.value.trim()) &&
+    Boolean(budgetPoints.value && budgetPoints.value >= (estimatedPoints.value || 0)) &&
     !materialsError.value
 )
 watch(modelId, () => {
@@ -409,6 +442,7 @@ watch(modelId, () => {
 })
 onMounted(async () => {
   void fetchHistory()
+  void loadAgentOptions()
   modelsLoading.value = true
   try {
     models.value = await loadStudioModels('video')
@@ -435,6 +469,7 @@ let session = 0
 let timer: ReturnType<typeof setTimeout> | undefined
 let retryKey = ''
 let retryInput = ''
+let retryEntry: HypitEntry | undefined
 function refreshHistory() {
   requestedStates = {}
   void fetchHistory()
@@ -472,6 +507,7 @@ watch([isLoggedIn, sessionVersion], ([loggedIn]) => {
   selectedId.value = undefined
   historyError.value = ''
   if (loggedIn) void fetchHistory()
+  if (loggedIn) void loadAgentOptions()
 })
 onBeforeUnmount(() => { disposed = true; clearTimeout(timer) })
 
@@ -574,14 +610,27 @@ async function analyze() {
       }
     }
     if (disposed || submitSession !== session) return
-    const snapshot = JSON.stringify({ body, settings })
-    if (retryInput !== snapshot || !retryKey) { retryKey = crypto.randomUUID(); retryInput = snapshot }
-    const id = await createReplicateTask(body, settings, retryKey)
-    retryKey = ''
+    const snapshot = JSON.stringify({ body, settings, creativePrompt: creativePrompt.value, chatModel: chatModel.value, imageModelId: imageModelId.value, budgetPoints: budgetPoints.value })
+    if (retryInput !== snapshot || !retryKey) { retryKey = crypto.randomUUID(); retryInput = snapshot; retryEntry = undefined }
+    if (!retryEntry) {
+    const allUrls = [...new Set([body.videoUrl, ...body.replacements.flatMap((item) => item.imageUrls)])]
+    const [registered, metadata] = await Promise.all([resolveAssets(allUrls), readVideoMetadata(body.videoUrl)])
+    const byUrl = new Map(registered.map((asset) => [asset.url, asset.id]))
+    const assetId = (url: string) => { const id = byUrl.get(url); if (!id) throw new Error('素材登记失败，请重新上传'); return id }
+    retryEntry = {
+      templateCode: 'hypit', clientRequestId: retryKey, prompt: creativePrompt.value.trim(), chatModel: chatModel.value,
+      sourceVideoIds: [assetId(body.videoUrl)],
+      bindings: body.replacements.map((item) => ({ entityId: item.id, kind: item.kind, target: item.target, assetIds: item.imageUrls.map(assetId) })),
+      generation: { videoModelId: settings.modelId, imageModelId: imageModelId.value, ratio: settings.ratio, resolution: settings.resolution, duration: settings.duration },
+      budgetPoints: budgetPoints.value, sourceMetadata: metadata,
+    }
+    }
     if (disposed || submitSession !== session) return
-    selectedId.value = id
-    historyPage.value = 1
-    await fetchHistory()
+    const created = await bootstrapWorkspace(retryEntry)
+    if (disposed || submitSession !== session) return
+    await router.push(`/workspaces/${created.workspaceId}`)
+    retryKey = ''
+    retryEntry = undefined
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '复刻失败，请稍后重试'
   } finally {
