@@ -6,6 +6,7 @@
       type="button"
       class="filter-chips__chip"
       :class="{ 'filter-chips__chip--active': selected === option }"
+      :aria-pressed="selected === option"
       @click="emit('select', option)"
     >
       {{ option }}
@@ -16,15 +17,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = withDefaults(
-  defineProps<{
-    options: readonly string[]
-    selected: string
-    allLabel?: string
-    className?: string
-  }>(),
-  { allLabel: '全部' }
-)
+interface Props {
+  options: readonly string[]
+  selected: string
+  allLabel?: string
+  className?: string
+}
+const props = withDefaults(defineProps<Props>(), { allLabel: '全部' })
 
 const emit = defineEmits<{
   select: [value: string]
@@ -48,23 +47,24 @@ const allOptions = computed(() => [props.allLabel, ...props.options])
   &__chip {
     flex-shrink: 0;
     min-height: 36px;
-    border-radius: 9999px;
+    border-radius: 9px;
     border: 1px solid transparent;
     background: transparent;
     padding: 6px 12px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--color-ink-secondary);
     cursor: pointer;
     transition: all 0.2s;
 
     &--active {
-      background: var(--color-creative-violet);
-      color: white;
+      background: var(--color-accent-soft);
+      border-color: var(--color-accent-border);
+      color: var(--color-creative-violet);
     }
 
     &:hover:not(&--active) {
-      border-color: rgba(109, 40, 217, 0.4);
+      border-color: var(--color-accent-border);
     }
   }
 }

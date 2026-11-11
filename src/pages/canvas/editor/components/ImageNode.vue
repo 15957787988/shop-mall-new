@@ -11,6 +11,9 @@ import NodeGenerationHistory from './NodeGenerationHistory.vue'
 import NodeAddButton from './NodeAddButton.vue'
 import NodeGenLoading from './NodeGenLoading.vue'
 import ReplaceMediaMenu from './ReplaceMediaMenu.vue'
+import MediaSourceDialog from '@/components/AssetLibrary/MediaSourceDialog.vue'
+import { validateLibrarySelection } from '@/components/AssetLibrary/selection'
+import { useRoute } from 'vue-router'
 
 const props = defineProps({
   id: String,
@@ -26,6 +29,8 @@ const { getNodes, updateNodeInternals } = useVueFlow()
 const message = useMessage()
 const uploading = ref(false)
 const fileInputRef = ref(null)
+const sourceOpen = ref(false)
+const route = useRoute()
 const isUploading = computed(() => uploading.value || !!props.data?.uploading)
 
 const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp'
@@ -129,7 +134,30 @@ async function onLocalUpload(file) {
 }
 
 function triggerLocalUpload() {
-  fileInputRef.value?.click()
+  if (store.canEditNode(props.id)) sourceOpen.value = true
+}
+
+async function selectLibraryAssets(assets) {
+  if (disposed || !store.canEditNode(props.id)) return
+  uploading.value = true
+  try {
+    const [asset] = validateLibrarySelection(
+      assets,
+      [],
+      1,
+      ['image/jpeg', 'image/png', 'image/webp'],
+      10
+    )
+    if (!asset) return
+
+    if (disposed || !store.canEditNode(props.id)) return
+    await applyMediaUrl(asset.url, asset.name, true)
+    sourceOpen.value = false
+  } catch (error) {
+    message.error(error.message || '素材不可用')
+  } finally {
+    uploading.value = false
+  }
 }
 
 function onLocalFileChange(e) {
@@ -169,6 +197,14 @@ function onLocalFileChange(e) {
         v-if="selected && !isUploading && !isGenerating && !genError"
         label="替换图片"
         @upload="triggerLocalUpload"
+      />
+      <MediaSourceDialog
+        v-model:open="sourceOpen"
+        :kinds="['image']"
+        :max-count="1"
+        :project-id="String(route.query.projectId || '')"
+        @local="fileInputRef?.click()"
+        @select="selectLibraryAssets"
       />
       <input
         ref="fileInputRef"

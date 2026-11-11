@@ -12,20 +12,21 @@
 <script setup lang="ts">
 import { cn } from '@/lib/utils'
 
-defineProps<{
+interface Props {
   label?: string
   title: string
   description?: string
   className?: string
-}>()
+}
+defineProps<Props>()
 </script>
 
 <style scoped lang="scss">
 .section-header {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 24px;
 
   @media (min-width: 640px) {
     flex-direction: row;
@@ -43,17 +44,19 @@ defineProps<{
   }
 
   &__title {
-    font-size: 18px;
+    margin: 0;
+    line-height: 1.4;
+    font-size: 22px;
     font-weight: 600;
     color: var(--color-ink-primary);
 
     @media (min-width: 768px) {
-      font-size: 20px;
+      font-size: 24px;
     }
   }
 
   &__description {
-    margin-top: 2px;
+    margin: 8px 0 0;
     font-size: 14px;
     color: var(--color-ink-secondary);
   }

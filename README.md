@@ -1140,3 +1140,12 @@ export default defineConfig({
 - 回复`数据结构算法`，获取 数据结构算法 教程。
 - 回复`架构师`，获取 架构师学习资源教程。
 - 更多教程资源应用尽有，欢迎`关注获取`
+
+### 个人资产库
+
+- `/agent-lib` 管理“生成历史 / 我保存的 / 我上传的”，每页 24 条，按图片、视频、音频筛选。
+- `/ai/image`、`/ai/video`、`/tools/video-replicate`（兼容 `/video-replicate`）及画布的添加/替换入口，共用“本地上传 / 资产库上传”。选用资产直接复用 URL，不重复上传或调用模型。
+- 上传沿用 `/admin-api/infra/file/upload`；新上传的媒体自动登记到当前用户的资产库。旧上传文件不会自动扫描补录；资产库页面和选用弹窗仅展示本人上传的素材，不提供生成历史或保存来源切换。
+- 资产数据由商城服务 Flyway `V11__personal_asset_library.sql` 建表，后台管理 Java 服务不负责该表。需先发布并重启商城 Java，再发布前端。
+- 资产移除只软删除库记录，保留对象存储文件及既有作品引用。选用素材继续受目标页面的类型、数量及模型尺寸/时长校验约束。
+- 自检：`node scripts/check-asset-library.cjs`、`node scripts/check-video-replicate.cjs`；构建输出到临时目录，避免改动 `dist/`。

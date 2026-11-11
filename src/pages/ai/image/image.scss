@@ -1,18 +1,19 @@
 .studio {
   display: flex;
-  height: calc(100vh - 48px);
+  height: 100%;
   min-height: 0;
-  gap: 10px;
-  padding: 10px;
+  gap: 24px;
+  padding: 24px;
 
   &__form {
     display: flex;
-    width: 370px;
+    width: 360px;
     flex-shrink: 0;
     flex-direction: column;
     overflow: hidden;
-    border-radius: 12px;
-    background: #fff;
+    border: 1px solid var(--color-border-whisper);
+    border-radius: var(--radius-panel);
+    background: var(--color-surface-0);
     box-shadow: var(--shadow-soft);
   }
 
@@ -22,9 +23,47 @@
   }
 
   &__section {
-    padding: 14px 16px;
+    padding: 20px;
     border-bottom: 1px solid var(--color-border-whisper);
   }
+
+  &__form-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex-shrink: 0;
+    padding: 22px 20px;
+    border-bottom: 1px solid var(--color-border-whisper);
+    h1 { margin: 0; font-size: 17px; font-weight: 650; line-height: 1.5; }
+    p { margin: 5px 0 0; font-size: 12px; color: var(--color-ink-secondary); line-height: 1.7; }
+  }
+  &__form-icon, &__empty-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--color-accent-soft);
+    color: var(--color-creative-violet);
+    font-size: 20px;
+  }
+  &__results-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    max-width: 1120px;
+    margin: 0 auto 20px;
+    padding: 4px 0;
+    h2 { margin: 0; font-size: 20px; font-weight: 650; }
+    p { margin: 4px 0 0; color: var(--color-ink-secondary); font-size: 12px; }
+  }
+  &__result-count { color: var(--color-ink-secondary); font-size: 12px; white-space: nowrap; }
+  &__empty-icon { width: 64px; height: 64px; font-size: 28px; margin-bottom: 8px; }
+  &__empty strong { color: var(--color-ink-primary); font-size: 17px; font-weight: 600; }
+  &__empty > span:last-child { max-width: 320px; font-size: 13px; line-height: 1.8; }
+  &__footer > .ant-btn-primary { min-height: 44px; font-weight: 600; }
 
   &__label {
     margin: 0 0 8px;
@@ -62,7 +101,7 @@
   }
 
   &__error {
-    color: #cf1322;
+    color: var(--color-danger);
   }
 
   &__hint {
@@ -73,7 +112,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 12px 16px;
+    padding: 16px 20px;
     border-top: 1px solid var(--color-border-whisper);
   }
 
@@ -85,7 +124,12 @@
 
   &__empty {
     display: flex;
-    height: 100%;
+    min-height: min(480px, 65vh);
+    flex-direction: column;
+    gap: 12px;
+    border: 1px dashed var(--color-border-whisper);
+    border-radius: var(--radius-panel);
+    background: var(--color-surface-0);
     align-items: center;
     justify-content: center;
     padding: 24px;
@@ -95,10 +139,12 @@
   }
 
   &__card {
-    margin-bottom: 12px;
-    border-radius: 12px;
-    background: #fff;
-    padding: 14px 16px;
+    margin: 0 auto 20px;
+    max-width: 1120px;
+    border: 1px solid var(--color-border-whisper);
+    border-radius: var(--radius-panel);
+    background: var(--color-surface-0);
+    padding: 20px;
     box-shadow: var(--shadow-soft);
   }
 
@@ -121,7 +167,7 @@
     justify-content: center;
     border: 1px solid var(--color-border-whisper);
     border-radius: 8px;
-    background: #fff;
+    background: var(--color-surface-0);
     color: var(--color-ink-primary);
     font-size: 16px;
     cursor: pointer;
@@ -137,19 +183,20 @@
     }
 
     &--danger:hover:not(:disabled) {
-      border-color: #cf1322;
-      color: #cf1322;
+      border-color: var(--color-danger);
+      color: var(--color-danger);
     }
   }
 
   &__card-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
   }
 
   &__card-model {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
   }
 
@@ -160,7 +207,7 @@
     font-size: 12px;
 
     &[data-fail='true'] {
-      color: #cf1322;
+      color: var(--color-danger);
     }
   }
 
@@ -179,7 +226,7 @@
     /* autoprefixer: ignore next */
     -webkit-box-orient: vertical;
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.7;
     color: var(--color-ink-secondary);
     white-space: pre-wrap;
     word-break: break-word;
@@ -188,7 +235,7 @@
   &__card-error {
     margin: 8px 0 0;
     font-size: 12px;
-    color: #cf1322;
+    color: var(--color-danger);
   }
 
   &__media {
@@ -227,10 +274,11 @@
   &__more {
     display: block;
     width: 100%;
-    margin-bottom: 12px;
+    margin: 0 auto 20px;
+    max-width: 1120px;
     border: none;
     border-radius: 10px;
-    background: #fff;
+    background: var(--color-surface-0);
     padding: 10px;
     cursor: pointer;
     color: var(--color-ink-secondary);
@@ -286,9 +334,9 @@
       gap: 6px;
       border: 0;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.16);
+      background: var(--color-media-control);
       padding: 6px 12px;
-      color: #fff;
+      color: var(--color-surface-0);
       cursor: pointer;
 
       &:disabled {
@@ -369,8 +417,10 @@
 @media (max-width: 960px) {
   .studio {
     height: auto;
-    min-height: calc(100vh - 48px);
+    min-height: calc(100dvh - var(--app-header-height));
     flex-direction: column;
+    gap: 20px;
+    padding: 16px;
 
     &__form {
       width: 100%;

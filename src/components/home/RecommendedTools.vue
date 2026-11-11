@@ -1,237 +1,192 @@
 <template>
-  <section class="recommended-tools animate-fade-up">
-    <h2 class="recommended-tools__title">推荐工具</h2>
-
-    <div class="recommended-tools__layout">
-      <div class="recommended-tools__featured">
-        <router-link
-          v-for="tool in FEATURED_TOOLS"
-          :key="tool.id"
-          :to="tool.linkUrl"
-          class="recommended-tools__featured-card"
-          :style="getFeaturedStyle(tool.id)"
-        >
-          <div>
-            <h3 class="recommended-tools__featured-name" :style="getFeaturedAccent(tool.id)">
-              {{ tool.name }}
-            </h3>
-            <p class="recommended-tools__featured-desc">{{ tool.description }}</p>
-          </div>
-          <span class="recommended-tools__featured-action" :style="getFeaturedAccent(tool.id)">
-            立即使用
-            <ArrowRightOutlined />
-          </span>
-        </router-link>
-      </div>
-      <div class="recommended-tools__grid">
-        <router-link
-          v-for="tool in displayGrid"
-          :key="tool.id"
-          :to="tool.linkUrl || getToolHref(tool.id)"
-          class="recommended-tools__grid-card"
-        >
-          <ToolIcon :category="tool.category" size="sm" />
-          <span class="recommended-tools__grid-name">{{ tool.name }}</span>
-        </router-link>
-      </div>
+  <section class="recommended-tools">
+    <div class="recommended-tools__heading">
+      <h2>选择创作方式</h2>
+      <router-link to="/tools">全部工具 <ArrowRightOutlined /></router-link>
+    </div>
+    <div class="recommended-tools__featured">
+      <router-link
+        v-for="tool in FEATURED_TOOLS"
+        :key="tool.href"
+        :to="tool.href"
+        class="recommended-tools__featured-card"
+      >
+        <span class="recommended-tools__icon"><component :is="tool.icon" /></span>
+        <h3>{{ tool.name }}</h3>
+        <p>{{ tool.description }}</p>
+        <span class="recommended-tools__featured-action">开始创作 <ArrowRightOutlined /></span>
+      </router-link>
+    </div>
+    <div class="recommended-tools__grid">
+      <router-link
+        v-for="tool in displayGrid"
+        :key="tool.id"
+        :to="tool.linkUrl || getToolHref(tool.id)"
+        class="recommended-tools__grid-card"
+      >
+        <ToolIcon :category="tool.category" size="sm" />
+        <span>{{ tool.name }}</span>
+      </router-link>
     </div>
   </section>
 </template>
-
 <script setup lang="ts">
-import { ArrowRightOutlined } from '@ant-design/icons-vue'
+import {
+  ArrowRightOutlined,
+  PictureOutlined,
+  VideoCameraOutlined,
+  CopyOutlined,
+  AppstoreOutlined,
+} from '@ant-design/icons-vue'
 import ToolIcon from '@/components/ui/ToolIcon.vue'
-import { tools, type ToolCategory } from '@/mock/tools'
+import { tools } from '@/mock/tools'
 import { getToolHref } from '@/lib/tool-routes'
-
-interface DisplayTool {
-  id: string
-  name: string
-  description: string
-  category: ToolCategory
-  icon?: string
-  linkUrl?: string
-}
-
-const FEATURED_TOOLS: DisplayTool[] = [
+const FEATURED_TOOLS = [
   {
-    id: 't1',
-    name: 'AI商品套图',
-    description: '一键生成电商商品套图',
-    category: 'ai-shoot',
-    linkUrl: '/tools/ai-product-image',
+    name: 'AI 制图',
+    description: '用文字和参考图，把创意变成画面。',
+    href: '/ai/image',
+    icon: PictureOutlined,
   },
   {
-    id: 't8',
-    name: '爆款视频',
-    description: '复刻热门带货视频',
-    category: 'video',
-    linkUrl: '/tools/viral-videos',
+    name: 'AI 视频',
+    description: '让商品、人物与故事动起来。',
+    href: '/ai/video',
+    icon: VideoCameraOutlined,
+  },
+  {
+    name: '爆款复刻',
+    description: '参考原片节奏，换上你的素材。',
+    href: '/tools/video-replicate',
+    icon: CopyOutlined,
+  },
+  {
+    name: '商品套图',
+    description: '围绕一件商品，完成成套视觉。',
+    href: '/tools/ai-product-image',
+    icon: AppstoreOutlined,
   },
 ]
-
-const GRID_IDS = ['t20', 't21', 't22', 't23', 't26', 't28', 't24', 't25'] as const
-const FEATURED_GRAD: Record<string, { from: string; to: string; accent: string }> = {
-  t1: { from: '#E0F2FE', to: '#EDE9FE', accent: '#0284C7' },
-  t8: { from: '#D1FAE5', to: '#ECFDF5', accent: '#059669' },
-}
-
-function getTool(id: string) {
-  return tools.find((t) => t.id === id)
-}
-
-const displayGrid = GRID_IDS.map(getTool).filter(Boolean) as DisplayTool[]
-
-function getFeaturedStyle(id: string) {
-  const gradient = FEATURED_GRAD[id]
-  if (!gradient) {
-    return {}
-  }
-  return {
-    background: `linear-gradient(135deg, ${gradient.from} 0%, ${gradient.to} 100%)`,
-  }
-}
-
-function getFeaturedAccent(id: string) {
-  const gradient = FEATURED_GRAD[id]
-  if (!gradient) {
-    return {}
-  }
-  return { color: gradient.accent }
-}
+const gridIds = ['t20', 't21', 't22', 't23', 't26', 't28', 't24', 't25']
+const displayGrid = tools.filter((tool) => gridIds.includes(tool.id))
 </script>
-
 <style scoped lang="scss">
 .recommended-tools {
   margin-bottom: var(--spacing-section);
-
-  &__title {
-    margin: 0 0 12px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-ink-primary);
-  }
-
-  &__layout {
+  &__heading {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    @media (min-width: 1024px) {
-      flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+    }
+    a {
+      font-size: 13px;
+      color: var(--color-ink-secondary);
     }
   }
-
   &__featured {
-    display: flex;
-    flex-shrink: 0;
-    flex-direction: column;
-    gap: 12px;
-
-    @media (min-width: 640px) {
-      flex-direction: row;
-    }
-
-    @media (min-width: 1024px) {
-      width: 280px;
-      flex-direction: column;
-    }
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
   }
-
   &__featured-card {
     display: flex;
-    min-height: 88px;
-    flex: 1;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 16px;
-    border-radius: 12px;
-    text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s;
-
+    align-items: flex-start;
+    min-height: 240px;
+    padding: 24px;
+    border: 1px solid var(--color-border-whisper);
+    border-radius: var(--radius-panel);
+    background: var(--color-surface-0);
+    color: var(--color-ink-primary);
+    transition: border-color 0.18s, box-shadow 0.18s;
+    h3 {
+      margin: 22px 0 8px;
+      font-size: 19px;
+      font-weight: 600;
+    }
+    p {
+      margin: 0 0 24px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--color-ink-secondary);
+    }
     &:hover {
-      transform: translateY(-2px);
+      border-color: var(--color-accent-border);
       box-shadow: var(--shadow-lift);
-
-      .recommended-tools__featured-action {
-        opacity: 1;
-      }
-    }
-
-    &:active {
-      transform: scale(0.98);
     }
   }
-
-  &__featured-name {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 600;
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--color-accent-soft);
+    color: var(--color-creative-violet);
+    font-size: 22px;
   }
-
-  &__featured-desc {
-    margin: 4px 0 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    font-size: 12px;
-    color: var(--color-ink-secondary);
-  }
-
   &__featured-action {
-    display: inline-flex;
+    display: flex;
+    width: 100%;
     align-items: center;
-    gap: 4px;
-    margin-top: 8px;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: auto;
     font-size: 12px;
+    color: var(--color-creative-violet);
     font-weight: 500;
-    opacity: 0;
-    transition: opacity 0.2s;
   }
-
   &__grid {
     display: grid;
-    flex: 1;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+    gap: 1px;
+    border: 1px solid var(--color-border-whisper);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 20px;
+    background: var(--color-border-whisper);
   }
-
   &__grid-card {
     display: flex;
-    min-height: 72px;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 4px;
-    border-radius: 12px;
+    gap: 12px;
+    padding: 16px 20px;
     background: var(--color-surface-0);
-    box-shadow: var(--shadow-soft);
-    text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s;
-
+    color: var(--color-ink-secondary);
+    font-size: 13px;
     &:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lift);
-    }
-
-    &:active {
-      transform: scale(0.98);
+      background: var(--color-accent-soft);
+      color: var(--color-creative-violet);
     }
   }
-
-  &__grid-name {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-align: center;
-    font-size: 10px;
-    font-weight: 500;
-    color: var(--color-ink-primary);
-
-    @media (min-width: 640px) {
+  @media (max-width: 1150px) {
+    &__featured {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    &__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 520px) {
+    &__featured {
+      gap: 12px;
+    }
+    &__featured-card {
+      min-height: 220px;
+      padding: 18px;
+      h3 {
+        font-size: 17px;
+      }
+    }
+    &__grid-card {
+      padding: 14px;
+      gap: 8px;
       font-size: 12px;
     }
   }

@@ -2,6 +2,10 @@
   <PageContainer flush>
     <div class="studio">
       <aside class="studio__form">
+        <header class="studio__form-heading">
+          <span class="studio__form-icon"><PictureOutlined /></span>
+          <div><h1>图片创作</h1><p>从商品图到创意画面，用文字与参考图开始创作。</p></div>
+        </header>
         <div class="studio__form-scroll scroll-area">
           <section class="studio__section">
             <h3 class="studio__label">模型</h3>
@@ -72,9 +76,15 @@
       </aside>
 
       <main class="studio__results scroll-area" ref="listEl">
+        <header class="studio__results-heading">
+          <div><h2>我的图片</h2><p>查看生成进度，预览和下载作品</p></div>
+          <span class="studio__result-count">{{ total }} 个作品</span>
+        </header>
         <div v-if="listLoading && !works.length" class="studio__empty">加载中…</div>
         <div v-else-if="!works.length" class="studio__empty">
-          还没有作品。左侧填写后生成，画布里的结果不会出现在这里。
+          <span class="studio__empty-icon"><PictureOutlined /></span>
+          <strong>开始你的第一个图片作品</strong>
+          <span>填写提示词、选择模型后点击生成，结果会保存在这里。</span>
         </div>
         <article v-for="item in works" :key="item.id" class="studio__card">
           <div class="studio__card-body">
@@ -188,7 +198,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { PictureOutlined, CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { Button, Input, Modal, Select } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'

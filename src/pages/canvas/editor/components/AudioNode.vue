@@ -13,6 +13,10 @@ import { useMessage } from '../../shims/message'
 import NodeHeader from './NodeHeader.vue'
 import NodeAddButton from './NodeAddButton.vue'
 import ReplaceMediaMenu from './ReplaceMediaMenu.vue'
+import MediaSourceDialog from '@/components/AssetLibrary/MediaSourceDialog.vue'
+import { validateLibrarySelection } from '@/components/AssetLibrary/selection'
+import { useRoute } from 'vue-router'
+import { readAssetDuration } from '@/components/AssetLibrary/mediaMetadata'
 
 const props = defineProps({
   id: String,
@@ -26,6 +30,8 @@ let disposed = false
 const message = useMessage()
 const { getNodes, updateNodeInternals } = useVueFlow()
 const fileInputRef = ref(null)
+const sourceOpen = ref(false)
+const route = useRoute()
 const audioRef = ref(null)
 const uploading = ref(false)
 const playing = ref(false)
@@ -69,7 +75,29 @@ function patchData(data) {
 }
 
 function triggerLocalUpload() {
-  fileInputRef.value?.click()
+  if (store.canEditNode(props.id)) sourceOpen.value = true
+}
+
+async function selectLibraryAssets(assets) {
+  if (disposed || !store.canEditNode(props.id)) return
+  uploading.value = true
+  try {
+    const [asset] = validateLibrarySelection(assets, [], 1, ['mp3', 'wav'], 15)
+    if (!asset) return
+    const dur = await readAssetDuration(asset.url, 'audio')
+    const error = validateAudioUpload(
+      { name: asset.name, type: asset.mimeType || '', size: Number(asset.fileSize) || 0 },
+      dur
+    )
+    if (error) throw new Error(error)
+    if (disposed || !store.canEditNode(props.id)) return
+    await applyMediaUrl(asset.url, asset.name, dur, true)
+    sourceOpen.value = false
+  } catch (error) {
+    message.error(error.message || '素材不可用')
+  } finally {
+    uploading.value = false
+  }
 }
 
 function clearAudio(e) {
@@ -222,6 +250,14 @@ onBeforeUnmount(() => {
         v-if="selected && !uploading"
         label="替换音频"
         @upload="triggerLocalUpload"
+      />
+      <MediaSourceDialog
+        v-model:open="sourceOpen"
+        :kinds="['audio']"
+        :max-count="1"
+        :project-id="String(route.query.projectId || '')"
+        @local="fileInputRef?.click()"
+        @select="selectLibraryAssets"
       />
       <input
         ref="fileInputRef"

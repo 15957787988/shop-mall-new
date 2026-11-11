@@ -69,6 +69,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/tools/video-replicate',
+    alias: '/video-replicate',
     name: 'VideoReplicate',
     component: () => import('@/pages/tools/VideoReplicate/index.vue'),
   },

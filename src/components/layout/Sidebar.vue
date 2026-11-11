@@ -4,7 +4,8 @@
   <aside :class="['sidebar', { 'sidebar--open': open, 'sidebar--collapsed': collapsed }]">
     <div class="sidebar__brand">
       <router-link to="/" class="sidebar__brand-link" :title="BRAND_NAME" @click="onClose">
-        <!-- <span class="sidebar__logo">{{ BRAND_LOGO_CHAR }}</span>1 -->
+        <span class="sidebar__logo"><PartitionOutlined /></span>
+        <span class="sidebar__brand-name">{{ BRAND_NAME }}</span>
       </router-link>
       <button
         type="button"
@@ -36,7 +37,6 @@
             >
               <component :is="item.icon" class="sidebar__nav-icon" />
               <span class="sidebar__nav-label">{{ item.label }}</span>
-              <RightOutlined class="sidebar__chevron" />
             </router-link>
           </li>
         </ul>
@@ -64,16 +64,16 @@ import {
   VideoCameraOutlined,
   HighlightOutlined,
   PlayCircleOutlined,
-  RightOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons-vue'
-import { BRAND_LOGO_CHAR, BRAND_NAME } from '@/lib/brand'
+import { BRAND_NAME } from '@/lib/brand'
 
-defineProps<{
+interface Props {
   open: boolean
   onClose: () => void
-}>()
+}
+defineProps<Props>()
 
 const route = useRoute()
 const collapsed = ref(localStorage.getItem('sidebar-collapsed') === '1')
@@ -97,23 +97,24 @@ const NAV_GROUPS: NavItem[][] = [
     { href: '/ai/image', label: 'AI制图', icon: HighlightOutlined },
     { href: '/ai/video', label: 'AI视频', icon: PlayCircleOutlined },
     { href: '/tools/video-replicate', label: '爆款复刻', icon: VideoCameraOutlined },
-    { href: '/tools', label: '工具', icon: ToolOutlined },
-  ],
-  [{ href: '/templates', label: '模板', icon: AppstoreOutlined }],
-  [
     { href: '/agent-lib', label: '我的资产', icon: ContainerOutlined },
-    { href: '/space', label: '我的作品', icon: FolderOpenOutlined },
-    { href: '/recent', label: '最近打开', icon: ClockCircleOutlined },
+    // { href: '/tools', label: '工具', icon: ToolOutlined },
   ],
-  [
-    { href: '/team', label: '帮我设计', icon: StarOutlined },
-    { href: '/pricing', label: '套餐', icon: CreditCardOutlined },
-  ],
+  // [{ href: '/templates', label: '模板', icon: AppstoreOutlined }],
+  // [
+  //   { href: '/space', label: '我的作品', icon: FolderOpenOutlined },
+  //   { href: '/recent', label: '最近打开', icon: ClockCircleOutlined },
+  // ],
+  // [
+  //   { href: '/team', label: '帮我设计', icon: StarOutlined },
+  //   { href: '/pricing', label: '套餐', icon: CreditCardOutlined },
+  // ],
 ]
 
 const TOOL_LEAVES = ['/tools/ai-product-image', '/tools/viral-videos', '/tools/video-replicate']
 
 function isNavActive(pathname: string, href: string) {
+  if (href === '/tools/video-replicate' && pathname === '/video-replicate') return true
   if (href === '/') return pathname === '/'
   if (href === '/canvas/index') return pathname === '/canvas' || pathname.startsWith('/canvas/')
   if (href === '/tools') {
@@ -128,10 +129,11 @@ function isNavActive(pathname: string, href: string) {
 <style scoped lang="scss">
 .sidebar {
   position: fixed;
+  visibility: hidden;
   inset: 0 auto 0 0;
   z-index: var(--z-sidebar);
   display: flex;
-  width: 240px;
+  width: var(--sidebar-width);
   flex-shrink: 0;
   flex-direction: column;
   background: var(--color-surface-0);
@@ -141,10 +143,12 @@ function isNavActive(pathname: string, href: string) {
 
   @media (min-width: 768px) {
     position: static;
+    visibility: visible;
     transform: translateX(0);
   }
 
   &--open {
+    visibility: visible;
     transform: translateX(0);
   }
 
@@ -165,13 +169,22 @@ function isNavActive(pathname: string, href: string) {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 16px 14px 8px;
+    padding: 22px 14px 20px;
   }
 
   &__brand-link {
     display: flex;
     align-items: center;
+    gap: 10px;
+    min-width: 0;
     text-decoration: none;
+  }
+
+  &__brand-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-ink-primary);
+    white-space: nowrap;
   }
 
   &__logo {
@@ -181,16 +194,16 @@ function isNavActive(pathname: string, href: string) {
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: 10px;
     background: var(--color-creative-violet);
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 700;
-    color: #fff;
+    color: var(--color-on-media);
   }
 
   &__collapse {
     display: none;
-    width: 32px;
+    width: 26px;
     height: 32px;
     align-items: center;
     justify-content: center;
@@ -212,7 +225,7 @@ function isNavActive(pathname: string, href: string) {
 
   &__close-btn {
     display: flex;
-    width: 32px;
+    width: 26px;
     height: 32px;
     align-items: center;
     justify-content: center;
@@ -231,12 +244,12 @@ function isNavActive(pathname: string, href: string) {
     display: flex;
     flex: 1;
     flex-direction: column;
-    padding: 8px 10px 16px;
+    padding: 0 12px 24px;
   }
 
   &__divider {
     height: 1px;
-    margin: 8px 6px;
+    margin: 14px 10px;
     background: var(--color-border-whisper);
   }
 
@@ -246,7 +259,7 @@ function isNavActive(pathname: string, href: string) {
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
   }
 
   &__nav-item {
@@ -254,8 +267,8 @@ function isNavActive(pathname: string, href: string) {
     width: 100%;
     align-items: center;
     gap: 10px;
-    min-height: 42px;
-    border-radius: 12px;
+    min-height: 44px;
+    border-radius: 9px;
     padding: 0 12px;
     text-decoration: none;
     color: var(--color-ink-secondary);
@@ -275,13 +288,13 @@ function isNavActive(pathname: string, href: string) {
     }
 
     &--active {
-      background: var(--color-surface-2);
-      color: var(--color-ink-primary);
+      background: var(--color-accent-soft);
+      color: var(--color-creative-violet);
       font-weight: 600;
+      box-shadow: inset 3px 0 var(--color-creative-violet);
 
-      .sidebar__nav-icon,
-      .sidebar__chevron {
-        color: var(--color-ink-primary);
+      .sidebar__nav-icon {
+        color: var(--color-creative-violet);
       }
     }
   }
@@ -320,6 +333,7 @@ function isNavActive(pathname: string, href: string) {
         padding-inline: 8px;
       }
 
+      .sidebar__brand-name,
       .sidebar__nav-label,
       .sidebar__chevron {
         display: none;

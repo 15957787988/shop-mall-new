@@ -26,7 +26,7 @@
               <h2>参考素材</h2>
               <span>未替换的内容沿用原片</span>
             </div>
-            <fieldset :disabled="submitting">
+            <fieldset :disabled="formLocked">
               <legend>原视频 <span class="replicate__required">必填</span></legend>
               <UploadFile
                 :model-value="videos"
@@ -52,6 +52,15 @@
                 preload="metadata"
               />
             </fieldset>
+            <div class="replicate__reverse">
+              <Button
+                :class="{ 'is-ready': reversedPrompt }"
+                :loading="analyzing"
+                :disabled="!reversedPrompt && !canReverse"
+                @click="reversePrompt"
+                >{{ reversedPrompt ? '查看提示词' : '反推提示词' }}</Button
+              >
+            </div>
             <div class="replicate__section-heading replicate__optional-heading">
               <h3>替换参考图</h3>
               <span>可选 · 支持多个对象</span>
@@ -61,7 +70,7 @@
                 <h3>{{ role.label }}替换</h3>
                 <Button
                   size="small"
-                  :disabled="submitting || materials.replacements.length >= 30"
+                  :disabled="formLocked || materials.replacements.length >= 30"
                   @click="addReplacement(role.kind)"
                   >＋ 添加{{ role.label }}</Button
                 >
@@ -75,24 +84,31 @@
               <fieldset
                 v-for="item in materials.replacements.filter((item) => item.kind === role.kind)"
                 :key="item.id"
-                :disabled="submitting"
+                :disabled="formLocked"
                 class="replicate__replacement-item"
               >
-                <legend>{{ role.label }} · {{ item.id }}</legend>
-                <Button
-                  class="replicate__remove"
-                  size="small"
-                  type="text"
-                  :disabled="submitting"
-                  :aria-label="`删除${item.id}`"
-                  @click="removeReplacement(item.id)"
-                  >删除</Button
-                >
+                <legend class="replicate__replacement-legend">{{ role.label }} · {{ item.id }}</legend>
+                <div class="replicate__replacement-header">
+                  <div class="replicate__replacement-title">
+                    <strong>{{ role.label }}参考</strong>
+                    <span>{{ item.id }}</span>
+                  </div>
+                  <Button
+                    class="replicate__remove"
+                    size="small"
+                    type="text"
+                    danger
+                    :disabled="formLocked"
+                    :aria-label="`删除${item.id}`"
+                    @click="removeReplacement(item.id)"
+                    ><DeleteOutlined />删除</Button
+                  >
+                </div>
                 <label :for="`target-${item.id}`">原视频中的替换目标</label>
                 <Input
                   :id="`target-${item.id}`"
                   v-model:value="item.target"
-                  :disabled="submitting"
+                  :disabled="formLocked"
                   :maxlength="300"
                   :placeholder="role.description"
                 />
@@ -112,7 +128,7 @@
               参考图 {{ imageCount }} / {{ maxImages }} 张 · 同一对象可上传多个角度
             </p>
             <p v-if="materialsError" class="replicate__error" role="alert">{{ materialsError }}</p>
-            <fieldset :disabled="submitting" class="replicate__settings">
+            <fieldset :disabled="formLocked" class="replicate__settings">
               <legend>生成设置</legend>
               <label
                 >视频模型<Select
@@ -136,6 +152,35 @@
                   :max="durationMax"
                   :step="1"
               /></label>
+              <div v-if="currentModel" class="replicate__audio">
+                <div class="replicate__section-heading">
+                  <h3>参考音频</h3><span>可选</span>
+                </div>
+                <template v-if="maxAudios > 0">
+                  <p>最多 {{ maxAudios }} 段 · 合计不超过 {{ maxAudioDuration }} 秒</p>
+                  <UploadFile
+                    :model-value="refAudios"
+                    drag
+                    :disabled="formLocked"
+                    :limit="maxAudios"
+                    :file-size="15"
+                    :is-show-tip="false"
+                    :file-type="['mp3', 'wav']"
+                    accept="audio/mpeg,audio/wav,.mp3,.wav"
+                    :before-upload-hook="beforeAudioUpload"
+                    :before-library-select="validateAudios"
+                    @update:model-value="updateAudios"
+                  >
+                    <div class="replicate__video-drop">
+                      <SoundOutlined /><strong>点击或拖拽上传音频</strong>
+                      <span>MP3 / WAV · 单段小于 15MB</span>
+                    </div>
+                  </UploadFile>
+                  <audio v-for="url in refAudios" :key="url" :src="url" controls preload="metadata" />
+                  <p>音频作为生成参考传给视频模型，效果取决于模型能力。</p>
+                </template>
+                <p v-else>当前模型不支持参考音频</p>
+              </div>
             </fieldset>
           </div>
           <div class="replicate__form-footer">
@@ -289,18 +334,32 @@
         </aside>
       </div>
     </Modal>
+    <Modal v-model:open="promptOpen" title="反推提示词" :footer="null" width="640px" centered>
+      <div class="replicate__prompt-modal">
+        <Input.TextArea v-model:value="promptText" :auto-size="{ minRows: 12, maxRows: 18 }" />
+        <button
+          type="button"
+          class="replicate__prompt-copy"
+          :disabled="!promptText.trim()"
+          @click="copyPrompt(promptText)"
+        >
+          <CopyOutlined />一键复制
+        </button>
+      </div>
+    </Modal>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { Button, Input, Modal, Pagination, Select, Slider, Spin } from 'ant-design-vue'
-import { CopyOutlined, DownloadOutlined, VideoCameraOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
+import { CopyOutlined, DeleteOutlined, DownloadOutlined, SoundOutlined, VideoCameraOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
+import type { UploadProps } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import UploadFile from '@/components/UploadFile/src/UploadFile.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import { useAuth } from '@/composables/useAuth'
-import { createReplicateTask, pageReplicateTasks, type ReplicateMaterials, type ReplicateTask, type ReplacementKind } from './api'
+import { analyzeReplicatePrompt, createReplicateTask, pageReplicateTasks, type ReplicateMaterials, type ReplicateTask, type ReplacementKind } from './api'
 import { downloadStudioFile, getStudioWork, loadStudioModels, studioFileName, type StudioWork } from '@/pages/ai/api'
 import StudioParams from '@/pages/ai/StudioParams.vue'
 import '@/pages/ai/video/video.scss'
@@ -310,6 +369,7 @@ import type { CommonAiModelItem } from '@/service/api/ai-model'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { validateAiImageConstraints, formatAiImageValidationError } from '@/pages/canvas/shims/imageConstraints'
 import { isSeedance } from '@/pages/canvas/utils/seedanceConstraints'
+import { readAssetDuration } from '@/components/AssetLibrary/mediaMetadata'
 
 const { isLoggedIn, sessionVersion, openLogin } = useAuth()
 const { addToast } = useToast()
@@ -320,16 +380,18 @@ const roles: { kind: ReplacementKind; label: string; description: string }[] = [
   { kind: 'scene', label: '场景', description: '例如：前3秒的电梯厅，保留后半段客厅' },
 ]
 const counters = { character: 0, product: 0, scene: 0 }
+const submitting = ref(false)
+const analyzing = ref(false)
+const formLocked = computed(() => submitting.value || analyzing.value)
 function addReplacement(kind: ReplacementKind) {
-  if (submitting.value || materials.replacements.length >= 30) return
+  if (formLocked.value || materials.replacements.length >= 30) return
   counters[kind] += 1
   materials.replacements.push({ id: `${kind}_${counters[kind]}`, kind, target: '', imageUrls: [] })
 }
 function removeReplacement(id: string) {
-  if (!submitting.value)
+  if (!formLocked.value)
     materials.replacements = materials.replacements.filter((item) => item.id !== id)
 }
-const submitting = ref(false)
 const error = ref('')
 const models = ref<CommonAiModelItem[]>([])
 const modelsLoading = ref(false)
@@ -337,7 +399,17 @@ const modelId = ref<number>()
 const aspect = ref('')
 const resolution = ref('')
 const duration = ref(5)
+const refAudios = ref<string[]>([])
 const currentModel = computed(() => models.value.find((item) => item.id === modelId.value))
+const maxAudios = computed(() => {
+  const limits = currentModel.value?.mediaLimits
+  const value = Number(limits?.platformMaxAudios ?? limits?.maxAudios ?? 3)
+  return Number.isFinite(value) ? Math.max(0, Math.min(10, Math.floor(value))) : 0
+})
+const maxAudioDuration = computed(() => {
+  const value = Number(currentModel.value?.mediaLimits?.maxTotalAudioDuration ?? 15)
+  return Number.isFinite(value) && value > 0 ? value : 15
+})
 const modelOptions = computed(() =>
   models.value.map((item) => ({
     label: `${item.name || item.model || String(item.id)}${item.disabledReason ? `（${item.disabledReason}）` : ''}`,
@@ -395,7 +467,7 @@ const materialsError = computed(() => {
 })
 const canAnalyze = computed(
   () =>
-    !submitting.value &&
+    !formLocked.value &&
     Boolean(materials.videoUrl) &&
     Boolean(currentModel.value) &&
     !currentModel.value?.disabled &&
@@ -406,6 +478,10 @@ watch(modelId, () => {
   aspect.value = ratioOptions.value[0]?.value || ''
   resolution.value = resolutionOptions.value[0]?.value || ''
   duration.value = Math.max(durationMin.value, Math.min(durationMax.value, duration.value))
+  if (refAudios.value.length > maxAudios.value) {
+    refAudios.value = refAudios.value.slice(0, maxAudios.value)
+    addToast('已按新模型的音频数量限制调整参考音频', 'info')
+  }
 })
 onMounted(async () => {
   void fetchHistory()
@@ -468,6 +544,10 @@ watch([isLoggedIn, sessionVersion], ([loggedIn]) => {
   requestedStates = {}
   previewOpen.value = false
   previewTask.value = undefined
+  promptOpen.value = false
+  promptText.value = ''
+  promptCache.value = undefined
+  refAudios.value = []
   total.value = 0
   selectedId.value = undefined
   historyError.value = ''
@@ -542,6 +622,83 @@ async function copyPrompt(text?: string) {
 function updateVideos(value: string | string[]) {
   materials.videoUrl = Array.isArray(value) ? value[0] || '' : value
 }
+function updateAudios(value: string | string[]) {
+  refAudios.value = Array.isArray(value) ? value : value ? [value] : []
+}
+async function validateAudios(urls: string[]) {
+  if (urls.length > maxAudios.value) throw new Error(`当前模型最多支持 ${maxAudios.value} 段参考音频`)
+  let total = 0
+  for (const url of urls) total += await readAssetDuration(url, 'audio')
+  if (total > maxAudioDuration.value)
+    throw new Error(`参考音频总时长不能超过 ${maxAudioDuration.value} 秒`)
+}
+const beforeAudioUpload: UploadProps['beforeUpload'] = async (file) => {
+  if (!/\.(mp3|wav)$/i.test(file.name) || file.size >= 15 * 1024 * 1024) return true
+  const url = URL.createObjectURL(file)
+  try {
+    await validateAudios([...refAudios.value, url])
+    return true
+  } catch (e) {
+    addToast(e instanceof Error ? e.message : '无法读取音频，请更换素材', 'error')
+    return false
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+function materialsBody(): ReplicateMaterials {
+  return {
+    videoUrl: materials.videoUrl,
+    replacements: materials.replacements.map((item) => ({
+      ...item,
+      target: item.target.trim(),
+      imageUrls: [...item.imageUrls],
+    })),
+  }
+}
+function materialsKey() {
+  return JSON.stringify(materialsBody())
+}
+const promptOpen = ref(false)
+const promptText = ref('')
+const promptCache = ref<{ key: string; text: string }>()
+const reversedPrompt = computed(() =>
+  promptCache.value?.key === materialsKey() ? promptCache.value.text : ''
+)
+watch(promptText, (text) => {
+  const cache = promptCache.value
+  if (!cache || cache.key !== materialsKey() || cache.text === text) return
+  promptCache.value = { key: cache.key, text }
+})
+const canReverse = computed(
+  () => !formLocked.value && Boolean(materials.videoUrl) && !materialsError.value
+)
+async function reversePrompt() {
+  if (!isLoggedIn.value) {
+    openLogin()
+    return
+  }
+  const cached = reversedPrompt.value
+  if (cached) {
+    promptText.value = cached
+    promptOpen.value = true
+    return
+  }
+  if (!canReverse.value) return
+  analyzing.value = true
+  error.value = ''
+  const key = materialsKey()
+  try {
+    const text = (await analyzeReplicatePrompt(materialsBody())).trim()
+    if (!text) throw new Error('未返回提示词')
+    if (disposed) return
+    promptCache.value = { key, text }
+    promptText.value = text
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : '反推失败，请稍后重试'
+  } finally {
+    analyzing.value = false
+  }
+}
 async function analyze() {
   if (!isLoggedIn.value) {
     openLogin()
@@ -551,21 +708,17 @@ async function analyze() {
   submitting.value = true
   const submitSession = session
   error.value = ''
-  const body: ReplicateMaterials = {
-    videoUrl: materials.videoUrl,
-    replacements: materials.replacements.map((item) => ({
-      ...item,
-      target: item.target.trim(),
-      imageUrls: [...item.imageUrls],
-    })),
-  }
+  const body = materialsBody()
+  const prompt = reversedPrompt.value
   const settings = {
     modelId: modelId.value!,
     ratio: aspect.value,
     resolution: resolution.value,
     duration: duration.value,
+    audioUrls: [...refAudios.value],
   }
   try {
+    if (settings.audioUrls.length) await validateAudios(settings.audioUrls)
     if (currentModel.value && isSeedance(currentModel.value)) {
       const images = [...new Set(body.replacements.flatMap((item) => item.imageUrls))]
       for (let i = 0; i < images.length; i += 1) {
@@ -574,9 +727,9 @@ async function analyze() {
       }
     }
     if (disposed || submitSession !== session) return
-    const snapshot = JSON.stringify({ body, settings })
+    const snapshot = JSON.stringify({ body, settings, prompt })
     if (retryInput !== snapshot || !retryKey) { retryKey = crypto.randomUUID(); retryInput = snapshot }
-    const id = await createReplicateTask(body, settings, retryKey)
+    const id = await createReplicateTask(body, settings, retryKey, prompt || undefined)
     retryKey = ''
     if (disposed || submitSession !== session) return
     selectedId.value = id

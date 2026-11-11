@@ -34,7 +34,10 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: '@import "@/assets/style/main.scss"; @import "@/pages/canvas/styles/variables.scss";',
+        // 只注入 Sass 变量。含 CSS 的 tokens 由 global.scss 加载一次。
+        additionalData: '@use "@/pages/canvas/styles/variables.scss" as *;',
+        // ponytail: Vite 2 内部调用 sass.render。升级 Vite 5+ 后改 api: 'modern-compiler'，再删本行。
+        silenceDeprecations: ['legacy-js-api'],
       },
     },
   },

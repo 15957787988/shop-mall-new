@@ -5,10 +5,11 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+interface Props {
   className?: string
   flush?: boolean
-}>()
+}
+defineProps<Props>()
 </script>
 
 <style scoped lang="scss">
@@ -16,15 +17,15 @@ defineProps<{
   margin-left: auto;
   margin-right: auto;
   width: 100%;
-  max-width: 100%;
-  padding: 16px 12px;
+  max-width: 1560px;
+  padding: 20px 16px;
 
   @media (min-width: 768px) {
     padding: 24px;
   }
 
   @media (min-width: 1024px) {
-    padding: 24px 32px;
+    padding: 32px;
   }
 
   &--flush {
@@ -32,7 +33,13 @@ defineProps<{
     min-height: 0;
     width: 100%;
     overflow: hidden;
+    max-width: none;
     padding: 0;
+    @media (max-width: 960px) {
+      height: auto;
+      min-height: 100%;
+      overflow: visible;
+    }
   }
 }
 </style>

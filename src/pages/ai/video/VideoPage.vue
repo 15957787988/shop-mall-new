@@ -2,6 +2,10 @@
   <PageContainer flush>
     <div class="studio">
       <aside class="studio__form">
+        <header class="studio__form-heading">
+          <span class="studio__form-icon"><VideoCameraOutlined /></span>
+          <div><h1>视频创作</h1><p>描述画面与动作，结合参考素材生成新视频。</p></div>
+        </header>
         <div class="studio__form-scroll scroll-area">
           <section class="studio__section">
             <h3 class="studio__label">模型</h3>
@@ -79,6 +83,7 @@
                 :file-type="['mp4', 'mov']"
                 accept="video/mp4,video/quicktime,.mp4,.mov"
                 :before-upload-hook="beforeVideoUpload"
+                :before-library-select="validateLibraryVideos"
                 @update:model-value="refVideos = asUrlList($event)"
               />
             </div>
@@ -93,6 +98,7 @@
                 :file-type="['mp3', 'wav']"
                 accept="audio/mpeg,audio/wav,.mp3,.wav"
                 :before-upload-hook="beforeAudioUpload"
+                :before-library-select="validateLibraryAudios"
                 @update:model-value="refAudios = asUrlList($event)"
               />
             </div>
@@ -116,9 +122,15 @@
       </aside>
 
       <main class="studio__results scroll-area" ref="listEl">
+        <header class="studio__results-heading">
+          <div><h2>我的视频</h2><p>查看生成进度，预览和下载作品</p></div>
+          <span class="studio__result-count">{{ total }} 个作品</span>
+        </header>
         <div v-if="listLoading && !works.length" class="studio__empty">加载中…</div>
         <div v-else-if="!works.length" class="studio__empty">
-          还没有作品。左侧填写后生成，画布里的结果不会出现在这里。
+          <span class="studio__empty-icon"><VideoCameraOutlined /></span>
+          <strong>开始你的第一个视频作品</strong>
+          <span>填写提示词、选择模型后点击生成，结果会保存在这里。</span>
         </div>
         <article v-for="item in works" :key="item.id" class="studio__card">
           <div class="studio__card-body">
@@ -249,7 +261,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { VideoCameraOutlined, CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
@@ -565,6 +577,13 @@ async function assertRefAudios(urls: string[], maxTotal: number) {
 }
 
 // ponytail: 上传只拦单文件超长。多段合计在生成前再查，同批多选可能先传上再被拒。
+async function validateLibraryVideos(urls: string[]) {
+  if (currentModel.value) await assertRefVideos(urls, currentModel.value)
+}
+async function validateLibraryAudios(urls: string[]) {
+  await assertRefAudios(urls, maxAudioDuration.value)
+}
+
 const beforeVideoUpload: UploadProps['beforeUpload'] = async (file) => {
   if (!['mp4', 'mov'].includes(fileExt(file)) || file.size / 1024 / 1024 >= 50) return true
   try {

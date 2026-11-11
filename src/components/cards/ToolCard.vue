@@ -15,7 +15,9 @@
 
     <template v-else>
       <div :class="['tool-card__preview', gradientClass]">
-        <span v-if="hot" class="tool-card__badge tool-card__badge--hot tool-card__badge--left">热门</span>
+        <span v-if="hot" class="tool-card__badge tool-card__badge--hot tool-card__badge--left"
+          >热门</span
+        >
         <span v-if="isClosed" class="tool-card__badge tool-card__badge--closed">未开放</span>
         <ToolIcon :category="category" size="lg" />
       </div>
@@ -34,20 +36,18 @@ import { getToolPreviewGradient } from '@/lib/tool-preview'
 import { getToolHref } from '@/lib/tool-routes'
 import type { ToolCategory } from '@/mock/tools'
 
-const props = withDefaults(
-  defineProps<{
-    id: string
-    name: string
-    description: string
-    category: ToolCategory
-    href?: string
-    hot?: boolean
-    status?: 'open' | 'closed'
-    className?: string
-    variant?: 'tile' | 'compact'
-  }>(),
-  { variant: 'tile' }
-)
+interface Props {
+  id: string
+  name: string
+  description: string
+  category: ToolCategory
+  href?: string
+  hot?: boolean
+  status?: 'open' | 'closed'
+  className?: string
+  variant?: 'tile' | 'compact'
+}
+const props = withDefaults(defineProps<Props>(), { variant: 'tile' })
 
 const isClosed = computed(() => props.status === 'closed')
 const link = computed(() => props.href ?? getToolHref(props.id))
@@ -60,11 +60,12 @@ const gradientClass = computed(() => getToolPreviewGradient(props.category))
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 12px;
+  border: 1px solid var(--color-border-whisper);
+  border-radius: var(--radius-panel);
   background: var(--color-surface-0);
   box-shadow: var(--shadow-soft);
   text-decoration: none;
-  transition: all 0.2s;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 
   &:hover {
     transform: translateY(-2px);
@@ -77,7 +78,7 @@ const gradientClass = computed(() => getToolPreviewGradient(props.category))
 
     &:hover {
       box-shadow: var(--shadow-lift);
-      outline: 2px solid rgba(124, 58, 237, 0.2);
+      border-color: var(--color-accent-border);
     }
   }
 
@@ -97,7 +98,7 @@ const gradientClass = computed(() => getToolPreviewGradient(props.category))
   &__body {
     display: flex;
     flex-direction: column;
-    padding: 10px 12px;
+    padding: 16px 18px;
   }
 
   &__badge {

@@ -48,13 +48,13 @@ function handleRegenerated() {
 <style scoped lang="scss">
 .saleor-page {
   display: flex;
-  height: calc(100vh - 48px);
+  height: calc(100dvh - var(--app-header-height));
   flex-direction: column;
   overflow: hidden;
 
   &__head {
     flex-shrink: 0;
-    padding: 12px 16px 8px;
+    padding: 24px 24px 20px;
   }
 
   &__title {
@@ -68,12 +68,12 @@ function handleRegenerated() {
     display: flex;
     min-height: 0;
     flex: 1;
-    gap: 10px;
-    padding: 0 10px 10px;
+    gap: 24px;
+    padding: 0 24px 24px;
   }
 
   &__sidebar {
-    width: 370px;
+    width: 360px;
     flex-shrink: 0;
     min-height: 0;
   }
@@ -88,7 +88,7 @@ function handleRegenerated() {
 @media (max-width: 960px) {
   .saleor-page {
     height: auto;
-    min-height: calc(100vh - 48px);
+    min-height: calc(100dvh - var(--app-header-height));
     overflow: visible;
 
     &__body {

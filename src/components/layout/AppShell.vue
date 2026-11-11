@@ -5,7 +5,6 @@
     <div class="app-shell__main">
       <TopBar
         v-if="!isCanvasEditor"
-        :floating="isCanvasIndex"
         :on-menu-click="() => (sidebarOpen = true)"
         :unread-count="0"
         :is-logged-in="isLoggedIn"
@@ -19,7 +18,7 @@
 
       <main :class="['app-shell__content', { 'app-shell__content--workspace': isToolWorkspace, 'app-shell__content--canvas': isCanvasEditor, 'app-shell__content--gallery': isCanvasIndex }]">
         <slot />
-        <SiteFooter v-if="showFooter && !hideFooterOnToolPage && !isCanvas" />
+        <SiteFooter v-if="showFooter && showPageFooter" />
       </main>
     </div>
 
@@ -79,10 +78,10 @@ useLiveMemberInfo()
 
 const route = useRoute()
 const hideFooterOnToolPage = computed(
-  () => route.path.startsWith('/tools/') || route.path.startsWith('/ai/'),
+  () => route.path.startsWith('/tools/') || route.path.startsWith('/ai/') || route.path === '/video-replicate',
 )
 const isToolWorkspace = computed(() => hideFooterOnToolPage.value)
-const isCanvas = computed(() => route.path === '/canvas' || route.path.startsWith('/canvas/'))
+const showPageFooter = computed(() => ['/pricing', '/team', '/templates'].includes(route.path))
 const isCanvasEditor = computed(() => route.path === '/canvas')
 const isCanvasIndex = computed(() => route.path === '/canvas/index')
 
@@ -141,7 +140,8 @@ async function handleLogout() {
 .app-shell {
   display: flex;
   height: 100vh;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   overflow: hidden;
 
   &__main {
@@ -156,6 +156,7 @@ async function handleLogout() {
   &__content {
     flex: 1;
     min-height: 0;
+    scrollbar-width: thin;
     background: var(--color-surface-1);
     overflow: auto;
 
@@ -173,5 +174,8 @@ async function handleLogout() {
       background-size: 22px 22px;
     }
   }
+}
+@media (max-width: 960px) {
+  .app-shell__content--workspace { overflow-y: auto; }
 }
 </style>

@@ -1399,7 +1399,7 @@ html.consumer-theme .gallery .search-wrap .search-input:focus-visible {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 72px 40px 64px;
+  padding: 32px 32px 48px;
 }
 .gallery-top {
   display: flex;

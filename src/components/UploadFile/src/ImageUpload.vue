@@ -65,6 +65,22 @@
       <div class="image-upload__empty-desc">{{ emptyDesc || `同一产品，最多${maxCount}张` }}</div>
     </button>
 
+    <MediaSourceDialog
+
+      v-model:open="sourceOpen"
+
+      :kinds="['image']"
+
+      :max-count="remainingCount"
+
+      :exclude-urls="images.map((item) => item.url)"
+
+      @local="selectLocal"
+
+      @select="selectAssets"
+
+    />
+
     <Modal
       v-if="preview"
       v-model:open="previewVisible"
@@ -106,6 +122,9 @@ import { uploadFile } from '@/components/UploadFile/api'
 import { buildImageAccept, matchImageFileType } from '@/components/UploadFile/utils'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import MediaSourceDialog from '@/components/AssetLibrary/MediaSourceDialog.vue'
+import type { LibraryAsset } from '@/components/AssetLibrary/api'
+import { validateLibrarySelection } from '@/components/AssetLibrary/selection'
 
 interface UploadedImage {
   uid: string
@@ -158,6 +177,7 @@ const images = ref<UploadedImage[]>(
     uploading: false,
   }))
 )
+const sourceOpen = ref(false)
 const fileList = ref<UploadProps['fileList']>([])
 const uploadRef = ref<{ $el: HTMLElement } | null>(null)
 const lastSyncedUrls = ref('')
@@ -206,6 +226,33 @@ watch(
 )
 
 function triggerSelect() {
+  if (canUpload.value) sourceOpen.value = true
+}
+
+function selectAssets(assets: LibraryAsset[]) {
+  try {
+    const fresh = validateLibrarySelection(
+      assets,
+      images.value.map((item) => item.url),
+      props.maxCount,
+      props.fileType,
+      props.fileSize
+    )
+    for (const asset of fresh)
+      images.value.push({
+        uid: `asset-${asset.source}-${asset.id}`,
+        file: new File([], asset.name),
+        url: asset.url,
+        previewUrl: asset.url,
+        uploading: false,
+      })
+    sourceOpen.value = false
+  } catch (error) {
+    addToast(error instanceof Error ? error.message : '素材不可用', 'error')
+  }
+}
+
+function selectLocal() {
   uploadRef.value?.$el?.querySelector<HTMLInputElement>('input[type="file"]')?.click()
 }
 

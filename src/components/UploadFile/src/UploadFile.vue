@@ -1,5 +1,13 @@
 <template>
-  <div class="upload-file" :class="$attrs.class">
+  <div :id="inputId" class="upload-file" :class="$attrs.class">
+    <MediaSourceDialog
+      v-model:open="sourceOpen"
+      :kinds="libraryKinds"
+      :max-count="Math.max(0, limit - fileList.length)"
+      :exclude-urls="fileList.map((item) => item.url || '')"
+      @local="selectLocal"
+      @select="selectAssets"
+    />
     <Upload.Dragger
       v-if="drag"
       v-model:file-list="fileList"
@@ -8,13 +16,16 @@
       :max-count="limit"
       :multiple="limit > 1"
       :show-upload-list="true"
+      :open-file-dialog-on-click="false"
       :before-upload="beforeUpload"
       :custom-request="customRequest"
       @remove="handleRemove"
     >
+      <div role="button" tabindex="0" @click.stop="openSources" @keydown.enter.prevent.stop="openSources" @keydown.space.prevent.stop="openSources">
       <slot>
         <p class="upload-file__default-text">点击或拖拽上传文件</p>
       </slot>
+      </div>
     </Upload.Dragger>
 
     <Upload
@@ -25,13 +36,16 @@
       :max-count="limit"
       :multiple="limit > 1"
       :show-upload-list="true"
+      :open-file-dialog-on-click="false"
       :before-upload="beforeUpload"
       :custom-request="customRequest"
       @remove="handleRemove"
     >
+      <div role="button" tabindex="0" @click.stop="openSources" @keydown.enter.prevent.stop="openSources" @keydown.space.prevent.stop="openSources">
       <slot>
         <Button type="primary">选取文件</Button>
       </slot>
+      </div>
     </Upload>
 
     <div v-if="isShowTip" class="upload-file__tip">
@@ -46,6 +60,9 @@ import { Upload, Button } from 'ant-design-vue'
 import type { UploadFile, UploadProps } from 'ant-design-vue'
 import { uploadFile } from '@/components/UploadFile/api'
 import { useToast } from '@/composables/useToast'
+import MediaSourceDialog from '@/components/AssetLibrary/MediaSourceDialog.vue'
+import type { LibraryAsset } from '@/components/AssetLibrary/api'
+import { validateLibrarySelection } from '@/components/AssetLibrary/selection'
 
 defineOptions({ name: 'UploadFile' })
 
@@ -60,6 +77,7 @@ const props = withDefaults(
     disabled?: boolean
     accept?: string
     beforeUploadHook?: UploadProps['beforeUpload']
+    beforeLibrarySelect?: (urls: string[]) => Promise<void>
   }>(),
   {
     fileType: () => ['doc', 'xls', 'ppt', 'txt', 'pdf'],
@@ -80,6 +98,57 @@ const emit = defineEmits<{
 const { addToast } = useToast()
 const fileList = ref<UploadFile[]>([])
 const uploading = ref(false)
+const sourceOpen = ref(false)
+const libraryKinds = computed<LibraryAsset['kind'][]>(() => {
+  const types = props.fileType.join(',').toLowerCase()
+  return (['image', 'video', 'audio'] as const).filter((kind) =>
+    ({
+      image: /image|jpg|jpeg|png|webp|gif/,
+      video: /video|mp4|mov|webm/,
+      audio: /audio|mp3|wav|m4a|ogg/,
+    }[kind].test(types))
+  )
+})
+function openSources() {
+  if (props.disabled || uploading.value || fileList.value.length >= props.limit) return
+  if (!libraryKinds.value.length) selectLocal()
+  else sourceOpen.value = true
+}
+function selectLocal() {
+  document.querySelector<HTMLInputElement>(`#${inputId} input[type="file"]`)?.click()
+}
+const inputId = `media-upload-${Math.random().toString(36).slice(2)}`
+async function selectAssets(assets: LibraryAsset[]) {
+  if (props.disabled || uploading.value) return
+  uploading.value = true
+  try {
+    const fresh = validateLibrarySelection(
+      assets,
+      fileList.value.map((file) => file.url || ''),
+      props.limit,
+      props.fileType,
+      props.fileSize
+    )
+    await props.beforeLibrarySelect?.(
+      [...fileList.value.map((file) => file.url || ''), ...fresh.map((asset) => asset.url)].filter(
+        Boolean
+      )
+    )
+    for (const asset of fresh)
+      fileList.value.push({
+        uid: `asset-${asset.source}-${asset.id}`,
+        name: asset.name,
+        status: 'done',
+        url: asset.url,
+      })
+    emitUpdateModelValue()
+    sourceOpen.value = false
+  } catch (error) {
+    addToast(error instanceof Error ? error.message : '素材不可用', 'error')
+  } finally {
+    uploading.value = false
+  }
+}
 
 const resolvedAccept = computed(() => props.accept || props.fileType.join(','))
 

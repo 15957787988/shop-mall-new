@@ -4,6 +4,7 @@
       <button type="button" class="top-bar__menu-btn" aria-label="打开菜单" @click="onMenuClick">
         <MenuOutlined />
       </button>
+      <span v-if="!floating" class="top-bar__page-name">{{ pageName }}</span>
     </div>
 
     <div class="top-bar__actions">
@@ -47,12 +48,13 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { MenuOutlined, StarOutlined, BellOutlined } from '@ant-design/icons-vue'
 import UserMenu from '@/components/features/UserMenu.vue'
 import CreditDetailModal from '@/components/features/CreditDetailModal.vue'
 import type { MemberInfo } from '@/components/layout/api'
 
-const props = defineProps<{
+interface Props {
   onMenuClick: () => void
   unreadCount: number
   isLoggedIn: boolean
@@ -63,8 +65,18 @@ const props = defineProps<{
   onLoginClick: () => void
   onLogoutClick: () => void
   floating?: boolean
-}>()
+}
+const props = defineProps<Props>()
 
+const route = useRoute()
+const pageNames: Record<string, string> = {
+  CanvasIndex: '无限画布', Home: '创作工作台', Space: '我的作品', Team: '设计服务', AgentLib: '资产库',
+  Recent: '最近打开', Search: '搜索', Tools: '创作工具', AiProductImage: '商品套图',
+  VideoReplicate: '爆款复刻', ViralVideos: '视频制作', AiImage: 'AI 制图', AiVideo: 'AI 视频',
+  TryOn: 'AI 试穿', ToolDetail: '创作工具', Templates: '模板中心',
+  TemplateDetail: '模板详情', Workspace: '创作工作区', Pricing: '积分与套餐',
+}
+const pageName = computed(() => pageNames[String(route.name)] || '电商工作室')
 const chargeOpen = ref(false)
 const displayPoint = computed(() => props.userInfo?.point ?? 0)
 const displayUserName = computed(() => props.userInfo?.nickname)
@@ -75,13 +87,14 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
 .top-bar {
   z-index: 30;
   display: flex;
-  height: 48px;
+  height: var(--app-header-height);
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 0 12px;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--color-border-whisper);
+  background: var(--color-surface-0);
 
   @media (min-width: 768px) {
     padding: 0 24px;
@@ -91,6 +104,13 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
     display: flex;
     min-width: 0;
     align-items: center;
+  }
+
+  &__page-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-ink-primary);
+    white-space: nowrap;
   }
 
   &__menu-btn {
@@ -126,6 +146,7 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
     padding: 0;
     background: transparent;
     box-shadow: none;
+    border-bottom: 0;
 
     @media (max-width: 767px) {
       right: 12px;
@@ -146,72 +167,34 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
 
   &__credit-pill {
     display: flex;
-    height: 32px;
+    height: 36px;
     align-items: center;
     border: 1px solid var(--color-border-whisper);
-    border-radius: 9999px;
+    border-radius: 10px;
     overflow: hidden;
     background: var(--color-surface-0);
-    box-shadow: var(--shadow-soft);
+    box-shadow: none;
   }
 
-  &__detail-btn,
-  &__credit-btn,
-  &__vip-btn {
+  &__detail-btn, &__credit-btn {
     display: inline-flex;
-    height: 100%;
     align-items: center;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    transition: background 0.2s;
-
-    // &:hover {
-    //   background: var(--color-surface-2);
-    // }
-  }
-
-  &__detail-btn {
+    flex-shrink: 0;
+    height: 100%;
     padding: 0 12px;
-    font-size: 13px;
-    font-weight: 500;
+    gap: 6px;
+    border: 0;
+    background: transparent;
     color: var(--color-ink-primary);
-    white-space: nowrap;
-
-    &:hover {
-      color: var(--color-creative-violet);
-    }
-  }
-
-  &__credit-btn {
-    gap: 4px;
-    padding: 0 10px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--color-creative-violet);
-  }
-
-  &__credit-icon {
-    font-size: 14px;
-    color: var(--color-warning-amber);
-  }
-
-  &__credit-divider {
-    width: 1px;
-    height: 11px;
-    background: var(--color-border-whisper);
-  }
-
-  &__vip-btn {
-    padding: 0 12px 0 8px;
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
-    background-image: linear-gradient(91deg, #7c5cff 0%, #5ddbf1 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
+    cursor: pointer;
+    &:hover { background: var(--color-accent-soft); }
   }
+  &__credit-btn { color: var(--color-creative-violet); font-weight: 600; }
+  &__credit-icon { color: var(--color-warning-amber); font-size: 15px; }
+  &__credit-divider { width: 1px; height: 14px; background: var(--color-border-whisper); }
 
   &__message-btn {
     position: relative;
@@ -246,7 +229,12 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
     padding: 0 4px;
     font-size: 10px;
     font-weight: 500;
-    color: #fff;
+    color: var(--color-on-media);
   }
+}
+@media (max-width: 520px) {
+  .top-bar__page-name { display: none; }
+  .top-bar__detail-btn { padding-inline: 8px; font-size: 12px; }
+  .top-bar__credit-btn { padding-inline: 8px; font-size: 12px; }
 }
 </style>

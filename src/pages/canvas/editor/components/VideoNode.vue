@@ -13,6 +13,10 @@ import NodeGenerationHistory from './NodeGenerationHistory.vue'
 import NodeAddButton from './NodeAddButton.vue'
 import NodeGenLoading from './NodeGenLoading.vue'
 import ReplaceMediaMenu from './ReplaceMediaMenu.vue'
+import MediaSourceDialog from '@/components/AssetLibrary/MediaSourceDialog.vue'
+import { validateLibrarySelection } from '@/components/AssetLibrary/selection'
+import { useRoute } from 'vue-router'
+import { readAssetDuration } from '@/components/AssetLibrary/mediaMetadata'
 
 const props = defineProps({
   id: String,
@@ -30,6 +34,8 @@ const message = useMessage()
 const { getNodes, updateNodeInternals } = useVueFlow()
 const uploading = ref(false)
 const fileInputRef = ref(null)
+const sourceOpen = ref(false)
+const route = useRoute()
 const isUploading = computed(() => uploading.value || !!props.data?.uploading)
 const fileName = ref(props.data.fileName || '')
 const videoAspect = ref('')
@@ -168,7 +174,26 @@ async function onLocalUpload(file) {
 }
 
 function triggerLocalUpload() {
-  fileInputRef.value?.click()
+  if (store.canEditNode(props.id)) sourceOpen.value = true
+}
+
+async function selectLibraryAssets(assets) {
+  if (disposed || !store.canEditNode(props.id)) return
+  uploading.value = true
+  try {
+    const [asset] = validateLibrarySelection(assets, [], 1, ['mp4', 'mov'], 50)
+    if (!asset) return
+    const dur = await readAssetDuration(asset.url, 'video')
+    const error = validateVideoUpload(dur, 0)
+    if (error) throw new Error(error)
+    if (disposed || !store.canEditNode(props.id)) return
+    await applyMediaUrl(asset.url, asset.name, dur, true)
+    sourceOpen.value = false
+  } catch (error) {
+    message.error(error.message || '素材不可用')
+  } finally {
+    uploading.value = false
+  }
 }
 
 function onLocalFileChange(e) {
@@ -278,6 +303,14 @@ const wrapStyle = computed(() =>
         "
         label="替换视频"
         @upload="triggerLocalUpload"
+      />
+      <MediaSourceDialog
+        v-model:open="sourceOpen"
+        :kinds="['video']"
+        :max-count="1"
+        :project-id="String(route.query.projectId || '')"
+        @local="fileInputRef?.click()"
+        @select="selectLibraryAssets"
       />
       <input
         ref="fileInputRef"

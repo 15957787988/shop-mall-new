@@ -26,9 +26,10 @@ import { ArrowRightOutlined } from '@ant-design/icons-vue'
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 16px 20px;
+    padding: 28px;
     border-radius: 12px;
-    background: linear-gradient(135deg, #f5f0e6 0%, #efe7f6 100%);
+    border: 1px solid var(--color-accent-border);
+    background: var(--color-accent-soft);
     text-decoration: none;
     transition: transform 0.2s, box-shadow 0.2s;
 
@@ -42,16 +43,20 @@ import { ArrowRightOutlined } from '@ant-design/icons-vue'
     }
   }
 
+  @media (max-width: 600px) {
+    &__card { align-items: flex-start; flex-direction: column; padding: 24px; }
+  }
+
   &__title {
     margin: 0;
-    font-size: 14px;
+    font-size: 19px;
     font-weight: 600;
     color: var(--color-ink-primary);
   }
 
   &__desc {
     margin: 4px 0 0;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--color-ink-secondary);
   }
 
@@ -60,9 +65,9 @@ import { ArrowRightOutlined } from '@ant-design/icons-vue'
     flex-shrink: 0;
     align-items: center;
     gap: 4px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
-    color: #6d28d9;
+    color: var(--color-creative-violet);
   }
 }
 </style>
