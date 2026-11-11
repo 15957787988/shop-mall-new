@@ -156,6 +156,7 @@ async function handleLogout() {
   &__content {
     flex: 1;
     min-height: 0;
+    min-width: 0;
     scrollbar-width: thin;
     background: var(--color-surface-1);
     overflow: auto;
@@ -175,7 +176,7 @@ async function handleLogout() {
     }
   }
 }
-@media (max-width: 960px) {
+@media (max-width: 960px), (max-height: 600px) {
   .app-shell__content--workspace { overflow-y: auto; }
 }
 </style>

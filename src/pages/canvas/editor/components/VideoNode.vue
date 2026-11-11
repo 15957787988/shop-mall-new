@@ -41,7 +41,37 @@ const fileName = ref(props.data.fileName || '')
 const videoAspect = ref('')
 const videoRef = ref(null)
 const coverVisible = ref(!!props.data?.poster)
+const pointerLeft = ref(false)
 useCanvasVideo(videoRef, props.id)
+
+function playSelectedVideo() {
+  if (!props.selected || pointerLeft.value) return
+  videoRef.value?.play()?.catch(() => {})
+}
+
+watch(
+  [videoRef, () => props.selected],
+  ([video, selected], previous = []) => {
+    if (selected && !previous[1]) pointerLeft.value = false
+    if (!video) return
+    if (selected) {
+      playSelectedVideo()
+    } else {
+      video.pause()
+    }
+  },
+  { immediate: true, flush: 'post' }
+)
+
+function onVideoEnter() {
+  pointerLeft.value = false
+  playSelectedVideo()
+}
+
+function onVideoLeave() {
+  pointerLeft.value = true
+  videoRef.value?.pause()
+}
 
 watch(
   () => [props.data?.src, props.data?.poster],
@@ -51,11 +81,14 @@ watch(
 )
 
 function playFromCover() {
-  coverVisible.value = false
-  videoRef.value?.play()
+  playSelectedVideo()
 }
 
 function onVideoPlay() {
+  if (!props.selected || pointerLeft.value) {
+    videoRef.value?.pause()
+    return
+  }
   coverVisible.value = false
 }
 
@@ -269,7 +302,11 @@ const wrapStyle = computed(() =>
 </script>
 
 <template>
-  <div :class="['canvas-node', 'video-node', { selected }]">
+  <div
+    :class="['canvas-node', 'video-node', { selected }]"
+    @mouseenter="onVideoEnter"
+    @mouseleave="onVideoLeave"
+  >
     <Handle v-if="showTargetHandle" id="tl" type="target" :position="Position.Left" />
     <NodeAddButton v-if="showTargetHandle" :id="id" :source-type="type" side="left" />
 
@@ -333,6 +370,8 @@ const wrapStyle = computed(() =>
             :poster="data.poster || undefined"
             class="node-video nodrag nopan nowheel"
             controls
+            muted
+            loop
             playsinline
             preload="auto"
             @loadedmetadata="onVideoMeta"
@@ -345,7 +384,7 @@ const wrapStyle = computed(() =>
             class="node-poster nodrag nopan nowheel"
             alt=""
             referrerpolicy="no-referrer"
-            @click.stop="playFromCover"
+            @click="playFromCover"
             @error="coverVisible = false"
           />
           <div class="vid-controls">

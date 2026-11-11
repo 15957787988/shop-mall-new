@@ -129,7 +129,9 @@ export function resolveAssetWallForNode(node, nodes, edges) {
   if (!node) return []
   const fromEdges = recomputeAssetWallFromEdges(node.id, nodes, edges)
   const localOnly = (node.data?.assetWall || []).filter(
-    (item) => item.source === 'upload',
+    (item) => item.source === 'upload' && (
+      !item.linkedNodeId || fromEdges.some((asset) => asset.nodeId === item.linkedNodeId)
+    ),
   )
   return mergeAssetWalls(fromEdges, localOnly)
 }

@@ -1,6 +1,7 @@
 <template>
   <Modal
     class="media-source-modal"
+    :class="{ 'asset-picker-modal': library }"
     :open="open"
     :title="library ? '从资产库选择' : '选择上传方式'"
     :width="library ? 1080 : 640"
@@ -45,15 +46,16 @@ interface Props {
   maxCount: number
   projectId?: string
   excludeUrls?: string[]
+  libraryOnly?: boolean
 }
 const props = withDefaults(defineProps<Props>(), { projectId: '', excludeUrls: () => [] })
 const emit =
   defineEmits<{ 'update:open': [value: boolean]; local: []; select: [assets: LibraryAsset[]] }>()
-const library = ref(false)
+const library = ref(props.libraryOnly)
 watch(
   () => props.open,
   () => {
-    library.value = false
+    library.value = props.libraryOnly
   }
 )
 function local() {

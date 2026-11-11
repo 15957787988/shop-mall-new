@@ -22,7 +22,7 @@
         </div>
         <div class="asset-library__actions">
           <Button :loading="loading" @click="load">刷新</Button>
-          <Button v-if="!selectable" type="primary" @click="uploadInput?.click()"
+          <Button type="primary" :loading="uploading" :disabled="!isLoggedIn" @click="uploadInput?.click()"
             ><UploadOutlined />上传素材</Button
           >
           <input
@@ -165,7 +165,7 @@
           <Button @click="emit('cancel')">取消</Button>
           <Button
             type="primary"
-            :disabled="!selected.length || loading"
+            :disabled="!selected.length || loading || uploading"
             @click="emit('select', [...selected])"
             >添加</Button
           >
@@ -215,6 +215,7 @@ const scope = ref('all')
 const pageNo = ref(1)
 const total = ref(0)
 const loading = ref(false)
+const uploading = ref(false)
 const error = ref('')
 const items = ref<LibraryAsset[]>([])
 const selected = ref<LibraryAsset[]>([])
@@ -258,7 +259,9 @@ function rememberDuration(asset: LibraryAsset, event: Event) {
     durations.value[key(asset)] = `${Number(seconds.toFixed(1))}s`
 }
 let seq = 0
+let disposed = false
 onBeforeUnmount(() => {
+  disposed = true
   stopPreview()
   seq += 1
 })
@@ -344,22 +347,25 @@ async function upload(event: Event) {
   const input = event.target as HTMLInputElement
   const files = Array.from(input.files || [])
   input.value = ''
+  if (uploading.value || !files.length || !isLoggedIn.value) return
   let count = 0
   const session = sessionVersion.value
   const kinds = [...uploadKinds.value]
-  loading.value = true
+  uploading.value = true
   for (const file of files) {
-    if (session !== sessionVersion.value || !isLoggedIn.value) break
+    if (disposed || session !== sessionVersion.value || !isLoggedIn.value) break
     try {
       if (!matchesLibraryUpload(file.name, kinds))
         throw new Error(`${file.name} 格式不符合当前类型，仅支持 ${libraryUploadAccept(kinds)}`)
       if (file.size > 50 * 1024 * 1024) throw new Error(`${file.name} 超过 50MB，请压缩后上传`)
-      await uploadFile(file)
+      await uploadFile(file, undefined, { saveToLibrary: true })
       count += 1
     } catch (e) {
       addToast(e instanceof Error ? e.message : `${file.name} 上传失败`, 'error')
     }
   }
+  uploading.value = false
+  if (disposed || session !== sessionVersion.value || !isLoggedIn.value) return
   if (count) {
     scope.value = 'all'
     pageNo.value = 1

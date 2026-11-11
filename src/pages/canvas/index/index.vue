@@ -1488,8 +1488,11 @@ html.consumer-theme .gallery .search-wrap .search-input:focus-visible {
   color: inherit;
 }
 .card-grid {
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 24px 18px;
+  width: 100%;
+  max-width: var(--layout-content-width);
+  margin-inline: auto;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 28px 24px;
 }
 .tpl-card {
   background: transparent;

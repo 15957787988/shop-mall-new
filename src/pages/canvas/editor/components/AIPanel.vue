@@ -60,7 +60,7 @@
     </div>
 
     <!-- ── Prompt area ── -->
-    <div class="prompt-wrap">
+    <div class="prompt-wrap" :class="{ 'is-composing': promptComposing }">
       <div
         ref="promptHighlightRef"
         class="prompt-highlight"
@@ -74,6 +74,8 @@
         class="prompt-input"
         :placeholder="PROMPT_PLACEHOLDER"
         @input="onPromptInput"
+        @compositionstart="onPromptCompositionStart"
+        @compositionend="onPromptCompositionEnd"
         @scroll="syncPromptHighlight"
         @keydown="onPromptKeydown"
         @focus="onPromptFocus"
@@ -406,18 +408,26 @@ const { findNode, getNodes, getViewport, onViewportChange, updateNodeInternals }
 
 // ── Assets ───────────────────────────────────────────────────────────────────
 const assets = ref([])
-const {
-  items: uploadedAssets,
-  canAddAny,
-  uploadFiles,
-  removeItem: removeUploaded,
-  addLibraryItem,
-  setLinkedNodeId,
-  updateItem: updateUploaded,
-  clear: clearUploaded,
-  mergeReplaceItems,
-  setConfig: setUploadConfig,
-} = useMediaAssetUpload()
+// 上传草稿按项目和节点隔离；异步上传也始终回到发起它的节点。
+const uploadDrafts = new Map()
+const activeUpload = computed(() => {
+  const key = JSON.stringify([props.projectId, activePanelNodeId.value])
+  if (!uploadDrafts.has(key)) uploadDrafts.set(key, useMediaAssetUpload())
+  return uploadDrafts.get(key)
+})
+const uploadedAssets = computed(() => activeUpload.value.items.value)
+const canAddAny = () => activeUpload.value.canAddAny()
+const uploadFiles = (files) => activeUpload.value.uploadFiles(files)
+const removeUploaded = (id) => activeUpload.value.removeItem(id)
+const addLibraryItem = (item) => activeUpload.value.addLibraryItem(item)
+const setLinkedNodeId = (id, nodeId) => activeUpload.value.setLinkedNodeId(id, nodeId)
+const updateUploaded = (id, patch) => activeUpload.value.updateItem(id, patch)
+const clearUploaded = () => activeUpload.value.clear()
+const mergeReplaceItems = (uploads, linkedIds) =>
+  activeUpload.value.mergeReplaceItems(uploads, linkedIds)
+const setUploadConfig = (config) => activeUpload.value.setConfig(config)
+
+watch(() => props.projectId, () => uploadDrafts.clear(), { flush: 'sync' })
 
 const displayAssets = computed(() => {
   const nodeItems = assets.value.map((a) => ({
@@ -686,6 +696,7 @@ const originalPanelVisible = computed(() => {
 })
 
 const promptText = ref('')
+const promptComposing = ref(false)
 
 function buildAssetFromNode(node) {
   const kind = getKind(node.type)
@@ -1285,7 +1296,19 @@ function selectMentionItem(asset) {
   })
 }
 
+function onPromptCompositionStart() {
+  promptComposing.value = true
+  closeMention()
+}
+
+function onPromptCompositionEnd(event) {
+  promptText.value = event.target.value
+  promptComposing.value = false
+  syncPromptHighlight()
+}
+
 function onPromptInput(event) {
+  if (promptComposing.value || event?.isComposing) return
   detectMention(event?.target?.value ?? promptText.value)
 }
 
@@ -1294,12 +1317,14 @@ function onPromptFocus() {
 }
 
 function onPromptBlur() {
+  promptComposing.value = false
   promptFocused.value = false
   flushPanelToNode()
   setTimeout(closeMention, 150)
 }
 
 function onPromptKeydown(e) {
+  if (promptComposing.value || e.isComposing || e.keyCode === 229) return
   if (removeMentionTokens(e)) return
   if (mentionActive.value && mentionItems.value.length) {
     if (e.key === 'ArrowDown') {
@@ -3215,6 +3240,17 @@ const panelStyle = computed(() => {
   }
 }
 
+// 中文选词期间 v-model 暂不更新，高亮层不能代替原生输入显示。
+.prompt-wrap.is-composing {
+  .prompt-input {
+    color: $text-primary;
+    -webkit-text-fill-color: $text-primary;
+  }
+  .prompt-highlight {
+    visibility: hidden;
+  }
+}
+
 .mention-drop {
   position: absolute;
   z-index: 20;
@@ -3289,20 +3325,23 @@ const panelStyle = computed(() => {
 }
 
 .duration-slider {
-  :deep(.el-slider__runway) {
+  :deep(.ant-slider-rail),
+  &:hover :deep(.ant-slider-rail) {
     height: 4px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba($text-primary, 0.35);
   }
 
-  :deep(.el-slider__bar) {
-    background: $accent-primary;
+  :deep(.ant-slider-track),
+  &:hover :deep(.ant-slider-track) {
+    background: var(--color-on-media);
   }
 
-  :deep(.el-slider__button) {
-    width: 14px;
-    height: 14px;
-    border: none;
-    background: $accent-primary;
+  :deep(.ant-slider-handle::after),
+  :deep(.ant-slider-handle:hover::after),
+  :deep(.ant-slider-handle:active::after),
+  :deep(.ant-slider-handle:focus::after) {
+    background: var(--color-on-media);
+    box-shadow: 0 0 0 2px var(--color-on-media);
   }
 }
 

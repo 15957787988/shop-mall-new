@@ -2,10 +2,11 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-width: 1560px;
+  width: 100%;
+  max-width: var(--layout-content-width);
   min-height: 0;
   margin: 0 auto;
-  padding: 24px;
+  padding: var(--layout-gap);
   color: var(--color-ink-primary);
   &__header {
     display: flex;
@@ -64,8 +65,8 @@
   }
   &__layout {
     display: grid;
-    grid-template-columns: 360px minmax(0, 1fr);
-    gap: 24px;
+    grid-template-columns: var(--layout-form-width) minmax(0, 1fr);
+    gap: var(--layout-gap);
     flex: 1;
     min-height: 0;
   }
@@ -319,27 +320,15 @@
     height: 44px;
     border-radius: 8px;
   }
-  &__prompt-modal {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  &__prompt-modal :deep(textarea.ant-input) {
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--color-ink-primary);
-  }
-  &__prompt-copy {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    align-self: flex-end;
-    border: 1px solid var(--color-border-whisper);
-    border-radius: 8px;
-    background: var(--color-surface-0);
-    padding: 6px 14px;
-    color: var(--color-ink-primary);
-    cursor: pointer;
+  &__prompt-editor {
+    display: grid;
+    gap: 8px;
+    :deep(textarea.ant-input) {
+      font-size: 14px;
+      line-height: 1.7;
+      resize: vertical;
+    }
+    > .ant-btn { justify-self: end; }
   }
   &__cost {
     text-align: center;
@@ -366,8 +355,10 @@
       flex-wrap: wrap;
     }
   }
-  @media (max-width: 760px) {
-    overflow-y: auto;
+  @media (max-width: 960px), (max-height: 600px) {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
     display: block;
     &__header {
       margin-bottom: 14px;
@@ -377,6 +368,7 @@
       flex-direction: column;
     }
     &__materials-scroll {
+      flex: none;
       overflow: visible;
     }
     &__materials {

@@ -240,8 +240,8 @@
     }
     .asset-library__grid {
       grid-template-columns: repeat(auto-fill, 156px);
-      min-height: 320px;
-      max-height: 55vh;
+      min-height: min(320px, 35dvh);
+      max-height: min(520px, calc(100dvh - 300px));
       align-content: start;
       gap: 16px;
     }
@@ -331,7 +331,7 @@
     }
     &--selectable .asset-library__grid {
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      min-height: 240px;
+      min-height: min(240px, 30dvh);
     }
     &__grid {
       gap: 12px;

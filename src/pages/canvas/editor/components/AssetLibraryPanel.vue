@@ -1,5 +1,7 @@
 <template>
   <Modal
+    class="asset-picker-modal"
+    centered
     :open="visible"
     title="画布资产库"
     width="1080px"

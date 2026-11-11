@@ -7,16 +7,33 @@
     @drop.prevent.stop="onDrop"
   >
     <input ref="fileInput" type="file" :accept="accept" multiple hidden @change="onChange" />
-    <button
-      type="button"
-      class="asset-add-btn"
+    <Dropdown
+      v-model:open="uploadMenuOpen"
+      :trigger="['click']"
+      placement="bottomLeft"
       :disabled="!canAdd || validating"
-      @click="sourceOpen = true"
     >
-      <span>＋</span><span>添加</span>
-    </button>
+      <button
+        type="button"
+        class="asset-add-btn"
+        :disabled="!canAdd || validating"
+        aria-label="添加参考素材"
+        aria-haspopup="menu"
+        :aria-expanded="uploadMenuOpen"
+      >
+        <PlusOutlined />
+        <span>添加</span>
+      </button>
+      <template #overlay>
+        <Menu class="asset-upload-menu" @click="chooseSource">
+          <MenuItem key="local">本地上传</MenuItem>
+          <MenuItem key="library">资产库上传</MenuItem>
+        </Menu>
+      </template>
+    </Dropdown>
     <MediaSourceDialog
       v-model:open="sourceOpen"
+      library-only
       :kinds="kinds"
       :max-count="remaining"
       :project-id="String(route.query.projectId || '')"
@@ -28,6 +45,8 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { Dropdown, Menu, MenuItem } from 'ant-design-vue'
+import { PlusOutlined } from '@ant-design/icons-vue'
 import MediaSourceDialog from '@/components/AssetLibrary/MediaSourceDialog.vue'
 import { validateLibrarySelection } from '@/components/AssetLibrary/selection'
 import { readAssetDuration } from '@/components/AssetLibrary/mediaMetadata'
@@ -53,7 +72,13 @@ const route = useRoute()
 const message = useMessage()
 const fileInput = ref(null)
 const sourceOpen = ref(false)
+const uploadMenuOpen = ref(false)
 const validating = ref(false)
+function chooseSource({ key }) {
+  uploadMenuOpen.value = false
+  if (key === 'local') fileInput.value?.click()
+  else sourceOpen.value = true
+}
 const limits = computed(() => ({
   image: props.maxImages,
   video: props.maxVideos,
@@ -158,20 +183,50 @@ async function selectAssets(assets) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   width: 52px;
   height: 52px;
-  border: 1px dashed var(--color-border-whisper);
-  border-radius: 8px;
-  background: var(--color-surface-1);
-  color: var(--color-creative-violet);
+  padding: 0;
+  border: 1px dashed rgba($accent-text, 0.85);
+  border-radius: $radius-md;
+  background: $bg-deep;
+  color: $accent-text;
+  font-size: 12px;
+  line-height: 1;
   cursor: pointer;
-  span:last-child {
-    font-size: 12px;
+  transition: $transition-fast;
+  :deep(.anticon) {
+    font-size: 18px;
+  }
+  &:hover:not(:disabled) {
+    border-color: $accent-text;
+    background: rgba($accent-primary, 0.12);
+  }
+  &:focus-visible {
+    outline: 2px solid $accent-text;
+    outline-offset: 3px;
   }
   &:disabled {
     cursor: not-allowed;
     opacity: 0.5;
+  }
+}
+.asset-upload-menu {
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid $border-default;
+  border-radius: $radius-xl;
+  background: $bg-surface;
+  :deep(.ant-dropdown-menu-item) {
+    padding: 10px 14px;
+    border-radius: $radius-md;
+    color: $text-primary;
+    font-size: 14px;
+    &:hover,
+    &.ant-dropdown-menu-item-active {
+      background: $border-default;
+      color: $text-primary;
+    }
   }
 }
 </style>

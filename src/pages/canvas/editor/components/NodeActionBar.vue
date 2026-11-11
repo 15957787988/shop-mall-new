@@ -1,5 +1,8 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
+import { FileTextOutlined } from '@ant-design/icons-vue'
+import { analyzeReplicatePrompt } from '@/pages/tools/VideoReplicate/api'
 import { Download, View, FullScreen } from '../../shims/icons'
 import { storeToRefs } from 'pinia'
 import { useVueFlow } from '@vue-flow/core'
@@ -13,6 +16,10 @@ import { applyPlaybackPosition } from '../../utils/canvasPlayback'
 const props = defineProps({ readonly: Boolean })
 const store = useFlowStore()
 const message = useMessage()
+const route = useRoute()
+const reversingNodes = ref(new Set())
+let disposed = false
+onBeforeUnmount(() => { disposed = true })
 const { nodes, activePanelNodeId } = storeToRefs(store)
 const { findNode, getViewport, onViewportChange, getNodes } = useVueFlow()
 const imageDownloader = useDownloader()
@@ -93,6 +100,40 @@ const barStyle = computed(() => {
 
 const isVideo = computed(() => mediaNode.value?.type?.includes('video'))
 const hasMedia = computed(() => !!mediaNode.value?.data?.src)
+const reversing = computed(() => reversingNodes.value.has(mediaNode.value?.id))
+
+async function reverseVideoPrompt() {
+  const source = mediaNode.value
+  if (props.readonly || !isVideo.value || !source?.data?.src || reversing.value) return
+  const id = source.id
+  const videoUrl = source.data.src
+  const projectId = route.query.projectId
+  reversingNodes.value.add(id)
+  try {
+    const content = (await analyzeReplicatePrompt({ videoUrl, replacements: [] })).trim()
+    if (!content) throw new Error('未返回提示词，请重试')
+    // 结果只写回原画布，避免切换项目或删除、更换视频后误插入节点。
+    const current = nodes.value.find((node) => node.id === id)
+    if (disposed || props.readonly || route.query.projectId !== projectId
+        || current?.data?.src !== videoUrl) return
+    const live = findNode(id) ?? current
+    const width = live.dimensions?.width || parseFloat(live.style?.width) || 320
+    const result = store.addNodeOfType('textNode', {
+      x: live.position.x + width + 80,
+      y: live.position.y,
+    }, getNodes.value)
+    if (!result) throw new Error('无法创建文本节点，请检查画布编辑权限')
+    store.updateNodeData(result.id, {
+      label: '视频反推提示词', content, outputValue: content,
+    }, getNodes.value)
+    message.success('反推完成，已添加文本节点')
+  } catch (error) {
+    if (!disposed && route.query.projectId === projectId)
+      message.error(error.message || '视频反推失败，请稍后重试')
+  } finally {
+    reversingNodes.value.delete(id)
+  }
+}
 
 const textCharCount = computed(() => (textNode.value?.data?.content || '').length)
 
@@ -196,6 +237,16 @@ function saveExpand() {
         </button>
       </template>
       <template v-else>
+        <button
+          v-if="isVideo && !readonly"
+          class="nab-btn"
+          :disabled="!hasMedia || reversing"
+          :aria-busy="reversing"
+          @click="reverseVideoPrompt"
+        >
+          <FileTextOutlined class="nab-icon" aria-hidden="true" />
+          {{ reversing ? '反推中…' : '反推提示词' }}
+        </button>
         <!-- <button class="nab-btn nab-btn-danger" title="删除节点" @click="deleteNode">🗑 删除</button> -->
         <button class="nab-btn" title="下载" :disabled="!hasMedia" @click="doDownload">
           <Download class="nab-icon" aria-hidden="true" />下载

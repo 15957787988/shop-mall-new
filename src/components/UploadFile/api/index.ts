@@ -5,9 +5,14 @@ import http from '@/service/http'
  * @param file 文件对象
  * @param directory 可选的目录前缀
  */
-export async function uploadFile(file: File, directory?: string): Promise<string> {
+export async function uploadFile(
+  file: File,
+  directory?: string,
+  options: { saveToLibrary?: boolean } = {}
+): Promise<string> {
   const formData = new FormData()
   formData.append('file', file)
+  if (options.saveToLibrary) formData.append('saveToLibrary', 'true')
   if (directory) {
     formData.append('directory', directory)
   }

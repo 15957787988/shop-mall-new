@@ -17,7 +17,8 @@ defineProps<Props>()
   margin-left: auto;
   margin-right: auto;
   width: 100%;
-  max-width: 1560px;
+  max-width: var(--layout-content-width);
+  min-width: 0;
   padding: 20px 16px;
 
   @media (min-width: 768px) {

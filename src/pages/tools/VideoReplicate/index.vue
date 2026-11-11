@@ -56,9 +56,9 @@
               <Button
                 :class="{ 'is-ready': reversedPrompt }"
                 :loading="analyzing"
-                :disabled="!reversedPrompt && !canReverse"
+                :disabled="!canReverse"
                 @click="reversePrompt"
-                >{{ reversedPrompt ? '查看提示词' : '反推提示词' }}</Button
+                >{{ reversedPrompt ? '重新反推提示词' : '反推提示词' }}</Button
               >
             </div>
             <div class="replicate__section-heading replicate__optional-heading">
@@ -128,6 +128,18 @@
               参考图 {{ imageCount }} / {{ maxImages }} 张 · 同一对象可上传多个角度
             </p>
             <p v-if="materialsError" class="replicate__error" role="alert">{{ materialsError }}</p>
+            <fieldset :disabled="formLocked" class="replicate__prompt-editor">
+              <legend>生成提示词</legend>
+              <Input.TextArea
+                v-model:value="promptText"
+                :auto-size="{ minRows: 6, maxRows: 14 }"
+                placeholder="点击上方“反推提示词”后在这里查看和编辑，生成时使用此处内容；留空则自动反推。"
+                aria-label="生成提示词"
+              />
+              <Button type="text" size="small" :disabled="!promptText.trim()" @click="copyPrompt(promptText)">
+                <CopyOutlined />复制提示词
+              </Button>
+            </fieldset>
             <fieldset :disabled="formLocked" class="replicate__settings">
               <legend>生成设置</legend>
               <label
@@ -334,19 +346,6 @@
         </aside>
       </div>
     </Modal>
-    <Modal v-model:open="promptOpen" title="反推提示词" :footer="null" width="640px" centered>
-      <div class="replicate__prompt-modal">
-        <Input.TextArea v-model:value="promptText" :auto-size="{ minRows: 12, maxRows: 18 }" />
-        <button
-          type="button"
-          class="replicate__prompt-copy"
-          :disabled="!promptText.trim()"
-          @click="copyPrompt(promptText)"
-        >
-          <CopyOutlined />一键复制
-        </button>
-      </div>
-    </Modal>
   </PageContainer>
 </template>
 
@@ -544,9 +543,7 @@ watch([isLoggedIn, sessionVersion], ([loggedIn]) => {
   requestedStates = {}
   previewOpen.value = false
   previewTask.value = undefined
-  promptOpen.value = false
   promptText.value = ''
-  promptCache.value = undefined
   refAudios.value = []
   total.value = 0
   selectedId.value = undefined
@@ -658,17 +655,12 @@ function materialsBody(): ReplicateMaterials {
 function materialsKey() {
   return JSON.stringify(materialsBody())
 }
-const promptOpen = ref(false)
 const promptText = ref('')
-const promptCache = ref<{ key: string; text: string }>()
-const reversedPrompt = computed(() =>
-  promptCache.value?.key === materialsKey() ? promptCache.value.text : ''
-)
-watch(promptText, (text) => {
-  const cache = promptCache.value
-  if (!cache || cache.key !== materialsKey() || cache.text === text) return
-  promptCache.value = { key: cache.key, text }
-})
+const reversedPrompt = computed(() => promptText.value.trim())
+// 素材变化后清空旧提示词，避免把前一个视频或对象的分析用于本次生成。
+watch(materialsKey, () => {
+  promptText.value = ''
+}, { flush: 'sync' })
 const canReverse = computed(
   () => !formLocked.value && Boolean(materials.videoUrl) && !materialsError.value
 )
@@ -677,21 +669,15 @@ async function reversePrompt() {
     openLogin()
     return
   }
-  const cached = reversedPrompt.value
-  if (cached) {
-    promptText.value = cached
-    promptOpen.value = true
-    return
-  }
   if (!canReverse.value) return
   analyzing.value = true
   error.value = ''
   const key = materialsKey()
+  const reverseSession = session
   try {
     const text = (await analyzeReplicatePrompt(materialsBody())).trim()
     if (!text) throw new Error('未返回提示词')
-    if (disposed) return
-    promptCache.value = { key, text }
+    if (disposed || reverseSession !== session || key !== materialsKey()) return
     promptText.value = text
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : '反推失败，请稍后重试'

@@ -44,6 +44,9 @@
   --z-toast: 2000;
   --sidebar-width: 224px;
   --spacing-section: 32px;
+  --layout-content-width: 1760px;
+  --layout-gap: clamp(12px, 1.4vw, 24px);
+  --layout-form-width: clamp(320px, 26vw, 420px);
   --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 

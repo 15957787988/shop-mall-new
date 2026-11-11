@@ -926,6 +926,7 @@ async function syncFromRemoteIfNeeded() {
 
 function onVisibilityChange() {
   if (document.visibilityState === 'visible') syncFromRemoteIfNeeded()
+  else playback.pauseAll()
 }
 
 function onNodeDrag() {
@@ -1699,8 +1700,9 @@ function onKeydown(e) {
 .app-shell {
   display: flex;
   flex-direction: column;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
   outline: none;
@@ -2112,8 +2114,9 @@ html.canvas-overscroll-lock body {
 .ghost-line-svg {
   position: fixed;
   inset: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
+  height: 100dvh;
   z-index: 8999;
   overflow: visible;
 }
