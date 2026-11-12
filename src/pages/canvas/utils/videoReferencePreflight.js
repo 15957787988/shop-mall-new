@@ -69,9 +69,13 @@ export function createVideoReferencePreflight({
   timeoutMs = 10000,
 } = {}) {
   return {
-    async validate(urls, model, { signal, names = [] } = {}) {
+    async validate(urls, model, { signal, names = [], sizes = [] } = {}) {
       const min = resolveMinSingleVideoDuration(model)
-      if (!urls.length || (min === 0 && !isSeedance(model))) return 0
+      if (!urls.length) return 0
+      for (let i = 0; i < urls.length; i++) {
+        if (Number(sizes[i]) > 50 * 1024 * 1024)
+          throw new Error(`参考视频「${names[i] || `视频${i + 1}`}」不能超过 50MB，请压缩后再生成`)
+      }
       const controller = new AbortController()
       const cancel = () => controller.abort()
       if (signal?.aborted) throw new Error('视频校验已取消')

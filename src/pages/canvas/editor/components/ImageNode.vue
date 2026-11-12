@@ -119,7 +119,7 @@ async function applyMediaUrl(url, name = '', completed = false) {
 }
 
 async function onLocalUpload(file) {
-  if (disposed || !store.canEditNode(props.id)) return
+  if (disposed || !store.canEditNode(props.id) || isUploading.value || isGenerating.value) return
   uploading.value = true
   try {
     const url = await uploadCanvasFile(file)
@@ -134,11 +134,15 @@ async function onLocalUpload(file) {
 }
 
 function triggerLocalUpload() {
+  if (store.canEditNode(props.id)) fileInputRef.value?.click()
+}
+
+function openLibrary() {
   if (store.canEditNode(props.id)) sourceOpen.value = true
 }
 
 async function selectLibraryAssets(assets) {
-  if (disposed || !store.canEditNode(props.id)) return
+  if (disposed || !store.canEditNode(props.id) || isUploading.value || isGenerating.value) return
   uploading.value = true
   try {
     const [asset] = validateLibrarySelection(
@@ -188,18 +192,20 @@ function onLocalFileChange(e) {
     <span v-if="isAgentSource" class="agent-tag">Agent</span>
 
     <div
-      v-loading="isUploading"
       class="node-body img-body"
-      element-loading-text="上传中..."
-      element-loading-background="rgba(10, 10, 24, 0.88)"
+      :aria-busy="isUploading || isGenerating"
     >
       <ReplaceMediaMenu
         v-if="selected && !isUploading && !isGenerating && !genError"
         label="替换图片"
+        source-menu
         @upload="triggerLocalUpload"
+        @library="openLibrary"
       />
       <MediaSourceDialog
         v-model:open="sourceOpen"
+        library-only
+        :busy="isUploading"
         :kinds="['image']"
         :max-count="1"
         :project-id="String(route.query.projectId || '')"
@@ -214,7 +220,9 @@ function onLocalFileChange(e) {
         @change="onLocalFileChange"
       />
 
-      <template v-if="isGenerating">
+      <NodeGenLoading v-if="isUploading" title="图片上传中…" hint="正在处理素材，请稍候" />
+
+      <template v-else-if="isGenerating">
         <NodeGenLoading hint="AI 生成结果将显示于此" />
       </template>
 

@@ -278,7 +278,7 @@ import { nextActivePanelId } from '../utils/panelActiveSwitch'
 import { isCreateOptionDisabled, validateRefEdge } from '../utils/refInputConstraints'
 import { shouldPersistCanvas } from '../utils/canvasSync'
 import { uploadCanvasFile } from '../utils/uploadFile'
-import { readVideoDuration, validateVideoUpload } from '../utils/videoConstraints'
+import { readVideoDuration, validateVideoSingleDuration } from '../utils/videoConstraints'
 import { detectFileKind } from '../composables/useMediaAssetUpload'
 import { CANVAS_PLAYBACK, createCanvasPlayback } from '../utils/canvasPlayback'
 import { projectApi } from '../api/projectApi'
@@ -1288,6 +1288,8 @@ function addAssetNode(asset, dropPos = null) {
       src: asset.url,
       outputValue: asset.url,
       fileName: asset.name,
+      fileSize: asset.fileSize ?? null,
+      fileSizeUrl: asset.url,
       poster: asset.poster,
       ...(asset.duration ? { duration: asset.duration } : {})
     })
@@ -1307,6 +1309,8 @@ function addAssetNode(asset, dropPos = null) {
       src: asset.url,
       outputValue: asset.url,
       fileName: asset.name,
+      fileSize: asset.fileSize ?? null,
+      fileSizeUrl: asset.url,
       poster: asset.poster,
       ...(asset.duration ? { duration: asset.duration } : {})
     },
@@ -1343,6 +1347,8 @@ function replaceNodeAsset(node, asset) {
     src: asset.url,
     outputValue: asset.url,
     fileName: asset.name,
+    fileSize: asset.fileSize ?? null,
+    fileSizeUrl: asset.url,
     uploading: false
   }
   if (asset.kind === 'video') {
@@ -1447,7 +1453,7 @@ async function dropMediaFiles(files, e) {
         ElMessage.error(`${file.name} 无法读取视频时长，请更换文件后重试`)
         continue
       }
-      const err = validateVideoUpload(duration, 0)
+      const err = validateVideoSingleDuration(duration)
       if (err) {
         ElMessage.error(err)
         continue
@@ -1472,7 +1478,9 @@ async function dropMediaFiles(files, e) {
           uploading: false,
           src: url,
           outputValue: url,
-          fileName: file.name
+          fileName: file.name,
+          fileSize: file.size,
+          fileSizeUrl: url
         }
         if (kind === 'video' && duration > 0) patch.duration = duration
         store.updateNodeResult(node.id, patch, getNodes.value)

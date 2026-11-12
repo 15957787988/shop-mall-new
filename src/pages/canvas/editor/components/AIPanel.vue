@@ -25,7 +25,7 @@
       >
         <div class="asset-thumb">
           <template v-if="asset.uploading">
-            <span class="asset-loading">⏳</span>
+            <span class="asset-loading" role="status" aria-label="素材上传中" />
           </template>
           <template v-else-if="asset.kind === 'image' && asset.thumb">
             <img :src="asset.thumb" class="asset-img" referrerpolicy="no-referrer" />
@@ -110,10 +110,10 @@
       </div>
     </div>
 
-    <!-- Progress bar when generating -->
-    <!-- <div v-if="isNodeGenerating" class="gen-progress">
-      <div class="gen-progress-fill" :style="{ width: genProgress + '%' }" />
-    </div> -->
+    <div v-if="operationLabel" class="operation-status" role="status" aria-live="polite">
+      <span class="submit-spinner" aria-hidden="true" />
+      <span>{{ operationLabel }}</span>
+    </div>
 
     <!-- ── Bottom toolbar ── -->
     <div class="panel-toolbar">
@@ -266,19 +266,20 @@
         </span>
         <button
           class="submit-btn"
-          aria-label="开始生成"
-          :class="{ generating: isNodeGenerating }"
+          :aria-label="operationLabel || '开始生成'"
+          :aria-busy="!!operationLabel"
+          :class="{ generating: !!operationLabel }"
           :disabled="!canGenerate || isGenerationPending"
           @click="generate"
           :title="
-            preflightingNodes.has(primaryNode?.id)
-              ? '正在校验参考视频时长'
+            operationLabel
+              ? operationLabel
               : isGenerationPending && !isNodeGenerating
               ? '后台任务尚未结束，结果会自动更新，请勿重复提交'
               : 'Ctrl+Enter'
           "
         >
-          <span v-if="isNodeGenerating" class="submit-spinner" />
+          <span v-if="operationLabel" class="submit-spinner" aria-hidden="true" />
           <Top v-else class="submit-icon" aria-hidden="true" />
         </button>
       </div>
@@ -455,6 +456,7 @@ function referenceInputSnapshot(nodeId) {
       id: asset.nodeId || asset.id,
       kind: asset.kind,
       url: assetMediaUrl(asset),
+      fileSize: assetFileSize(asset),
     })),
   })
 }
@@ -1852,6 +1854,13 @@ function assetMediaUrl(asset) {
     : asset.url
 }
 
+function assetFileSize(asset) {
+  const nodeId = asset.nodeId || asset.linkedNodeId
+  if (!nodeId) return asset.fileSize
+  const data = nodes.value.find((n) => n.id === nodeId)?.data
+  return data?.fileSizeUrl === data?.src ? data?.fileSize : undefined
+}
+
 function collectUrlsByKind(kind) {
   const urls = []
 
@@ -1928,6 +1937,7 @@ function currentEstimatedPoints() {
 const estimatedPoints = computed(() => formatModelPoints(currentEstimatedPoints()))
 
 const canGenerate = computed(() => {
+  if (isUploadingAssets.value) return false
   if (currentMode.value !== 'text' && currentEstimatedPoints() == null) return false
   if (buildGenerationPrompt(promptText.value, displayAssets.value, nodes.value)) return true
   if (currentMode.value === 'image') return collectRefImages().length > 0
@@ -2024,6 +2034,19 @@ const isNodeGenerating = computed(
         !!effectiveGenerationData(primaryNode.value).generating)) ||
     isBatchGenerating.value
 )
+
+const isUploadingAssets = computed(() =>
+  !!primaryNode.value?.data?.uploading || displayAssets.value.some((asset) =>
+    asset.uploading || nodes.value.find((node) => node.id === (asset.nodeId || asset.linkedNodeId))?.data?.uploading
+  )
+)
+
+const operationLabel = computed(() => {
+  if (isUploadingAssets.value) return '素材上传中，请稍候…'
+  if (preflightingNodes.has(primaryNode.value?.id)) return '正在校验参考素材…'
+  if (isNodeGenerating.value) return '正在生成，请勿重复提交…'
+  return ''
+})
 
 // Stopping the spinner must not enable another paid submission while this task is unresolved.
 const referenceDurationHint = computed(() => {
@@ -2541,7 +2564,7 @@ async function generate() {
   if (!scope.isActive()) return
   const node = primaryNode.value
   if (!node || !flowStore.canEditNode(node.id)) return
-  if (!node || isGenerationPending.value || preflightingNodes.has(node.id)) return
+  if (!node || isGenerationPending.value || isUploadingAssets.value || preflightingNodes.has(node.id)) return
   const generationMode = currentMode.value
 
   flushPanelToNode(node)
@@ -2617,7 +2640,11 @@ async function generate() {
         const asset = displayAssets.value.find((item) => assetMediaUrl(item) === url)
         return asset?.label || asset?.name || ''
       })
-      await referencePreflight.validate(refVideos, model, { signal: controller.signal, names })
+      const sizes = refVideos.map((url) => {
+        const asset = displayAssets.value.find((item) => assetMediaUrl(item) === url)
+        return asset ? assetFileSize(asset) : undefined
+      })
+      await referencePreflight.validate(refVideos, model, { signal: controller.signal, names, sizes })
       assertVideoInputsCurrent()
     } catch (error) {
       stopVideoInputWatch()
@@ -3089,7 +3116,28 @@ const panelStyle = computed(() => {
 }
 
 .asset-loading {
-  font-size: 14px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba($accent-primary, 0.22);
+  border-top-color: $accent-text;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.operation-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid $border-default;
+  color: $accent-text;
+  font-size: 12px;
+
+  .submit-spinner {
+    border-color: rgba($accent-primary, 0.22);
+    border-top-color: $accent-text;
+    flex-shrink: 0;
+  }
 }
 
 .asset-play {

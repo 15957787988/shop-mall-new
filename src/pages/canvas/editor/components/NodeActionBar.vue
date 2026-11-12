@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
-import { FileTextOutlined } from '@ant-design/icons-vue'
+import { FileTextOutlined, LoadingOutlined } from '@ant-design/icons-vue'
 import { analyzeReplicatePrompt } from '@/pages/tools/VideoReplicate/api'
 import { Download, View, FullScreen } from '../../shims/icons'
 import { storeToRefs } from 'pinia'
@@ -244,7 +244,8 @@ function saveExpand() {
           :aria-busy="reversing"
           @click="reverseVideoPrompt"
         >
-          <FileTextOutlined class="nab-icon" aria-hidden="true" />
+          <LoadingOutlined v-if="reversing" spin class="nab-icon" aria-hidden="true" />
+          <FileTextOutlined v-else class="nab-icon" aria-hidden="true" />
           {{ reversing ? '反推中…' : '反推提示词' }}
         </button>
         <!-- <button class="nab-btn nab-btn-danger" title="删除节点" @click="deleteNode">🗑 删除</button> -->

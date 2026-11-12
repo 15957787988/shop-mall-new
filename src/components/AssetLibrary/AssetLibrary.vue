@@ -199,6 +199,7 @@ interface Props {
   maxCount?: number
   projectId?: string
   excludeUrls?: string[]
+  uploadMaxSize?: number
 }
 const props = withDefaults(defineProps<Props>(), {
   selectable: false,
@@ -206,6 +207,7 @@ const props = withDefaults(defineProps<Props>(), {
   maxCount: 1,
   projectId: '',
   excludeUrls: () => [],
+  uploadMaxSize: 50 * 1024 * 1024,
 })
 const emit = defineEmits<{ select: [assets: LibraryAsset[]]; cancel: [] }>()
 const { addToast } = useToast()
@@ -357,7 +359,8 @@ async function upload(event: Event) {
     try {
       if (!matchesLibraryUpload(file.name, kinds))
         throw new Error(`${file.name} 格式不符合当前类型，仅支持 ${libraryUploadAccept(kinds)}`)
-      if (file.size > 50 * 1024 * 1024) throw new Error(`${file.name} 超过 50MB，请压缩后上传`)
+      if (props.uploadMaxSize > 0 && file.size > props.uploadMaxSize)
+        throw new Error(`${file.name} 超过 ${props.uploadMaxSize / 1024 / 1024}MB，请压缩后上传`)
       await uploadFile(file, undefined, { saveToLibrary: true })
       count += 1
     } catch (e) {

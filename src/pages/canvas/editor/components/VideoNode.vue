@@ -5,7 +5,7 @@ import { useFlowStore } from '../../stores/flowStore'
 import { uploadCanvasFile } from '../../utils/uploadFile'
 import { getGenCount, resolveVideoDimensionsFromSettings } from '../../utils/resolveNodeGenMeta'
 import { clearGenFailLabel } from '../../utils/genFailPatch'
-import { readVideoDuration, validateVideoUpload } from '../../utils/videoConstraints'
+import { readVideoDuration, validateVideoSingleDuration } from '../../utils/videoConstraints'
 import { useMessage } from '../../shims/message'
 import { useCanvasVideo } from '../../composables/useCanvasVideo'
 import NodeHeader from './NodeHeader.vue'
@@ -121,7 +121,10 @@ function clearVideo(e) {
   e.stopPropagation()
   fileName.value = ''
   videoAspect.value = ''
-  patchData({ src: '', poster: '', outputValue: '', fileName: '', duration: 0 })
+  patchData({
+    src: '', poster: '', outputValue: '', fileName: '', duration: 0,
+    fileSize: null, fileSizeUrl: '',
+  })
   refreshNodeInternals()
 }
 
@@ -154,7 +157,7 @@ function onVideoMeta(e) {
   refreshNodeInternals()
 }
 
-async function applyMediaUrl(url, name = '', duration = 0, completed = false) {
+async function applyMediaUrl(url, name = '', duration = 0, completed = false, fileSize = null) {
   if (disposed) return
   fileName.value = name || '资产视频'
   const label = clearGenFailLabel('video', props.data?.label)
@@ -163,6 +166,8 @@ async function applyMediaUrl(url, name = '', duration = 0, completed = false) {
     poster: '',
     outputValue: url,
     fileName: fileName.value,
+    fileSize,
+    fileSizeUrl: url,
     genError: '',
     ...(label ? { label } : {}),
   }
@@ -177,27 +182,25 @@ async function applyMediaUrl(url, name = '', duration = 0, completed = false) {
 }
 
 async function onLocalUpload(file) {
-  if (disposed || !store.canEditNode(props.id)) return
-  let dur
-  try {
-    dur = await readVideoDuration(file)
-    if (disposed) return
-  } catch {
-    if (disposed) return
-    message.error('无法读取视频时长，请更换文件后重试')
-    return
-  }
-  const err = validateVideoUpload(dur, 0)
-  if (err) {
-    message.error(err)
-    return
-  }
-
+  if (disposed || !store.canEditNode(props.id) || isUploading.value || isGenerating.value) return
   uploading.value = true
   try {
+    let dur
+    try {
+      dur = await readVideoDuration(file)
+    } catch {
+      if (!disposed) message.error('无法读取视频时长，请更换文件后重试')
+      return
+    }
+    if (disposed) return
+    const err = validateVideoSingleDuration(dur)
+    if (err) {
+      message.error(err)
+      return
+    }
     const url = await uploadCanvasFile(file)
     if (disposed) return
-    await applyMediaUrl(url, file.name, dur, true)
+    await applyMediaUrl(url, file.name, dur, true, file.size)
   } catch {
     if (disposed) return
     message.error('视频上传失败')
@@ -207,20 +210,24 @@ async function onLocalUpload(file) {
 }
 
 function triggerLocalUpload() {
+  if (store.canEditNode(props.id)) fileInputRef.value?.click()
+}
+
+function openLibrary() {
   if (store.canEditNode(props.id)) sourceOpen.value = true
 }
 
 async function selectLibraryAssets(assets) {
-  if (disposed || !store.canEditNode(props.id)) return
+  if (disposed || !store.canEditNode(props.id) || isUploading.value || isGenerating.value) return
   uploading.value = true
   try {
-    const [asset] = validateLibrarySelection(assets, [], 1, ['mp4', 'mov'], 50)
+    const [asset] = validateLibrarySelection(assets, [], 1, ['mp4', 'mov'])
     if (!asset) return
     const dur = await readAssetDuration(asset.url, 'video')
-    const error = validateVideoUpload(dur, 0)
+    const error = validateVideoSingleDuration(dur)
     if (error) throw new Error(error)
     if (disposed || !store.canEditNode(props.id)) return
-    await applyMediaUrl(asset.url, asset.name, dur, true)
+    await applyMediaUrl(asset.url, asset.name, dur, true, asset.fileSize ?? null)
     sourceOpen.value = false
   } catch (error) {
     message.error(error.message || '素材不可用')
@@ -326,10 +333,8 @@ const wrapStyle = computed(() =>
     <span v-if="isAgentSource" class="agent-tag">Agent</span>
 
     <div
-      v-loading="isUploading"
       class="node-body vid-body"
-      element-loading-text="上传中..."
-      element-loading-background="rgba(8, 8, 18, 0.88)"
+      :aria-busy="isUploading || isGenerating"
     >
       <ReplaceMediaMenu
         v-if="
@@ -339,12 +344,17 @@ const wrapStyle = computed(() =>
           (!genError || (hasVideo && !data.genTaskId && !data.genRequestId))
         "
         label="替换视频"
+        source-menu
         @upload="triggerLocalUpload"
+        @library="openLibrary"
       />
       <MediaSourceDialog
         v-model:open="sourceOpen"
+        library-only
+        :busy="isUploading"
         :kinds="['video']"
         :max-count="1"
+        :upload-max-size="0"
         :project-id="String(route.query.projectId || '')"
         @local="fileInputRef?.click()"
         @select="selectLibraryAssets"
@@ -357,7 +367,9 @@ const wrapStyle = computed(() =>
         @change="onLocalFileChange"
       />
 
-      <template v-if="isGenerating">
+      <NodeGenLoading v-if="isUploading" title="视频上传中…" hint="正在读取并上传素材，请稍候" />
+
+      <template v-else-if="isGenerating">
         <NodeGenLoading hint="AI 生成结果将显示于此" />
       </template>
 

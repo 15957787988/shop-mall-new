@@ -1,5 +1,6 @@
 <script setup>
 defineProps({
+  title: { type: String, default: '生成中…' },
   hint: { type: String, default: '' },
   compact: { type: Boolean, default: false },
 })
@@ -8,13 +9,12 @@ defineProps({
 <template>
   <div class="node-gen-loading" :class="{ compact }" role="status" aria-live="polite">
     <div class="node-gen-spinner" aria-hidden="true" />
-    <div class="node-gen-title">生成中...</div>
+    <div class="node-gen-title">{{ title }}</div>
     <div v-if="hint" class="node-gen-hint">{{ hint }}</div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-
 .node-gen-loading {
   display: flex;
   flex-direction: column;
@@ -23,7 +23,7 @@ defineProps({
   gap: 10px;
   min-height: 120px;
   padding: 16px;
-  background: linear-gradient(180deg, rgba(241, 208, 138, 0.08) 0%, #111110 100%);
+  background: linear-gradient(180deg, rgba($accent-primary, 0.08) 0%, $bg-deep 100%);
   border: 2px dashed rgba($accent-primary, 0.55);
   border-radius: 0 0 10px 10px;
   animation: node-gen-border-pulse 1.6s ease-in-out infinite;
@@ -77,6 +77,13 @@ defineProps({
   50% {
     border-color: rgba($accent-primary, 0.85);
     box-shadow: inset 0 0 24px rgba($accent-primary, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-gen-loading,
+  .node-gen-spinner {
+    animation: none;
   }
 }
 </style>

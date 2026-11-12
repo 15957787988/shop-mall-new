@@ -10,16 +10,18 @@
     destroy-on-close
     @cancel="emit('update:open', false)"
   >
-    <AssetLibrary
-      v-if="library"
-      selectable
-      :kinds="kinds"
-      :max-count="maxCount"
-      :project-id="projectId"
-      :exclude-urls="excludeUrls"
-      @select="emit('select', $event)"
-      @cancel="emit('update:open', false)"
-    />
+    <Spin v-if="library" :spinning="busy" tip="正在处理素材…">
+      <AssetLibrary
+        selectable
+        :kinds="kinds"
+        :max-count="maxCount"
+        :project-id="projectId"
+        :exclude-urls="excludeUrls"
+        :upload-max-size="uploadMaxSize"
+        @select="emit('select', $event)"
+        @cancel="emit('update:open', false)"
+      />
+    </Spin>
     <div v-else class="media-source-options">
       <button type="button" class="media-source-card" @click="local">
         <span class="media-source-card__icon"><UploadOutlined /></span>
@@ -36,7 +38,7 @@
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Modal } from 'ant-design-vue'
+import { Modal, Spin } from 'ant-design-vue'
 import { FolderOpenOutlined, UploadOutlined } from '@ant-design/icons-vue'
 import AssetLibrary from './AssetLibrary.vue'
 import type { LibraryAsset } from './api'
@@ -47,6 +49,8 @@ interface Props {
   projectId?: string
   excludeUrls?: string[]
   libraryOnly?: boolean
+  uploadMaxSize?: number
+  busy?: boolean
 }
 const props = withDefaults(defineProps<Props>(), { projectId: '', excludeUrls: () => [] })
 const emit =
