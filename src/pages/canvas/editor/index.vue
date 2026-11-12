@@ -189,7 +189,7 @@
           @close="mediaPanel = ''"
           @locate="locateHistoryNode"
         />
-        <NodeActionBar v-if="!mediaPanel" :readonly="!canEdit" />
+        <NodeActionBar v-if="!mediaPanel" :readonly="!canEdit" :save-canvas="flushAndSave" />
       </div> </div
     ><!-- /canvas-body -->
 
@@ -296,6 +296,7 @@ import {
   markRestoredVideoTask
 } from '../utils/discoverVideoTasks'
 import NodeActionBar from './components/NodeActionBar.vue'
+import { isDepthPendingNode, VIDEO_DEPTH_SAVE } from '../utils/videoDepth'
 import AssetLibraryPanel from './components/AssetLibraryPanel.vue'
 import GenerationHistoryPanel from './components/GenerationHistoryPanel.vue'
 import { useGenerationHistory, GENERATION_HISTORY } from '../composables/useGenerationHistory'
@@ -407,7 +408,7 @@ const visibleNodes = computed((previous = []) => {
         replacementTargetNodeId.value === n.id ? 'asset-drop-target' : ''
       ),
       draggable: canEdit.value,
-      connectable: canEdit.value,
+      connectable: canEdit.value && !isDepthPendingNode(n),
       selectable: true
     }
     const old = byId.get(n.id)
@@ -900,6 +901,8 @@ function flushCanvasState(event) {
   aiPanelRef.value?.flushPanel?.()
 }
 
+provide(VIDEO_DEPTH_SAVE, flushAndSave)
+
 async function flushAndSave() {
   flushCanvasState()
   clearTimeout(autoSaveTimer)
@@ -1336,7 +1339,7 @@ function getCompatibleReplaceTarget(e, assetKind) {
   const nodeId = nodeEl?.getAttribute?.('data-id')
   if (!nodeId) return null
   const node = store.nodes.find((n) => n.id === nodeId)
-  if (!node || !canEdit.value) return null
+  if (!node || !canEdit.value || isDepthPendingNode(node)) return null
   if (assetKind === 'image' && !node.type?.includes('image')) return null
   if (assetKind === 'video' && !node.type?.includes('video')) return null
   return node
@@ -1561,6 +1564,7 @@ function onCtxAction(action) {
   const { target, targetType } = ctxMenu.value
   const pos = ctxDropPos.value
   if (targetType === 'node' && target) {
+    if (isDepthPendingNode(nodes.value.find((n) => n.id === target.id)) && action !== 'delete') return
     if (action === 'delete') store.confirmRemoveNodeById(target.id)
     else if (action === 'duplicate') {
       const orig = nodes.value.find((n) => n.id === target.id)

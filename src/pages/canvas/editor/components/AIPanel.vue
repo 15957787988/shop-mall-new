@@ -291,6 +291,7 @@
 </template>
 
 <script setup>
+import { isDepthPendingNode } from '../../utils/videoDepth'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { isSeedance } from '../../utils/seedanceConstraints.js'
 /**
@@ -694,7 +695,7 @@ const panelVisible = computed(
 )
 const originalPanelVisible = computed(() => {
   const n = primaryNode.value
-  return n != null && getKind(n.type) != null
+  return n != null && !isDepthPendingNode(n) && getKind(n.type) != null
 })
 
 const promptText = ref('')

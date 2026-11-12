@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch, inject } from 'vue'
 import { Handle, Position, useVueFlow } from '@vue-flow/core'
 import { useFlowStore } from '../../stores/flowStore'
 import { uploadCanvasFile } from '../../utils/uploadFile'
@@ -9,6 +9,8 @@ import { readVideoDuration, validateVideoSingleDuration } from '../../utils/vide
 import { useMessage } from '../../shims/message'
 import { useCanvasVideo } from '../../composables/useCanvasVideo'
 import NodeHeader from './NodeHeader.vue'
+import { isDepthPendingNode, isDepthActive, depthTaskLabel, VIDEO_DEPTH_SAVE } from '../../utils/videoDepth'
+import VideoDepthPanel from './VideoDepthPanel.vue'
 import NodeGenerationHistory from './NodeGenerationHistory.vue'
 import NodeAddButton from './NodeAddButton.vue'
 import NodeGenLoading from './NodeGenLoading.vue'
@@ -26,6 +28,8 @@ const props = defineProps({
 })
 
 const store = useFlowStore()
+const depthPanelRef = ref(null)
+const saveCanvas = inject(VIDEO_DEPTH_SAVE, null)
 let disposed = false
 onBeforeUnmount(() => {
   disposed = true
@@ -112,7 +116,7 @@ onMounted(() => {
 })
 
 watch(
-  [() => props.data?.src, () => props.data?.generating, () => props.data?.genError, isUploading],
+  [() => props.data?.src, () => props.data?.generating, () => props.data?.genError, () => props.data?.depthState, isUploading],
   () => refreshNodeInternals()
 )
 
@@ -291,11 +295,17 @@ function patchData(data) {
 }
 
 const hasVideo = computed(() => !!props.data.src)
+const depthPending = computed(() => isDepthPendingNode({ data: props.data }))
+const depthWorking = computed(() => depthPending.value && (
+  props.data.depthState === 'SUBMITTING' || isDepthActive({ state: props.data.depthState })
+))
+const depthHint = computed(() => depthTaskLabel({ state: props.data.depthState, stage: props.data.depthStage }))
 
 const isLegacyVideoWithoutHistory = computed(() => {
   const data = props.data || {}
   return !!(
     data.src &&
+    !data.depthResultTaskId &&
     data.settings?.mode !== 'video' &&
     !data.genTaskId &&
     !data.genRequestId &&
@@ -310,12 +320,12 @@ const wrapStyle = computed(() =>
 
 <template>
   <div
-    :class="['canvas-node', 'video-node', { selected }]"
+    :class="['canvas-node', 'video-node', { selected, 'depth-pending': depthPending }]"
     @mouseenter="onVideoEnter"
     @mouseleave="onVideoLeave"
   >
-    <Handle v-if="showTargetHandle" id="tl" type="target" :position="Position.Left" />
-    <NodeAddButton v-if="showTargetHandle" :id="id" :source-type="type" side="left" />
+    <Handle v-if="showTargetHandle || depthPending" id="tl" type="target" :connectable="!depthPending" :position="Position.Left" />
+    <NodeAddButton v-if="showTargetHandle && !depthPending" :id="id" :source-type="type" side="left" />
 
     <NodeHeader
       :id="id"
@@ -328,17 +338,17 @@ const wrapStyle = computed(() =>
       :has-result="!!data.src"
       :deletable="!isLegacyVideoWithoutHistory"
     >
-      <NodeGenerationHistory :id="id" kind="video" :data="data" :busy="isUploading" />
+      <NodeGenerationHistory v-if="!depthPending" :id="id" kind="video" :data="data" :busy="isUploading" />
     </NodeHeader>
     <span v-if="isAgentSource" class="agent-tag">Agent</span>
 
     <div
       class="node-body vid-body"
-      :aria-busy="isUploading || isGenerating"
+      :aria-busy="isUploading || isGenerating || depthWorking"
     >
       <ReplaceMediaMenu
         v-if="
-          selected &&
+          selected && !depthPending &&
           !isUploading &&
           !isGenerating &&
           (!genError || (hasVideo && !data.genTaskId && !data.genRequestId))
@@ -367,7 +377,18 @@ const wrapStyle = computed(() =>
         @change="onLocalFileChange"
       />
 
-      <NodeGenLoading v-if="isUploading" title="视频上传中…" hint="正在读取并上传素材，请稍候" />
+      <template v-if="depthPending">
+        <NodeGenLoading v-if="depthWorking && !data.depthError" title="生成中…" :hint="depthHint" />
+        <div v-else class="vid-placeholder" role="status">
+          <span class="ph-icon" aria-hidden="true">▶</span>
+          <span class="ph-hint">{{ data.depthError || (data.depthState === 'FAILED' ? '提取失败' : '请在下方确认提取') }}</span>
+          <button v-if="(data.depthState === 'FAILED' || data.depthError) && store.canEditNode(id)"
+            class="depth-retry nodrag nopan" @click.stop="depthPanelRef?.openSettings()">
+            {{ data.depthTaskId && data.depthState !== 'FAILED' ? '查看状态' : '核对并重试' }}
+          </button>
+        </div>
+      </template>
+      <NodeGenLoading v-else-if="isUploading" title="视频上传中…" hint="正在读取并上传素材，请稍候" />
 
       <template v-else-if="isGenerating">
         <NodeGenLoading hint="AI 生成结果将显示于此" />
@@ -446,8 +467,11 @@ const wrapStyle = computed(() =>
       </template>
     </div>
 
-    <Handle id="sr" type="source" :position="Position.Right" />
-    <NodeAddButton :id="id" :source-type="type" />
+    <VideoDepthPanel ref="depthPanelRef" v-if="depthPending" :target-id="id"
+      :project-id="route.query.projectId" :readonly="!store.canEditNode(id)" :save-canvas="saveCanvas" />
+
+    <Handle v-if="!depthPending" id="sr" type="source" :position="Position.Right" />
+    <NodeAddButton v-if="!depthPending" :id="id" :source-type="type" />
   </div>
 </template>
 
@@ -455,6 +479,23 @@ const wrapStyle = computed(() =>
 .video-node {
   width: 244px;
   position: relative;
+}
+.depth-retry {
+  padding: 6px 12px;
+  border: 1px solid $border-default;
+  border-radius: $radius-sm;
+  background: $bg-surface;
+  color: $text-primary;
+  cursor: pointer;
+}
+.depth-pending {
+  .vid-placeholder { background: $bg-surface; border: 1px solid $border-default; }
+  :deep(.node-gen-loading) {
+    background: $bg-surface;
+    border: 1px solid $border-default;
+    animation: none;
+  }
+  :deep(.node-gen-title) { color: $text-primary; text-shadow: none; }
 }
 .hidden-file {
   display: none;

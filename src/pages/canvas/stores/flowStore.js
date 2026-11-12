@@ -1,5 +1,6 @@
 // 画布核心 Store：VueFlow 节点/边的数据源，所有节点操作均通过此 store 进行
 import { defineStore } from 'pinia'
+import { isDepthPendingNode } from '../utils/videoDepth'
 import { ref, computed } from 'vue'
 import { applyNodeChanges, applyEdgeChanges } from '@vue-flow/core'
 import { parseGraphDocument, normalizeAutoHeightNode } from '../utils/graphAdapter'
@@ -422,6 +423,10 @@ export const useFlowStore = defineStore('flow', () => {
    */
   function updateNodeData(id, patch, liveNodes) {
     if (!canEditNode(id)) return
+    const node = nodes.value.find((n) => n.id === id)
+    // 专用占位节点不能被普通面板自动保存、拖放替换等路径写入媒体或生成设置。
+    if (isDepthPendingNode(node) && Object.keys(patch).some((key) =>
+      ['src', 'poster', 'outputValue', 'settings', 'assetWall', 'prompt', 'content'].includes(key))) return
     writeNodeData(id, patch, liveNodes)
   }
   function updateNodeResult(id, patch, liveNodes) {
@@ -480,6 +485,7 @@ export const useFlowStore = defineStore('flow', () => {
     if (!node?.type?.toLowerCase().includes('video')) return false
     const data = node.data || {}
     if (!data.src) return false
+    if (data.depthResultTaskId) return false
     if (data.settings?.mode === 'video') return false
     if (data.genTaskId || data.genRequestId || data.genAppliedTaskId) return false
     return true
@@ -572,6 +578,7 @@ export const useFlowStore = defineStore('flow', () => {
 
     const sourceNode = nodes.value.find((n) => n.id === edge.source)
     const targetNode = nodes.value.find((n) => n.id === edge.target)
+    if (isDepthPendingNode(sourceNode) || (isDepthPendingNode(targetNode) && edge.data?.role !== 'generation-output')) return
     const check = validateRefEdge({
       sourceType: sourceNode?.type,
       sourceId: edge.source,
@@ -610,7 +617,7 @@ export const useFlowStore = defineStore('flow', () => {
    * 防止更新 nodes 数组时丢失已拖拽节点的位置
    */
   function addConnectedNode(sourceId, newType, position, currentPositions) {
-    if (!canCreate() || !allowNodes([sourceId])) return
+    if (!canCreate() || !allowNodes([sourceId]) || isDepthPendingNode(nodes.value.find((n) => n.id === sourceId))) return
     const factory = nodeDefaults[newType]
     if (!factory) return
 
@@ -724,6 +731,7 @@ export const useFlowStore = defineStore('flow', () => {
     if (idx === -1) return
 
     const n = nodes.value[idx]
+    if (isDepthPendingNode(n)) return
     // 从旧数据中提取可复用的字段
     const { content = '', src = '', outputValue = '' } = n.data
     const label = TYPE_LABELS[newType] ?? '节点'

@@ -12,8 +12,9 @@ import useDownloader from '../../shims/download'
 import { downloadVideo } from '../../shims/download'
 import { useCanvasVideo } from '../../composables/useCanvasVideo'
 import { applyPlaybackPosition } from '../../utils/canvasPlayback'
+import { isDepthPendingNode } from '../../utils/videoDepth'
 
-const props = defineProps({ readonly: Boolean })
+const props = defineProps({ readonly: Boolean, saveCanvas: Function })
 const store = useFlowStore()
 const message = useMessage()
 const route = useRoute()
@@ -34,6 +35,31 @@ let previewNodeId = null
 let previewPositionReady = false
 const viewportTick = ref(0)
 const downloading = ref(false)
+
+async function openDepth() {
+  if (props.readonly || !isVideo.value || !hasMedia.value) return
+  const source = mediaNode.value
+  let target = nodes.value.find((node) => isDepthPendingNode(node)
+    && node.data.depthSourceNodeId === source.id && node.data.depthRequestUrl === source.data.src)
+  if (!target) {
+    const live = findNode(source.id) ?? source
+    target = store.addNodeOfType('videoUploadNode', {
+      x: live.position.x + (live.dimensions?.width || parseFloat(live.style?.width) || 320) + 80,
+      y: live.position.y,
+    }, getNodes.value)
+    if (!target) return
+    store.updateNodeData(target.id, {
+      label: `深度提取-${source.data.label || '视频'}`,
+      depthSourceNodeId: source.id, depthRequestUrl: source.data.src,
+      depthRequestKey: crypto.randomUUID(), depthState: 'DRAFT',
+    }, getNodes.value)
+    store.addEdge({ id: `depth-${target.id}`, source: source.id, target: target.id,
+      sourceHandle: 'sr', targetHandle: 'tl', data: { role: 'generation-output' } })
+  }
+  store.nodes = nodes.value.map((node) => ({ ...node, selected: node.id === target.id }))
+  store.setActivePanelNode(target.id)
+  if (props.saveCanvas && !(await props.saveCanvas())) message.error('提取节点保存失败，请保存画布后重试')
+}
 
 const expandVisible = ref(false)
 const expandContent = ref('')
@@ -90,10 +116,11 @@ const barStyle = computed(() => {
   const live = findNode(node.id) ?? node
   const { x: vpX, y: vpY, zoom } = getViewport()
   const bounds = canvasWrapRect()
+  const width = live.dimensions?.width || parseFloat(live.style?.width) || 320
   return {
     top: `${bounds.top + live.position.y * zoom + vpY}px`,
-    left: `${bounds.left + live.position.x * zoom + vpX}px`,
-    transform: `scale(${zoom}) translateY(-${BAR_GAP}px)`,
+    left: `${bounds.left + (live.position.x + width / 2) * zoom + vpX}px`,
+    transform: `scale(${zoom}) translate(-50%, -${BAR_GAP}px)`,
     transformOrigin: 'top left',
   }
 })
@@ -229,7 +256,7 @@ function saveExpand() {
 
 <template>
   <Teleport to="body">
-    <div v-if="barNode" class="node-action-bar" :style="barStyle" @mousedown.stop @click.stop>
+    <div v-if="barNode && !isDepthPendingNode(barNode)" class="node-action-bar" :style="barStyle" @mousedown.stop @click.stop>
       <template v-if="textNode">
         <span class="nab-meta">{{ textCharCount }} 字</span>
         <button class="nab-btn nab-btn-primary" title="查看文本" @click="openExpand">
@@ -247,6 +274,9 @@ function saveExpand() {
           <LoadingOutlined v-if="reversing" spin class="nab-icon" aria-hidden="true" />
           <FileTextOutlined v-else class="nab-icon" aria-hidden="true" />
           {{ reversing ? '反推中…' : '反推提示词' }}
+        </button>
+        <button v-if="isVideo && !readonly" class="nab-btn" :disabled="!hasMedia" @click="openDepth">
+          <span class="nab-icon" aria-hidden="true">◉</span>深度提取
         </button>
         <!-- <button class="nab-btn nab-btn-danger" title="删除节点" @click="deleteNode">🗑 删除</button> -->
         <button class="nab-btn" title="下载" :disabled="!hasMedia" @click="doDownload">
@@ -304,6 +334,7 @@ function saveExpand() {
 <style lang="scss" scoped>
 .node-action-bar {
   position: fixed;
+  width: max-content;
   z-index: 200;
   display: flex;
   align-items: center;

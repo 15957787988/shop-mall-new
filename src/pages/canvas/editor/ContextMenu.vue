@@ -1,4 +1,5 @@
 <script setup>
+import { isDepthPendingNode } from '../utils/videoDepth'
 const props = defineProps({
   visible: Boolean,
   x: Number,
@@ -21,7 +22,7 @@ function act(action) {
     <div v-if="visible" class="ctx-menu" :style="{ left: `${x}px`, top: `${y}px` }">
       <template v-if="targetType === 'node'">
         <div class="ctx-header">节点操作</div>
-        <button class="ctx-item" @click="act('duplicate')"><span>⧉</span> 复制节点</button>
+        <button v-if="!isDepthPendingNode(target)" class="ctx-item" @click="act('duplicate')"><span>⧉</span> 复制节点</button>
         <div class="ctx-divider" />
         <button class="ctx-item danger" @click="act('delete')"><span>✕</span> 删除节点</button>
       </template>
