@@ -82,6 +82,7 @@
         @dragover="onDragOver"
         @dragleave="onDragLeave"
         @drop="onDrop"
+        @dblclick.capture="onNodeFocus"
       >
         <div v-if="!viewportReady" class="canvas-loading" role="status"
           >正在加载画布与生成任务…</div
@@ -1559,6 +1560,22 @@ function onNodeClick({ node }) {
   if (canEdit.value) void aiPanelRef.value?.resumePendingGenTasks?.()
 }
 
+function onNodeFocus(event) {
+  const target = event.target
+  if (!(target instanceof Element)) return
+  if (target.closest('input, textarea, select, [contenteditable="true"], .node-header, .player-controls, .vue-flow__handle, .vue-flow__resize-control')) return
+  if (target.closest('button') && !target.closest('.audio-player .play-btn')) return
+  const id = target.closest('.vue-flow__node')?.getAttribute('data-id')
+  const node = nodes.value.find((item) => item.id === id)
+  if (!node || !['textNode', 'imageNode', 'imageUploadNode', 'imageGenNode', 'videoNode', 'videoUploadNode', 'videoGenNode', 'audioUploadNode'].includes(node.type)) return
+  if (isDepthPendingNode(node)) return
+  event.preventDefault()
+  closeCtxMenu()
+  mediaPanel.value = ''
+  // Capture also reaches text bodies whose double-click starts editing.
+  fitView({ nodes: [node.id], padding: 0.2, duration: 300, maxZoom: 4 })
+}
+
 function onCtxAction(action) {
   if (!canEdit.value) return
   const { target, targetType } = ctxMenu.value
@@ -1588,6 +1605,7 @@ function onCtxAction(action) {
     else if (action === 'fit-view') doFitView()
     else if (action === 'add-text') store.addNodeOfType('textNode', pos, getNodes.value)
     else if (action === 'add-image') store.addNodeOfType('imageUploadNode', pos, getNodes.value)
+    else if (action === 'add-video') store.addNodeOfType('videoUploadNode', pos, getNodes.value)
     else if (action === 'add-audio') store.addNodeOfType('audioUploadNode', pos, getNodes.value)
     else if (action === 'add-note') store.addNodeOfType('noteNode', pos, getNodes.value)
   }

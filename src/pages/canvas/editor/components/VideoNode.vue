@@ -44,6 +44,11 @@ const isUploading = computed(() => uploading.value || !!props.data?.uploading)
 const fileName = ref(props.data.fileName || '')
 const videoAspect = ref('')
 const videoRef = ref(null)
+const playerRef = ref(null)
+const playing = ref(false)
+const muted = ref(true)
+const currentTime = ref(0)
+const mediaDuration = ref(0)
 const coverVisible = ref(!!props.data?.poster)
 const pointerLeft = ref(false)
 useCanvasVideo(videoRef, props.id)
@@ -81,6 +86,9 @@ watch(
   () => [props.data?.src, props.data?.poster],
   () => {
     coverVisible.value = !!props.data?.poster
+    currentTime.value = 0
+    mediaDuration.value = 0
+    playing.value = false
   }
 )
 
@@ -94,6 +102,37 @@ function onVideoPlay() {
     return
   }
   coverVisible.value = false
+  playing.value = true
+}
+
+function togglePlayback() {
+  const video = videoRef.value
+  if (!video) return
+  if (video.paused) playSelectedVideo()
+  else video.pause()
+}
+
+function seekVideo(event) {
+  const time = Number(event.target.value)
+  if (videoRef.value && Number.isFinite(time)) videoRef.value.currentTime = time
+}
+
+function toggleMute() {
+  if (videoRef.value) videoRef.value.muted = !videoRef.value.muted
+}
+
+async function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement === playerRef.value) await document.exitFullscreen()
+    else await playerRef.value?.requestFullscreen()
+  } catch {
+    message.error('无法进入全屏，请使用预览功能')
+  }
+}
+
+function formatVideoTime(value) {
+  const seconds = Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 }
 
 const VIDEO_ACCEPT = 'video/mp4,video/quicktime,.mp4,.mov'
@@ -147,6 +186,7 @@ function paintPausedFrame(el) {
 function onVideoMeta(e) {
   if (disposed) return
   const el = e?.target
+  mediaDuration.value = Number.isFinite(el?.duration) ? el.duration : 0
   if (!el?.videoWidth || !el?.videoHeight) {
     return
   }
@@ -395,14 +435,13 @@ const wrapStyle = computed(() =>
       </template>
 
       <template v-else-if="hasVideo">
-        <div class="vid-wrap" :style="wrapStyle">
+        <div ref="playerRef" class="vid-wrap" :style="wrapStyle">
           <video
             :key="data.src"
             ref="videoRef"
             :src="data.src"
             :poster="data.poster || undefined"
             class="node-video nodrag nopan nowheel"
-            controls
             muted
             loop
             playsinline
@@ -410,6 +449,9 @@ const wrapStyle = computed(() =>
             @loadedmetadata="onVideoMeta"
             @loadeddata="paintPausedFrame($event.target)"
             @play="onVideoPlay"
+            @pause="playing = false"
+            @timeupdate="currentTime = $event.target.currentTime"
+            @volumechange="muted = $event.target.muted"
           />
           <img
             v-if="coverVisible && data.poster"
@@ -422,6 +464,14 @@ const wrapStyle = computed(() =>
           />
           <div class="vid-controls">
             <button class="overlay-btn overlay-btn-del" @click.stop="clearVideo">✕</button>
+          </div>
+          <div class="player-controls nodrag nopan nowheel" @pointerdown.stop @click.stop @dblclick.stop>
+            <button type="button" :aria-label="playing ? '暂停' : '播放'" @click="togglePlayback">{{ playing ? '❚❚' : '▶' }}</button>
+            <span>{{ formatVideoTime(currentTime) }} / {{ formatVideoTime(mediaDuration) }}</span>
+            <input type="range" aria-label="播放进度" min="0" :max="mediaDuration || 0" step="0.1"
+              :value="currentTime" :disabled="!mediaDuration" @input="seekVideo" />
+            <button type="button" :aria-label="muted ? '取消静音' : '静音'" @click="toggleMute">{{ muted ? '静音' : '声音' }}</button>
+            <button type="button" aria-label="切换全屏" @click="toggleFullscreen">⛶</button>
           </div>
         </div>
         <p v-if="genError" class="legacy-task-error" role="status">{{ genError }}</p>
@@ -547,6 +597,40 @@ const wrapStyle = computed(() =>
   display: block;
   object-fit: contain;
   background: #111110;
+  // Custom controls keep the browser's double-click fullscreen handler out of the canvas.
+  pointer-events: none;
+}
+
+.player-controls {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  background: rgba($bg-deep, 0.85);
+  color: $text-primary;
+  font-size: 10px;
+  line-height: 1.4;
+
+  button {
+    padding: 2px;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+  }
+  span { white-space: nowrap; }
+  input { flex: 1; width: 0; min-width: 20px; accent-color: $text-primary; }
+}
+
+.vid-wrap:fullscreen {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  aspect-ratio: auto;
 }
 
 .node-poster {

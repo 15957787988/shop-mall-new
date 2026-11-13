@@ -242,7 +242,8 @@ onBeforeUnmount(() => {
 
     <div
       v-loading="uploading"
-      class="node-body audio-body"
+      class="node-body audio-body nodrag nopan"
+      title="双击居中放大"
       element-loading-text="上传中..."
       element-loading-background="rgba(8, 8, 18, 0.75)"
     >

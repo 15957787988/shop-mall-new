@@ -39,6 +39,7 @@ function act(action) {
         <div class="ctx-divider" />
         <button class="ctx-item" @click="act('add-text')"><span>T</span> 添加文本</button>
         <button class="ctx-item" @click="act('add-image')"><span>🖼</span> 添加图片</button>
+        <button class="ctx-item" @click="act('add-video')"><span>▶</span> 添加视频</button>
         <button class="ctx-item" @click="act('add-audio')"><span>🎧</span> 添加音频</button>
         <button class="ctx-item" @click="act('add-note')"><span>📝</span> 添加便签</button>
       </template>
