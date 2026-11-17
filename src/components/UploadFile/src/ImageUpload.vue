@@ -163,6 +163,7 @@ const emit = defineEmits<{
   uploadComplete: [urls: string[]]
   primaryChange: [index: number]
   uploadError: [message: string]
+  uploadingChange: [uploading: boolean]
 }>()
 
 const { addToast } = useToast()
@@ -186,6 +187,8 @@ const dragging = computed(() => dragDepth.value > 0)
 const previewVisible = ref(false)
 const previewIndex = ref(0)
 const previewSrc = computed(() => images.value[previewIndex.value]?.previewUrl ?? '')
+
+watch(() => images.value.some((image) => image.uploading), (uploading) => emit('uploadingChange', uploading))
 
 const canUpload = computed(() => images.value.length < props.maxCount)
 const remainingCount = computed(() => Math.max(0, props.maxCount - images.value.length))
@@ -419,7 +422,7 @@ function handlePrimaryClick(index: number, url: string) {
     .image-upload__empty,
     .image-upload__add {
       border-color: var(--color-creative-violet);
-      background: rgba(109, 40, 217, 0.05);
+      background: var(--color-accent-soft);
     }
   }
 
@@ -470,7 +473,7 @@ function handlePrimaryClick(index: number, url: string) {
 
     &--primary {
       border-color: var(--color-creative-violet);
-      outline: 2px solid rgba(109, 40, 217, 0.3);
+      outline: 2px solid var(--color-accent-border);
     }
 
     &--clickable {
@@ -575,7 +578,7 @@ function handlePrimaryClick(index: number, url: string) {
 
     &:hover {
       border-color: var(--color-creative-violet);
-      background: rgba(109, 40, 217, 0.05);
+      background: var(--color-accent-soft);
     }
   }
 
@@ -595,7 +598,7 @@ function handlePrimaryClick(index: number, url: string) {
 
     &:hover {
       border-color: var(--color-creative-violet);
-      background: rgba(109, 40, 217, 0.05);
+      background: var(--color-accent-soft);
     }
   }
 

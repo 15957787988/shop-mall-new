@@ -36,20 +36,25 @@
         :loading="generating"
         @click="emit('regenerate', selectedPoseIds)"
       >
-        {{ selectedPoseIds.length === 0 ? '请选择场景' : '生成场景图片' }}
+        {{ selectedPoseIds.length === 0 ? '请选择场景' : `生成场景图片（${pointsText}）` }}
       </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Button, Checkbox } from 'ant-design-vue'
+import { useProductImageModels } from '../../AiProductImage/hook/useProductImageModels'
+import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
+import { MODEL_ID_WEAR } from '@/constants/ai-model'
 import type { ScenePromptGroup } from '../utils/types'
 
-defineProps<{
+const props = defineProps<{
   groups: ScenePromptGroup[]
   generating?: boolean
+  aspectRatio?: string
+  referenceCount?: number
 }>()
 
 const emit = defineEmits<{
@@ -58,6 +63,13 @@ const emit = defineEmits<{
 }>()
 
 const selectedPoseIds = ref<string[]>([])
+const { loadProductImageModels, getModelById } = useProductImageModels()
+onMounted(() => { void loadProductImageModels() })
+const pointsText = computed(() => formatModelPoints(estimateModelPoints(getModelById(MODEL_ID_WEAR), {
+  ratio: props.aspectRatio,
+  imageCount: props.referenceCount,
+  count: selectedPoseIds.value.length,
+})))
 
 function isGroupAllSelected(group: ScenePromptGroup): boolean {
   return (

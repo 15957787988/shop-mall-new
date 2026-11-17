@@ -81,5 +81,5 @@ export function estimateModelPoints(
 }
 
 export function formatModelPoints(points: number | null): string {
-  return points == null ? '价格未配置' : `${points.toFixed(3)} 积分（预冻结）`
+  return points == null ? '价格未配置' : `${points.toFixed(3)} 积分`
 }

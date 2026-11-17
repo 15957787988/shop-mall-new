@@ -1,27 +1,27 @@
 // ─── Canvas Design Tokens ───────────────────────────────────────────────────
 
 // Backgrounds
-$bg-base:    #171716;
-$bg-deep:    #111110;
-$bg-canvas:  #171716;
-$bg-surface: #21201f;
+$bg-base:    #171717;
+$bg-deep:    #111111;
+$bg-canvas:  #171717;
+$bg-surface: #212121;
 
 // Text
-$text-primary:   #ebe7df;
-$text-secondary: #d2cdc4;
-$text-dim:       #b8b2a9;
-$text-muted:     #b8b2a9;
-$text-faint:     #96958f;
+$text-primary:   #ededed;
+$text-secondary: #d4d4d4;
+$text-dim:       #b8b8b8;
+$text-muted:     #b8b8b8;
+$text-faint:     #969696;
 
 // Borders
-$border-default: #35322d;
-$border-subtle:  #2e2e2b;
+$border-default: #353535;
+$border-subtle:  #2e2e2e;
 
 // Accent colors
-$accent-primary: #3d63e8;   // 与 C 端主操作色保持一致（Sass 计算需要颜色常量）
-$accent-hover:   #3355cf;
-$accent-text:    #9aaeff;
-$accent-purple:  #646cff;
+$accent-primary: #525252;   // 深色画布主操作色，配合白字保持对比度
+$accent-hover:   #666666;
+$accent-text:    #e5e5e5;
+$accent-purple:  #a3a3a3;
 $accent-green:   #42d985;
 $accent-red:     #ff5555;
 $accent-yellow:  #f5c542;

@@ -138,8 +138,8 @@ function onDelete(e) {
 
 .node-del {
   background: none;
-  border: 1px solid #3a3a5c;
-  color: #aaa9a4;
+  border: 1px solid $border-default;
+  color: $text-faint;
   cursor: pointer;
   font-size: 14px;
   font-weight: 700;

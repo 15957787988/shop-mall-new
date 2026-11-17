@@ -172,8 +172,8 @@ video {
 }
 button {
   color: #fff;
-  background: #33334c;
-  border: 1px solid #66667b;
+  background: $bg-surface;
+  border: 1px solid $border-default;
   padding: 7px 18px;
   border-radius: 6px;
   cursor: pointer;

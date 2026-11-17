@@ -311,8 +311,8 @@ function download(item) {
   height: min(84vh, 760px);
   display: flex;
   flex-direction: column;
-  color: var(--consumer-text, #f1f0ed);
-  background: #292927;
+  color: var(--consumer-text, $text-primary);
+  background: $bg-surface;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
@@ -333,13 +333,13 @@ button {
   cursor: pointer;
 }
 button:focus-visible {
-  outline: 2px solid var(--consumer-muted, #aaa9a4);
+  outline: 2px solid var(--consumer-muted, $text-faint);
   outline-offset: 2px;
 }
 .icon-button {
   background: transparent;
   border: 0;
-  color: var(--consumer-muted, #aaa9a4);
+  color: var(--consumer-muted, $text-faint);
   font-size: 22px;
 }
 .history-list {
@@ -359,13 +359,13 @@ button:focus-visible {
   text-align: left;
   background: transparent;
   border: 0;
-  color: var(--consumer-muted, #aaa9a4);
+  color: var(--consumer-muted, $text-faint);
 }
 .media-thumb {
   position: relative;
   display: block;
   height: 126px;
-  background: var(--consumer-raised, #292927);
+  background: var(--consumer-raised, $bg-surface);
   border-radius: 7px;
   overflow: hidden;
 }
@@ -379,8 +379,8 @@ button:focus-visible {
   bottom: 5px;
   right: 5px;
   padding: 1px 5px;
-  background: var(--consumer-panel, #20201f);
-  color: var(--consumer-text, #f1f0ed);
+  background: var(--consumer-panel, $bg-surface);
+  color: var(--consumer-text, $text-primary);
   border-radius: 3px;
   font-size: 12px;
 }
@@ -388,7 +388,7 @@ button:focus-visible {
   height: 100%;
   display: grid;
   place-items: center;
-  color: var(--consumer-muted, #aaa9a4);
+  color: var(--consumer-muted, $text-faint);
 }
 .history-card small {
   display: block;
@@ -397,14 +397,14 @@ button:focus-visible {
 }
 .empty-state {
   text-align: center;
-  color: var(--consumer-muted, #aaa9a4);
+  color: var(--consumer-muted, $text-faint);
   padding: 30px 5px;
   font-size: 13px;
 }
 footer {
   padding: 12px 16px;
   border-top: 1px solid var(--consumer-line, #363633);
-  color: var(--consumer-muted, #aaa9a4);
+  color: var(--consumer-muted, $text-faint);
   font-size: 12px;
 }
 .load-error {
@@ -415,7 +415,7 @@ footer {
 .load-more {
   background: transparent;
   border: 0;
-  color: var(--consumer-muted, #aaa9a4);
+  color: var(--consumer-muted, $text-faint);
   padding: 8px;
 }
 .load-more {

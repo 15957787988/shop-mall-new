@@ -680,7 +680,7 @@ function selectHistoryItem(item: HistoryItem) {
     align-items: center;
     justify-content: center;
     border-radius: 8px;
-    background: rgba(109, 40, 217, 0.1);
+    background: var(--color-accent-soft);
   }
 
   &__icon {
@@ -737,8 +737,8 @@ function selectHistoryItem(item: HistoryItem) {
     border-color: var(--color-creative-violet);
 
     &:hover:not(:disabled) {
-      background: rgba(109, 40, 217, 0.9);
-      border-color: rgba(109, 40, 217, 0.9);
+      background: var(--color-creative-violet);
+      border-color: var(--color-creative-violet);
     }
   }
 

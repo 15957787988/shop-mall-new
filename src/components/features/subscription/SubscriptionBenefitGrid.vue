@@ -6,7 +6,6 @@
         v-for="(feature, i) in features"
         :key="feature"
         class="subscription-benefit-grid__item"
-        :style="{ background: TILE_GRADIENTS[i % TILE_GRADIENTS.length] }"
       >
         <span class="subscription-benefit-grid__icon-wrap">
           <component :is="BENEFIT_ICONS[i]" class="subscription-benefit-grid__icon" />
@@ -46,14 +45,6 @@ const BENEFIT_ICONS = [
   CustomerServiceOutlined,
 ]
 
-const TILE_GRADIENTS = [
-  'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)',
-  'linear-gradient(135deg, #FDF4FF 0%, #EDE9FE 100%)',
-  'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-  'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
-  'linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%)',
-  'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
-]
 </script>
 
 <style scoped lang="scss">
@@ -82,6 +73,7 @@ const TILE_GRADIENTS = [
     border-radius: 12px;
     padding: 12px 8px;
     text-align: center;
+    background: var(--color-surface-1);
     box-shadow: var(--shadow-soft);
   }
 

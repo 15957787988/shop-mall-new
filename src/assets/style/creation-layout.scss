@@ -1,0 +1,160 @@
+// Shared presentation for creation pages; gallery and navigation pages keep their own layout.
+#app {
+  .saleor-page__body,
+  .tryon-page__body {
+    gap: 0;
+    padding: 0;
+  }
+
+  .saleor-page__sidebar,
+  .tryon-page__sidebar {
+    width: var(--layout-form-width);
+  }
+
+  .studio,
+  .replicate {
+    max-width: none;
+    padding: 0;
+    gap: 0;
+  }
+
+  .replicate__layout {
+    gap: 0;
+  }
+
+  .creation-workbench {
+    grid-template-columns: var(--layout-form-width) minmax(0, 1fr);
+  }
+
+  .saleor-sidebar,
+  .tryon-sidebar,
+  .scene-sidebar,
+  .studio__form,
+  .creation-form,
+  .replicate__materials,
+  .t8__sidebar {
+    border: 0;
+    border-radius: 0;
+    background: var(--color-surface-0);
+    box-shadow: none;
+  }
+
+  .t8__sidebar {
+    width: var(--layout-form-width);
+  }
+
+  .saleor-sidebar__scroll,
+  .tryon-sidebar__scroll,
+  .studio__form-scroll {
+    padding: 12px 20px 24px;
+    overflow-x: hidden;
+  }
+
+  .saleor-sidebar__section,
+  .tryon-sidebar__section,
+  .studio__section,
+  .creation-section {
+    padding: 16px 0;
+    border-bottom: 0;
+  }
+
+  .saleor-sidebar__footer,
+  .tryon-sidebar__footer,
+  .scene-sidebar__footer,
+  .studio__footer,
+  .creation-form__footer,
+  .t8__sidebar-footer {
+    padding: 12px 16px;
+    border-top: 0;
+    background: var(--color-surface-0);
+  }
+
+  .replicate__replacement-group,
+  .replicate__optional-heading {
+    border: 0;
+  }
+
+  .saleor-page__results,
+  .tryon-page__main {
+    padding: 20px;
+    border-radius: 0;
+  }
+
+  .saleor-sidebar,
+  .tryon-sidebar,
+  .scene-sidebar,
+  .studio__form,
+  .creation-form,
+  .replicate__materials,
+  .t8__sidebar {
+    .ant-select-selector,
+    textarea.ant-input,
+    input.ant-input,
+    .ant-input-affix-wrapper,
+    .ant-input-number,
+    .image-upload__empty,
+    .image-upload__add {
+      border-color: transparent;
+      border-radius: 8px;
+      background: var(--color-surface-1);
+      box-shadow: none;
+    }
+
+    .ant-select:not(.ant-select-disabled):hover .ant-select-selector,
+    .ant-input:hover {
+      border-color: var(--color-border-whisper);
+    }
+
+    .ant-select-focused .ant-select-selector,
+    .ant-input:focus,
+    .ant-input-affix-wrapper-focused {
+      border-color: var(--color-ink-muted);
+    }
+  }
+
+  .saleor-sidebar__structure-item,
+  .saleor-sidebar__mode .ant-radio-wrapper {
+    border: 0;
+    background: var(--color-surface-1);
+    box-shadow: none;
+  }
+
+  @media (min-width: 961px) and (min-height: 601px) {
+    .saleor-page,
+    .tryon-page,
+    .creation-workbench,
+    .studio,
+    .replicate {
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    // Each right pane owns vertical scrolling; lists and cards flow inside it.
+    .saleor-page__results,
+    .tryon-page__main,
+    .creation-results,
+    .studio__results,
+    .replicate__results,
+    .t8__main {
+      min-width: 0;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior-y: contain;
+      scrollbar-gutter: stable;
+    }
+  }
+
+  @media (max-width: 960px) {
+    .saleor-page__sidebar,
+    .tryon-page__sidebar,
+    .t8__sidebar {
+      width: 100%;
+    }
+
+    .creation-workbench {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

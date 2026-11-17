@@ -46,8 +46,8 @@ const emit = defineEmits<{
   bottom: 0;
   left: 0;
   right: 0;
-  border-top: 1px solid rgba(229, 231, 235, 0.6);
-  background: rgba(255, 249, 245, 0.95);
+  border-top: 1px solid var(--color-border-whisper);
+  background: var(--color-surface-0);
   padding: 12px 16px;
   backdrop-filter: blur(4px);
 
@@ -90,11 +90,11 @@ const emit = defineEmits<{
     color: white;
 
     &--wechat {
-      background: #07c160;
+      background: var(--color-ink-primary);
     }
 
     &--alipay {
-      background: #1677ff;
+      background: var(--color-ink-primary);
     }
   }
 
@@ -111,7 +111,7 @@ const emit = defineEmits<{
     font-weight: 600;
     color: white;
     background: linear-gradient(to right, var(--sub-accent-from), var(--sub-accent-to));
-    box-shadow: 0 8px 24px rgba(255, 107, 157, 0.35);
+    box-shadow: var(--shadow-soft);
     cursor: pointer;
     transition: transform 0.1s;
 

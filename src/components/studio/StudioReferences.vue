@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Image } from 'ant-design-vue'
-import type { StudioWork } from './api'
+import type { StudioWork } from '@/service/api/studio'
 
 const props = defineProps<{ work: StudioWork; sourceVideoUrl?: string }>()
 const expanded = ref(true)

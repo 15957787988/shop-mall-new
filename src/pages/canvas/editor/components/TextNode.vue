@@ -156,7 +156,7 @@ function onResizeEnd() {
 }
 
 .text-preview {
-  color: #c8c7c1;
+  color: $text-secondary;
 }
 
 .text-error {

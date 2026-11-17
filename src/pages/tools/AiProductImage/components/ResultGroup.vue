@@ -67,6 +67,7 @@
     <RegenerateModal
       :open="regenerateModalOpen"
       :default-model-id="group.modelId"
+      :image-count="pendingRegenerateIds.length"
       :loading="regenerateModalLoading"
       @confirm="handleRegenerateConfirm"
       @cancel="closeRegenerateModal"

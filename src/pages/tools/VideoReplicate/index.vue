@@ -1,24 +1,6 @@
 <template>
   <PageContainer flush>
-    <div class="replicate">
-      <header class="replicate__header">
-        <div>
-          <p>保留原片节奏，用你的素材重新创作</p>
-        </div>
-        <ol class="replicate__steps" aria-label="复刻流程">
-          <li :class="{ 'is-current': !activeTask }"><span>1</span>上传素材</li>
-          <li :class="{ 'is-current': activeTask?.status === 'ANALYZING' }">
-            <span>2</span>自动反推
-          </li>
-          <li
-            :class="{
-              'is-current': activeTask?.status === 'GENERATING' || activeTask?.status === 'SUCCESS',
-            }"
-          >
-            <span>3</span>直接生成
-          </li>
-        </ol>
-      </header>
+    <div class="replicate studio--gallery">
       <div class="replicate__layout">
         <section class="replicate__card replicate__materials">
           <div class="replicate__materials-scroll scroll-area">
@@ -52,15 +34,6 @@
                 preload="metadata"
               />
             </fieldset>
-            <div class="replicate__reverse">
-              <Button
-                :class="{ 'is-ready': reversedPrompt }"
-                :loading="analyzing"
-                :disabled="!canReverse"
-                @click="reversePrompt"
-                >{{ reversedPrompt ? '重新反推提示词' : '反推提示词' }}</Button
-              >
-            </div>
             <div class="replicate__section-heading replicate__optional-heading">
               <h3>替换参考图</h3>
               <span>可选 · 支持多个对象</span>
@@ -128,18 +101,6 @@
               参考图 {{ imageCount }} / {{ maxImages }} 张 · 同一对象可上传多个角度
             </p>
             <p v-if="materialsError" class="replicate__error" role="alert">{{ materialsError }}</p>
-            <fieldset :disabled="formLocked" class="replicate__prompt-editor">
-              <legend>生成提示词</legend>
-              <Input.TextArea
-                v-model:value="promptText"
-                :auto-size="{ minRows: 6, maxRows: 14 }"
-                placeholder="点击上方“反推提示词”后在这里查看和编辑，生成时使用此处内容；留空则自动反推。"
-                aria-label="生成提示词"
-              />
-              <Button type="text" size="small" :disabled="!promptText.trim()" @click="copyPrompt(promptText)">
-                <CopyOutlined />复制提示词
-              </Button>
-            </fieldset>
             <fieldset :disabled="formLocked" class="replicate__settings">
               <legend>生成设置</legend>
               <label
@@ -198,10 +159,9 @@
           <div class="replicate__form-footer">
             <div class="replicate__analyze-action">
               <Button type="primary" :loading="submitting" :disabled="!canAnalyze" @click="analyze"
-                ><ThunderboltOutlined />{{ submitting ? '正在准备复刻' : '一键复刻' }}</Button
+                ><ThunderboltOutlined />{{ submitting ? '正在准备复刻' : `一键复刻（${pointsText}）` }}</Button
               >
             </div>
-            <p class="replicate__cost" v-if="currentModel">{{ pointsText }}</p>
             <p class="replicate__cost" v-if="currentModel?.pricing?.billingSource === 'LOCAL_TARIFF'">前2张参考图免费，超额图另计；原视频仅用于豆包反推，不收生成参考视频费用。</p>
             <p v-if="submitting" role="status">
               正在保存任务，后台会继续反推和生成，可以离开页面。
@@ -226,32 +186,8 @@
                 : '登录后查看复刻记录'
             }}
           </div>
+          <div v-if="cards.length" class="studio__gallery-grid">
           <article v-for="{ task, work } in cards" :key="task.id" class="studio__card">
-            <header class="studio__card-head">
-              <span class="studio__card-model">{{
-                work.modelName || work.model || `复刻任务 #${task.id}`
-              }}</span>
-              <span
-                class="studio__card-status"
-                :data-fail="task.status === 'FAILED' || task.status === 'UNKNOWN'"
-                >{{ statusLabels[task.status] }}</span
-              >
-              <time class="studio__card-time">{{
-                task.createdAt.replace('T', ' ').slice(0, 16)
-              }}</time>
-            </header>
-            <p v-if="work.prompt" class="studio__card-prompt">{{ work.prompt }}</p>
-            <StudioParams :work="work" />
-            <p v-if="task.errorMessage" class="studio__card-error" role="alert">
-              {{ task.errorMessage }}
-            </p>
-            <p
-              v-if="task.canvasTaskId && workErrors[task.canvasTaskId]"
-              class="studio__card-error"
-              role="alert"
-            >
-              {{ workErrors[task.canvasTaskId] }}
-            </p>
             <div class="studio__media">
               <button
                 v-if="task.resultUrl"
@@ -275,6 +211,30 @@
                 {{ taskDescription(task) }}
               </span>
             </div>
+            <header class="studio__card-head">
+              <span class="studio__card-model">{{
+                work.modelName || work.model || `复刻任务 #${task.id}`
+              }}</span>
+              <span
+                class="studio__card-status"
+                :data-fail="task.status === 'FAILED' || task.status === 'UNKNOWN'"
+                >{{ statusLabels[task.status] }}</span
+              >
+              <time class="studio__card-time">{{
+                task.createdAt.replace('T', ' ').slice(0, 16)
+              }}</time>
+            </header>
+            <p v-if="work.prompt" class="studio__card-prompt">{{ work.prompt }}</p>
+            <p v-if="task.errorMessage" class="studio__card-error" role="alert">
+              {{ task.errorMessage }}
+            </p>
+            <p
+              v-if="task.canvasTaskId && workErrors[task.canvasTaskId]"
+              class="studio__card-error"
+              role="alert"
+            >
+              {{ workErrors[task.canvasTaskId] }}
+            </p>
             <div class="studio__actions replicate__card-actions">
               <a :href="task.sourceVideoUrl" target="_blank" rel="noopener noreferrer"
                 >查看原视频 · #{{ task.id }}</a
@@ -291,15 +251,8 @@
               </button>
             </div>
           </article>
-          <Pagination
-            v-if="total > 10"
-            v-model:current="historyPage"
-            :total="total"
-            :page-size="10"
-            :show-size-changer="false"
-            size="small"
-            @change="fetchHistory"
-          />
+          </div>
+          <AutoLoadMore :has-more="tasks.length < total" :loading="historyLoading" :count="tasks.length" @load="fetchHistory(true)" />
         </main>
       </div>
     </div>
@@ -350,19 +303,20 @@
 </template>
 
 <script setup lang="ts">
+import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { Button, Input, Modal, Pagination, Select, Slider, Spin } from 'ant-design-vue'
+import { Button, Input, Modal, Select, Slider, Spin } from 'ant-design-vue'
 import { CopyOutlined, DeleteOutlined, DownloadOutlined, SoundOutlined, VideoCameraOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
 import type { UploadProps } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import UploadFile from '@/components/UploadFile/src/UploadFile.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import { useAuth } from '@/composables/useAuth'
-import { analyzeReplicatePrompt, createReplicateTask, pageReplicateTasks, type ReplicateMaterials, type ReplicateTask, type ReplacementKind } from './api'
-import { downloadStudioFile, getStudioWork, loadStudioModels, studioFileName, type StudioWork } from '@/pages/ai/api'
-import StudioParams from '@/pages/ai/StudioParams.vue'
-import '@/pages/ai/video/video.scss'
-import StudioReferences from '@/pages/ai/StudioReferences.vue'
+import { createReplicateTask, pageReplicateTasks, type ReplicateMaterials, type ReplicateTask, type ReplacementKind } from './api'
+import { downloadStudioFile, getStudioWork, loadStudioModels, studioFileName, type StudioWork } from '@/service/api/studio'
+import StudioParams from '@/components/studio/StudioParams.vue'
+import '@/pages/video/video.scss'
+import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useToast } from '@/composables/useToast'
 import type { CommonAiModelItem } from '@/service/api/ai-model'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
@@ -380,8 +334,7 @@ const roles: { kind: ReplacementKind; label: string; description: string }[] = [
 ]
 const counters = { character: 0, product: 0, scene: 0 }
 const submitting = ref(false)
-const analyzing = ref(false)
-const formLocked = computed(() => submitting.value || analyzing.value)
+const formLocked = computed(() => submitting.value)
 function addReplacement(kind: ReplacementKind) {
   if (formLocked.value || materials.replacements.length >= 30) return
   counters[kind] += 1
@@ -514,36 +467,45 @@ function refreshHistory() {
   requestedStates = {}
   void fetchHistory()
 }
-async function fetchHistory() {
-  if (!isLoggedIn.value || historyLoading.value || disposed) return
+let moreQueued = false
+async function fetchHistory(append = false) {
+  if (!isLoggedIn.value || disposed) return
+  if (historyLoading.value) { if (append) moreQueued = true; return }
   const currentSession = session
   historyLoading.value = true
   clearTimeout(timer)
   try {
-    const result = await pageReplicateTasks(historyPage.value)
+    const nextPage = append ? historyPage.value + 1 : 1
+    const pages = await Promise.all(Array.from({ length: append ? 1 : historyPage.value }, (_, index) => pageReplicateTasks(append ? nextPage : index + 1)))
+    const result = { list: pages.flatMap(page => page.list), total: pages[0].total }
     if (disposed || currentSession !== session) return
-    tasks.value = result.list
-    total.value = result.total
+    tasks.value = [...new Map((append ? [...tasks.value, ...result.list] : [...result.list, ...tasks.value]).map(task => [task.id, task])).values()]
+    if (append) historyPage.value = nextPage
+    total.value = result.list.length ? result.total : tasks.value.length
     historyError.value = ''
     void loadWorks(result.list, currentSession)
   } catch (e: unknown) {
     if (!disposed && currentSession === session) historyError.value = e instanceof Error ? e.message : '记录加载失败'
   } finally {
-    historyLoading.value = false
-    if (!disposed && isLoggedIn.value)
-      timer = setTimeout(() => void fetchHistory(), 5000)
+    if (currentSession === session) {
+      historyLoading.value = false
+      if (!disposed && isLoggedIn.value) timer = setTimeout(() => void fetchHistory(), 5000)
+      if (!disposed && moreQueued) { moreQueued = false; void fetchHistory(true) }
+    }
   }
 }
 watch([isLoggedIn, sessionVersion], ([loggedIn]) => {
   session += 1
+  moreQueued = false
+  historyLoading.value = false
   clearTimeout(timer)
   tasks.value = []
+  historyPage.value = 1
   works.value = {}
   workErrors.value = {}
   requestedStates = {}
   previewOpen.value = false
   previewTask.value = undefined
-  promptText.value = ''
   refAudios.value = []
   total.value = 0
   selectedId.value = undefined
@@ -652,39 +614,6 @@ function materialsBody(): ReplicateMaterials {
     })),
   }
 }
-function materialsKey() {
-  return JSON.stringify(materialsBody())
-}
-const promptText = ref('')
-const reversedPrompt = computed(() => promptText.value.trim())
-// 素材变化后清空旧提示词，避免把前一个视频或对象的分析用于本次生成。
-watch(materialsKey, () => {
-  promptText.value = ''
-}, { flush: 'sync' })
-const canReverse = computed(
-  () => !formLocked.value && Boolean(materials.videoUrl) && !materialsError.value
-)
-async function reversePrompt() {
-  if (!isLoggedIn.value) {
-    openLogin()
-    return
-  }
-  if (!canReverse.value) return
-  analyzing.value = true
-  error.value = ''
-  const key = materialsKey()
-  const reverseSession = session
-  try {
-    const text = (await analyzeReplicatePrompt(materialsBody())).trim()
-    if (!text) throw new Error('未返回提示词')
-    if (disposed || reverseSession !== session || key !== materialsKey()) return
-    promptText.value = text
-  } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : '反推失败，请稍后重试'
-  } finally {
-    analyzing.value = false
-  }
-}
 async function analyze() {
   if (!isLoggedIn.value) {
     openLogin()
@@ -695,7 +624,6 @@ async function analyze() {
   const submitSession = session
   error.value = ''
   const body = materialsBody()
-  const prompt = reversedPrompt.value
   const settings = {
     modelId: modelId.value!,
     ratio: aspect.value,
@@ -713,9 +641,9 @@ async function analyze() {
       }
     }
     if (disposed || submitSession !== session) return
-    const snapshot = JSON.stringify({ body, settings, prompt })
+    const snapshot = JSON.stringify({ body, settings })
     if (retryInput !== snapshot || !retryKey) { retryKey = crypto.randomUUID(); retryInput = snapshot }
-    const id = await createReplicateTask(body, settings, retryKey, prompt || undefined)
+    const id = await createReplicateTask(body, settings, retryKey)
     retryKey = ''
     if (disposed || submitSession !== session) return
     selectedId.value = id

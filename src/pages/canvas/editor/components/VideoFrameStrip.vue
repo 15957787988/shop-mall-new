@@ -200,12 +200,12 @@ function handleGenerate(frame, e) {
   transition: background 0.12s, color 0.12s, border-color 0.12s;
   white-space: nowrap;
 
-  &:hover { border-color: $accent-primary; color: #a0aaff; }
+  &:hover { border-color: $accent-primary; color: $accent-text; }
 
   &.active {
     background: rgba($accent-primary, 0.13);
     border-color: $accent-primary;
-    color: #c0c5ff;
+    color: $accent-text;
   }
 }
 
@@ -216,7 +216,7 @@ function handleGenerate(frame, e) {
   background: $bg-surface;
   border: 1px solid $border-default;
   border-radius: 5px;
-  color: #c8c7c1;
+  color: $text-secondary;
   font-size: 12px;
   padding: 2px 5px;
   outline: none;

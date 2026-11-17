@@ -1,11 +1,7 @@
 <template>
   <PageContainer flush>
-    <div class="studio">
+    <div class="studio studio--gallery">
       <aside class="studio__form">
-        <header class="studio__form-heading">
-          <span class="studio__form-icon"><VideoCameraOutlined /></span>
-          <div><h1>视频创作</h1><p>描述画面与动作，结合参考素材生成新视频。</p></div>
-        </header>
         <div class="studio__form-scroll scroll-area">
           <section class="studio__section">
             <h3 class="studio__label">模型</h3>
@@ -21,8 +17,14 @@
             <p v-else-if="!modelsLoading && !models.length" class="studio__hint">暂无可用模型</p>
           </section>
 
+          <section v-if="productMode" class="studio__section">
+            <h3 class="studio__label">商品信息</h3>
+            <label class="studio__field">商品名称<Input v-model:value="productTitle" :maxlength="100" placeholder="填写真实商品名称" /></label>
+            <label class="studio__field studio__duration">商品卖点 / 口播文案<Input.TextArea v-model:value="productSellingPoints" :rows="3" :maxlength="1000" placeholder="如：轻便通勤、可拆卸肩带；请勿填写未经证实的功效" /></label>
+            <p class="studio__hint">下方至少添加一张商品图。参考图决定商品外观，卖点和创作要求决定展示内容。</p>
+          </section>
           <section class="studio__section">
-            <h3 class="studio__label">提示词</h3>
+            <h3 class="studio__label">{{ productMode ? '创作要求' : '提示词' }}</h3>
             <Input.TextArea
               v-model:value="prompt"
               :rows="6"
@@ -56,26 +58,26 @@
           </section>
 
           <section v-if="currentModel && showRefs" class="studio__section">
-            <h3 class="studio__label">全能参考</h3>
+            <h3 class="studio__label">{{ productMode ? '商品与参考素材' : '全能参考' }}</h3>
             <p class="studio__hint">可组合参考图、参考视频、参考音频</p>
             <div v-if="maxRefs > 0" class="studio__refs">
-              <span>参考图</span>
+              <span>{{ productMode ? '商品图（必填）· 同一商品的不同角度' : '参考图' }}</span>
               <ImageUpload
-                :key="`${modelId ?? 0}-image-${maxRefs}`"
+                :key="`${productMode}-${modelId ?? 0}-image-${maxRefs}`"
                 drag
                 preview
                 require-login
                 :max-count="maxRefs"
                 :file-size="10"
                 :existing-urls="refImages"
-                empty-desc="可选，jpg / png / webp"
+                :empty-desc="productMode ? '上传商品图，JPG / PNG / WebP' : '可选，JPG / PNG / WebP'"
                 @upload-complete="refImages = $event"
               />
             </div>
             <div v-if="maxVideos > 0" class="studio__refs">
               <span>参考视频 · 总时长不超过 {{ maxVideoDuration }}s</span>
               <UploadFile
-                :key="`${modelId ?? 0}-video-${maxVideos}`"
+                :key="`${productMode}-${modelId ?? 0}-video-${maxVideos}`"
                 :model-value="refVideos"
                 drag
                 :limit="maxVideos"
@@ -90,7 +92,7 @@
             <div v-if="maxAudios > 0" class="studio__refs">
               <span>参考音频 · 总时长不超过 {{ maxAudioDuration }}s</span>
               <UploadFile
-                :key="`${modelId ?? 0}-audio-${maxAudios}`"
+                :key="`${productMode}-${modelId ?? 0}-audio-${maxAudios}`"
                 :model-value="refAudios"
                 drag
                 :limit="maxAudios"
@@ -103,6 +105,7 @@
               />
             </div>
           </section>
+          <p v-if="productMode && currentModel && !maxRefs" class="studio__error studio__section">当前模型不支持商品参考图，请更换支持图片参考的视频模型。</p>
         </div>
 
         <div class="studio__footer">
@@ -132,26 +135,9 @@
           <strong>开始你的第一个视频作品</strong>
           <span>填写提示词、选择模型后点击生成，结果会保存在这里。</span>
         </div>
+        <div v-if="works.length" class="studio__gallery-grid">
         <article v-for="item in works" :key="item.id" class="studio__card">
           <div class="studio__card-body">
-            <header class="studio__card-head">
-              <span class="studio__card-model">{{
-                item.modelName || item.model || '生成结果'
-              }}</span>
-              <span
-                v-if="statusLabel(item)"
-                class="studio__card-status"
-                :data-fail="item.status === 30"
-              >
-                {{ statusLabel(item) }}
-              </span>
-              <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
-            </header>
-            <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
-            <StudioParams :work="item" />
-            <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
-              {{ item.errorMessage }}
-            </p>
             <div class="studio__media">
               <button
                 v-if="videoSrc(item)"
@@ -176,11 +162,30 @@
                   @loadedmetadata="paintThumb"
                 />
                 <span class="studio__play" aria-hidden="true" />
+                <span v-if="item.duration" class="studio__duration-badge">{{ item.duration }}s</span>
               </button>
               <span v-else-if="isPending(item)" class="studio__media-wait"
                 >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
               >
+              <span v-else class="studio__media-wait">{{ item.status === 30 ? '生成失败' : '结果暂不可用' }}</span>
             </div>
+            <header class="studio__card-head">
+              <span class="studio__card-model">{{
+                item.creationTitle || item.creationLabel || item.modelName || item.model || '生成结果'
+              }}</span>
+              <span
+                v-if="statusLabel(item)"
+                class="studio__card-status"
+                :data-fail="item.status === 30"
+              >
+                {{ statusLabel(item) }}
+              </span>
+              <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
+            </header>
+            <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
+            <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
+              {{ item.errorMessage }}
+            </p>
             <div class="studio__actions">
               <button
                 type="button"
@@ -205,18 +210,11 @@
             </div>
           </div>
         </article>
-        <button
-          v-if="hasMore"
-          type="button"
-          class="studio__more"
-          :disabled="listLoading"
-          @click="loadMore"
-        >
-          {{ listLoading ? '加载中…' : '加载更多' }}
-        </button>
+        </div>
+<AutoLoadMore :has-more="hasMore" :loading="listLoading" :count="works.length" @load="loadMore" />
       </main>
     </div>
-    <HistoryModal v-model:open="historyOpen" kind="video" />
+    <HistoryModal v-model:open="historyOpen" kind="video" :creation-tool="productMode ? 'product-video' : 'video'" />
     <Modal
       v-model:open="previewOpen"
       :footer="null"
@@ -260,7 +258,10 @@
 </template>
 
 <script setup lang="ts">
+import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { buildProductVideoPrompt } from '@/lib/creation/product-video'
 import { VideoCameraOutlined, CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
@@ -273,9 +274,9 @@ import {
 import { isSeedance, assertSeedanceDimensions } from '@/pages/canvas/utils/seedanceConstraints'
 import { readReferenceVideoMetadata } from '@/pages/canvas/utils/videoReferencePreflight'
 import UploadFile from '@/components/UploadFile/src/UploadFile.vue'
-import HistoryModal from '../HistoryModal.vue'
-import StudioParams from '../StudioParams.vue'
-import StudioReferences from '../StudioReferences.vue'
+import HistoryModal from '@/components/studio/HistoryModal.vue'
+import StudioParams from '@/components/studio/StudioParams.vue'
+import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useAuth } from '@/composables/useAuth'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useToast } from '@/composables/useToast'
@@ -290,8 +291,13 @@ import {
   studioFileName,
   submitStudioVideo,
   type StudioWork,
-} from '../api'
+} from '@/service/api/studio'
 
+interface Props { productMode?: boolean }
+const props = withDefaults(defineProps<Props>(), { productMode: false })
+const route = useRoute()
+const productTitle = ref('')
+const productSellingPoints = ref('')
 const { isLoggedIn, openLogin } = useAuth()
 const { addToast } = useToast()
 
@@ -370,9 +376,10 @@ const maxVideoDuration = computed(() => bound(currentModel.value, 'maxTotalVideo
 const maxAudioDuration = computed(() => bound(currentModel.value, 'maxTotalAudioDuration', 15))
 const showRefs = computed(() => maxRefs.value > 0 || maxVideos.value > 0 || maxAudios.value > 0)
 const estimatedPoints = computed(() => estimateModelPoints(currentModel.value, { resolution: resolution.value, ratio: aspect.value, duration: duration.value, imageCount: refImages.value.length, referenceVideo: refVideos.value.length > 0, generateAudio: true }))
-const pointsText = computed(() => ` · ${formatModelPoints(estimatedPoints.value)}`)
+const pointsText = computed(() => `（${formatModelPoints(estimatedPoints.value)}）`)
 const canSubmit = computed(() => {
   if (submitting.value || !modelId.value || currentModel.value?.disabled || estimatedPoints.value == null) return false
+  if (props.productMode) return maxRefs.value > 0 && refImages.value.length > 0 && !!productTitle.value.trim()
   return Boolean(
     prompt.value.trim() ||
       refImages.value.length ||
@@ -653,11 +660,11 @@ async function fetchPage(reset: boolean) {
   listLoading.value = true
   const nextPage = reset ? 1 : pageNo.value + 1
   try {
-    const page = await pageStudioWorks('video', nextPage)
+    const page = await pageStudioWorks('video', nextPage, 10, props.productMode ? 'product-video' : 'video')
     if (seq !== pageSeq) return
     const list = page.list ?? []
     works.value = reset ? list : works.value.concat(list)
-    total.value = page.total ?? works.value.length
+    total.value = list.length ? (page.total ?? works.value.length) : works.value.length
     pageNo.value = nextPage
     schedulePoll()
   } catch (error: unknown) {
@@ -757,7 +764,7 @@ async function handleGenerate() {
     if (refVideos.value.length) await assertRefVideos(refVideos.value, currentModel.value)
     if (refAudios.value.length) await assertRefAudios(refAudios.value, maxAudioDuration.value)
     const params = buildVideoParams({
-      prompt: prompt.value,
+      prompt: props.productMode ? buildProductVideoPrompt(productTitle.value, productSellingPoints.value, prompt.value) : prompt.value,
       aspect: aspect.value,
       duration: duration.value,
       resolution: resolution.value,
@@ -771,6 +778,7 @@ async function handleGenerate() {
       return
     }
     await submitStudioVideo({
+      creationTool: props.productMode ? 'product-video' : 'video',
       modelId: modelId.value,
       model: currentModel.value?.model,
       params,
@@ -793,6 +801,12 @@ watch(isLoggedIn, (loggedIn) => {
   if (!models.value.length || modelsError.value) void loadModels()
   void fetchPage(true)
 })
+
+watch(() => [props.productMode, route.query.prompt], () => {
+  prompt.value = typeof route.query.prompt === 'string' ? route.query.prompt.slice(0, 30000) : ''
+  productTitle.value = ''; productSellingPoints.value = ''
+  refImages.value = []; refVideos.value = []; refAudios.value = []
+}, { immediate: true })
 
 onMounted(() => {
   void loadModels()

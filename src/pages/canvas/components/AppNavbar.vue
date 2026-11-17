@@ -23,7 +23,7 @@ const router = useRouter()
   justify-content: space-between;
   height: 56px;
   padding: 0 24px;
-  background: rgba(#0c0c1e, 0.95);
+  background: rgba($bg-deep, 0.95);
   border-bottom: 1px solid $border-default;
   backdrop-filter: blur(8px);
   position: sticky;

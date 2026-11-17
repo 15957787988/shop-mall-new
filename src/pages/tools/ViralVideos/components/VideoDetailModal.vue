@@ -74,7 +74,7 @@
               :loading="regenerating"
               @click="emit('regenerate', record)"
             >
-              重新生成
+              重新生成（{{ pointsText }}）
             </Button>
           </div>
         </aside>
@@ -94,6 +94,7 @@ defineProps<{
   loading: boolean
   record: ShopVideoRecord | null
   regenerating: boolean
+  pointsText: string
 }>()
 
 const open = defineModel<boolean>('open', { default: false })

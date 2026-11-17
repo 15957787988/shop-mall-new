@@ -110,10 +110,13 @@ axios.interceptors.response.use(
   (res) => {
   //  NProgress.done()
     const path = (res.config.url || '').split('?')[0]
-    const billable = /\/ai\/(?:image|video)\/(?:common\/(?:generations|generate)|get-my|my-page)$/.test(path)
-      || /\/ai\/video\/replicate\/(?:tasks(?:\/\d+)?|prompt)$/.test(path)
-      || /\/ai\/shop\/image-group\/(?:generate|regenerate|get|page)$/.test(path)
-    if (billable && res.data?.code === 0) onPointsChanged?.()
+    // 仅提交生成后同步余额，历史与状态查询不能再次触发余额查询。
+    const submission = res.config.method?.toLowerCase() === 'post' && (
+      /\/ai\/(?:image|video)\/(?:common\/(?:generations|generate)|collections)$/.test(path)
+      || /\/ai\/video\/replicate\/(?:tasks|prompt)$/.test(path)
+      || /\/ai\/shop\/image-group\/(?:generate|regenerate)$/.test(path)
+    )
+    if (submission && res.data?.code === 0) onPointsChanged?.()
     return res
   },
   (error) => {

@@ -22,6 +22,11 @@ export interface StudioWork {
   prompt?: string
   model?: string
   modelName?: string
+  creationTool?: string
+  creationBatchId?: string
+  creationTitle?: string
+  creationIndex?: number
+  creationLabel?: string
   ratio?: string
   resolution?: string
   duration?: number
@@ -45,12 +50,13 @@ export function loadStudioModels(kind: StudioKind) {
   return fetchCommonAiModels(type, undefined, kind === 'video')
 }
 
-export function pageStudioWorks(kind: StudioKind, pageNo: number, pageSize = PAGE_SIZE) {
+export function pageStudioWorks(kind: StudioKind, pageNo: number, pageSize = PAGE_SIZE, creationTool?: string) {
   const url = kind === 'image' ? '/admin-api/ai/image/my-page' : '/admin-api/ai/video/my-page'
   return http.get<PageResult<StudioWork>>(url, {
     pageNo,
     pageSize,
     excludeCanvas: true,
+    ...(creationTool ? { creationTool } : {}),
   })
 }
 
@@ -93,6 +99,7 @@ export async function downloadStudioFile(url: string, fileName: string) {
 }
 
 export function submitStudioImage(body: {
+  creationTool?: 'image' | 'model-image'
   idempotencyKey?: string
   modelId: number
   model?: string
@@ -104,6 +111,7 @@ export function submitStudioImage(body: {
   return http.post<number>('/admin-api/ai/image/common/generations', {
     ...body,
     responseFormat: 'url',
+    creationTool: body.creationTool || 'image',
     idempotencyKey: body.idempotencyKey || crypto.randomUUID(),
   })
 }
@@ -217,6 +225,7 @@ function assertVideoParams() {
 if (import.meta.env?.DEV) assertVideoParams()
 
 export function submitStudioVideo(body: {
+  creationTool?: 'video' | 'product-video'
   idempotencyKey?: string
   modelId: number
   model?: string
@@ -224,6 +233,7 @@ export function submitStudioVideo(body: {
 }) {
   return http.post<number>('/admin-api/ai/video/common/generate', {
     ...body,
+    creationTool: body.creationTool || 'video',
     idempotencyKey: body.idempotencyKey || crypto.randomUUID(),
   })
 }

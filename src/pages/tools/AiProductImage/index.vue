@@ -1,18 +1,18 @@
 <template>
   <PageContainer flush>
     <div class="saleor-page">
-      <header class="saleor-page__head">
-        <h1 class="saleor-page__title">AI商品套图</h1>
-      </header>
 
       <div class="saleor-page__body">
         <aside class="saleor-page__sidebar">
           <Sidebar v-model:generating="generating" @generate="handleGenerate" />
         </aside>
-        <main class="saleor-page__results">
+        <main class="saleor-page__results scroll-area">
           <ResultList
             v-model:results="results"
             :loading="loading"
+            :loading-more="loadingMore"
+            :has-more="hasMore"
+            @load-more="loadMore"
             :refresh-results="() => fetchResults(true)"
             @regenerated="handleRegenerated"
           />
@@ -29,7 +29,7 @@ import ResultList from "./components/ResultList.vue";
 import { useSaleorImageGroup } from "./hook/useSaleorImageGroup";
 import type { SaleorFormData } from "./utils/types";
 
-const { results, loading, generating, fetchResults, handleGenerate: submitGenerate } =
+const { results, loadingMore, hasMore, loadMore, loading, generating, fetchResults, handleGenerate: submitGenerate } =
   useSaleorImageGroup();
 
 async function handleGenerate(form: SaleorFormData, done: () => void) {
@@ -48,7 +48,7 @@ function handleRegenerated() {
 <style scoped lang="scss">
 .saleor-page {
   display: flex;
-  height: calc(100dvh - var(--app-header-height));
+  height: 100%;
   flex-direction: column;
   overflow: hidden;
 

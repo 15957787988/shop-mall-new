@@ -1,24 +1,11 @@
-/** 工具列表/卡片入口 */
-export function getToolHref(toolId: string): string {
-  if (toolId === "t1") {
-    return "/tools/ai-product-image";
-  }
-  if (toolId === "t8") return "/tools/t8";
-  if (toolId === "t13") return "/tools/try-on";
-  if (toolId === "t7") return "/workspace?tool=t7";
-  return `/tools/${toolId}`;
+/** 已接通的创作工具入口，兼容旧工具卡片。 */
+const creationPaths: Record<string, string> = {
+  t1: '/product-set', t2: '/detail-page', t3: '/image-remix',
+  t5: '/image', t6: '/product-retouch', t7: '/product-video',
+  t8: '/video-remix', t9: '/video-remix', t13: '/virtual-try-on', t15: '/fashion-set',
 }
-
-/** 开放工具的创作入口路由 */
-export function getToolWorkspaceHref(toolId: string): string {
-  if (toolId === "t1") {
-    return "/tools/ai-product-image";
-  }
-  if (toolId === "t8") return "/tools/t8";
-  if (toolId === "t13") return "/tools/try-on";
-  if (toolId === "t7") return "/workspace?tool=t7";
-  return `/workspace?tool=${toolId}`;
-}
+export function getToolHref(toolId: string): string { return creationPaths[toolId] || `/tools/${toolId}` }
+export function getToolWorkspaceHref(toolId: string): string { return creationPaths[toolId] || `/workspace?tool=${toolId}` }
 
 /**
  * 从 linkUrl 解析 toolId
@@ -26,6 +13,9 @@ export function getToolWorkspaceHref(toolId: string): string {
  */
 export function parseToolIdFromLinkUrl(linkUrl: string | undefined): string | null {
   if (!linkUrl) return null;
+
+  const creation = Object.entries(creationPaths).find(([, path]) => path === linkUrl.split('?')[0])
+  if (creation) return creation[0]
 
   // /tools/t5 -> t5
   // /tools/ai-product-image -> t1 (特殊映射)

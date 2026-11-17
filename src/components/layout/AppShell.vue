@@ -1,11 +1,8 @@
 <template>
   <div class="app-shell">
-    <Sidebar v-if="!isCanvasEditor" :open="sidebarOpen" :on-close="() => (sidebarOpen = false)" />
-
     <div class="app-shell__main">
       <TopBar
         v-if="!isCanvasEditor"
-        :on-menu-click="() => (sidebarOpen = true)"
         :unread-count="0"
         :is-logged-in="isLoggedIn"
         :user-info="userInfo"
@@ -54,7 +51,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import Sidebar from '@/components/layout/Sidebar.vue'
 import TopBar from '@/components/layout/TopBar.vue'
 import SiteFooter from '@/components/layout/SiteFooter.vue'
 import ShellOverlays from '@/components/features/ShellOverlays.vue'
@@ -78,7 +74,7 @@ useLiveMemberInfo()
 
 const route = useRoute()
 const hideFooterOnToolPage = computed(
-  () => route.path.startsWith('/tools/') || route.path.startsWith('/ai/') || route.path === '/video-replicate',
+  () => !!route.meta.creationWorkspace || route.path.startsWith('/tools/'),
 )
 const isToolWorkspace = computed(() => hideFooterOnToolPage.value)
 const showPageFooter = computed(() => ['/pricing', '/team', '/templates'].includes(route.path))
@@ -96,7 +92,6 @@ const {
   userInfo,
 } = useAuth()
 
-const sidebarOpen = ref(false)
 const messageOpen = ref(false)
 const pointDetailOpen = ref(false)
 const vipOpen = ref(false)

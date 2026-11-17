@@ -219,7 +219,7 @@ const defaultAspect = computed(() => {
     color: var(--color-ink-secondary);
 
     &--scene {
-      background: rgba(109, 40, 217, 0.1);
+      background: var(--color-accent-soft);
       color: var(--color-creative-violet);
     }
   }

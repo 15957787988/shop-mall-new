@@ -61,6 +61,8 @@
               </button>
             </div>
 
+
+          </div>
             <div class="t8__gallery-meta">
               <span class="t8__gallery-type">
                 {{ videoTypeLabelByCode(item.videoType) }}
@@ -70,32 +72,24 @@
                 {{ formatRecordTime(item.createTime) }}
               </span>
             </div>
-          </div>
+          <p v-if="item.sellingPoints" class="t8__gallery-description">{{ item.sellingPoints }}</p>
         </div>
       </div>
 
-      <Pagination
-        v-if="total > HISTORY_PAGE_SIZE"
-        class="t8__gallery-pagination"
-        :current="pageNo"
-        :total="total"
-        :page-size="HISTORY_PAGE_SIZE"
-        :show-size-changer="false"
-        @change="emit('page-change', $event)"
-      />
+      <AutoLoadMore :has-more="history.length < total" :loading="loading" :count="history.length" @load="emit('page-change', pageNo + 1)" />
     </Spin>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Pagination, Spin } from 'ant-design-vue'
+import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
+import { Spin } from 'ant-design-vue'
 import {
   ReloadOutlined,
   PlayCircleOutlined,
   DownloadOutlined,
 } from '@ant-design/icons-vue'
 import { isShopVideoFinished, type ShopVideoRecord } from '../api'
-import { HISTORY_PAGE_SIZE } from '../utils/constants'
 import {
   formatRecordTime,
   isTypeHot,
@@ -181,7 +175,7 @@ const emit = defineEmits<{
   overflow: hidden;
   border-radius: 12px;
   background: #111;
-  aspect-ratio: 9 / 12;
+  aspect-ratio: 9 / 16;
 }
 
 .t8__gallery-cover-img {
@@ -270,7 +264,7 @@ const emit = defineEmits<{
 }
 
 .t8__gallery-meta {
-  position: absolute;
+  position: static;
   right: 0;
   bottom: 0;
   left: 0;

@@ -47,7 +47,7 @@ const emit = defineEmits<{
     gap: 4px;
     border: none;
     border-radius: 9999px;
-    background: rgba(109, 40, 217, 0.1);
+    background: var(--color-accent-soft);
     padding: 2px 10px;
     font-size: 11px;
     color: var(--color-creative-violet);
@@ -55,7 +55,7 @@ const emit = defineEmits<{
     transition: background 0.2s;
 
     &:hover {
-      background: rgba(109, 40, 217, 0.15);
+      background: var(--color-surface-2);
     }
   }
 

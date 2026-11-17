@@ -52,6 +52,7 @@
       :loading="videoDetail.loading"
       :record="videoDetail.record"
       :regenerating="regenerating"
+      :points-text="retryPointsText"
       @close="closeVideoDetail"
       @download="handleDownload"
       @regenerate="handleRegenerate"
@@ -89,6 +90,7 @@ const {
   canGenerate,
   canReplicate,
   estimateHint,
+  retryPointsText,
   showHistoryGallery,
   toggleTypeChecked,
   changeTypeCount,

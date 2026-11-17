@@ -1,15 +1,14 @@
 <template>
   <PageContainer flush>
     <div class="tryon-page">
-      <header class="tryon-page__head">
-        <h1 class="tryon-page__title">AI服饰穿戴</h1>
-      </header>
 
       <div class="tryon-page__body">
         <aside class="tryon-page__sidebar">
           <SceneSidebar
             v-show="phase === 'scene-select' || phase === 'result'"
             :groups="scenePromptGroups"
+            :aspect-ratio="savedForm?.aspectRatio"
+            :reference-count="(savedForm?.productImages.length ?? 0) + (savedForm?.modelAvatar ? 1 : 0)"
             :generating="generatingImages"
             @prev="handlePrev"
             @regenerate="handleRegenerate"
@@ -21,7 +20,7 @@
           />
         </aside>
 
-        <main class="tryon-page__main">
+        <main class="tryon-page__main scroll-area">
           <Spin v-if="generatingPrompt && phase === 'config'" class="tryon-page__loading">
             <div class="tryon-page__loading-text">正在生成推荐场景...</div>
           </Spin>
@@ -32,6 +31,9 @@
             v-else-if="phase === 'result' || results.length"
             v-model:results="results"
             :loading="resultsLoading"
+            :loading-more="loadingMore"
+            :has-more="hasMore"
+            @load-more="loadMore"
           />
           <TryOnEmpty v-else />
         </main>
@@ -57,7 +59,7 @@ import type { TryOnFormData, ScenePromptGroup, ScenePromptResult } from './utils
 type Phase = 'config' | 'scene-select' | 'result'
 
 const { addToast } = useToast()
-const { results, loading: resultsLoading, fetchResults, startPolling } = useWearImageResults()
+const { results, loadingMore, hasMore, loadMore, loading: resultsLoading, fetchResults, startPolling } = useWearImageResults()
 
 const phase = ref<Phase>('config')
 const generatingPrompt = ref(false)

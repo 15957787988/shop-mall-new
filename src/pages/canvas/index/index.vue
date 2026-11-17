@@ -634,14 +634,14 @@ async function onClone(tpl) {
   pointer-events: none;
 }
 .skeleton-card .cover {
-  background: linear-gradient(120deg, #20201f, #292927, #20201f);
+  background: linear-gradient(120deg, $bg-surface, $bg-surface, $bg-surface);
 }
 .skeleton-title {
   height: 18px;
   margin: 18px;
   width: 60%;
   border-radius: 4px;
-  background: #292927;
+  background: $bg-surface;
 }
 
 .gallery {
@@ -1042,7 +1042,7 @@ html.consumer-theme .gallery .search-wrap .search-input:focus-visible {
     height: 28px;
     border-radius: 50%;
     border: 1px solid $border-default;
-    background: rgba(10, 10, 20, 0.75);
+    background: rgba($bg-deep, 0.75);
     color: $text-secondary;
     font-size: 13px;
     cursor: pointer;
@@ -1058,7 +1058,7 @@ html.consumer-theme .gallery .search-wrap .search-input:focus-visible {
 .create-mask {
   position: fixed;
   inset: 0;
-  background: rgba(4, 4, 10, 0.72);
+  background: rgba($bg-deep, 0.72);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -1159,7 +1159,7 @@ html.consumer-theme .gallery .search-wrap .search-input:focus-visible {
 .detail-mask {
   position: fixed;
   inset: 0;
-  background: rgba(4, 4, 10, 0.72);
+  background: rgba($bg-deep, 0.72);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
@@ -1629,7 +1629,7 @@ html.consumer-theme .gallery .search-wrap .search-input:focus-visible {
   color: #fff;
 }
 .mine-card .footer {
-  background: linear-gradient(transparent, rgba(17, 24, 39, 0.72));
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
 }
 .mine-card .time {
   font-size: 12px;

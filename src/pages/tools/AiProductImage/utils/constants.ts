@@ -1,6 +1,3 @@
-/** 每张套图消耗积分 */
-export const POINTS_PER_IMAGE = 3;
-
 /** 子图类型 → 展示标签 */
 export const IMAGE_TYPE_LABELS: Record<number, string> = {
   1: "白底图",

@@ -9,7 +9,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { StudioWork } from './api'
+import type { StudioWork } from '@/service/api/studio'
 
 const props = defineProps<{
   work: StudioWork

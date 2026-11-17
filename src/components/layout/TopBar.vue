@@ -1,11 +1,19 @@
 <template>
   <header :class="['top-bar', { 'top-bar--floating': floating }]">
-    <div class="top-bar__left">
-      <button type="button" class="top-bar__menu-btn" aria-label="打开菜单" @click="onMenuClick">
-        <MenuOutlined />
-      </button>
-      <span v-if="!floating" class="top-bar__page-name">{{ pageName }}</span>
-    </div>
+    <router-link to="/" class="top-bar__brand" aria-label="返回创作工作台">
+      <span class="top-bar__brand-icon"><PartitionOutlined /></span>{{ BRAND_NAME }}
+    </router-link>
+    <nav class="top-bar__nav" aria-label="主导航">
+      <router-link
+        v-for="item in navigation"
+        :key="item.path"
+        :to="item.path"
+        :class="{ active: isActive(item.path) }"
+        :aria-current="isActive(item.path) ? 'page' : undefined"
+      >
+        {{ item.label }}
+      </router-link>
+    </nav>
 
     <div class="top-bar__actions">
       <div v-if="isLoggedIn" class="top-bar__credit-pill">
@@ -49,13 +57,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { MenuOutlined, StarOutlined, BellOutlined } from '@ant-design/icons-vue'
+import { PartitionOutlined, StarOutlined, BellOutlined } from '@ant-design/icons-vue'
 import UserMenu from '@/components/features/UserMenu.vue'
 import CreditDetailModal from '@/components/features/CreditDetailModal.vue'
+import { BRAND_NAME } from '@/lib/brand'
 import type { MemberInfo } from '@/components/layout/api'
 
 interface Props {
-  onMenuClick: () => void
   unreadCount: number
   isLoggedIn: boolean
   userInfo?: MemberInfo | null
@@ -69,14 +77,20 @@ interface Props {
 const props = defineProps<Props>()
 
 const route = useRoute()
-const pageNames: Record<string, string> = {
-  CanvasIndex: '无限画布', Home: '创作工作台', Space: '我的作品', Team: '设计服务', AgentLib: '资产库',
-  Recent: '最近打开', Search: '搜索', Tools: '创作工具', AiProductImage: '商品套图',
-  VideoReplicate: '爆款复刻', ViralVideos: '视频制作', AiImage: 'AI 制图', AiVideo: 'AI 视频',
-  TryOn: 'AI 试穿', ToolDetail: '创作工具', Templates: '模板中心',
-  TemplateDetail: '模板详情', Workspace: '创作工作区', Pricing: '积分与套餐',
+const navigation = [
+  { label: '工作台', path: '/' },
+  { label: '全部工具', path: '/tools' },
+  { label: '无限画布', path: '/canvas/index' },
+  { label: '我的作品', path: '/space' },
+  { label: '资产库', path: '/agent-lib' },
+]
+function isActive(path: string) {
+  return path === '/'
+    ? route.path === '/'
+    : path === '/tools'
+    ? !!route.meta.creationWorkspace || route.path === '/tools'
+    : route.path === path
 }
-const pageName = computed(() => pageNames[String(route.name)] || '电商工作室')
 const chargeOpen = ref(false)
 const displayPoint = computed(() => props.userInfo?.point ?? 0)
 const displayUserName = computed(() => props.userInfo?.nickname)
@@ -87,53 +101,70 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
 .top-bar {
   z-index: 30;
   display: flex;
-  height: var(--app-header-height);
+  min-height: var(--app-header-height);
   flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 12px;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--color-border-whisper);
   background: var(--color-surface-0);
 
   @media (min-width: 768px) {
-    padding: 0 24px;
+    padding: 12px clamp(24px, 3.8vw, 64px);
   }
 
-  &__left {
-    display: flex;
-    min-width: 0;
+  &__brand {
+    display: inline-flex;
     align-items: center;
-  }
-
-  &__page-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--color-ink-primary);
-    white-space: nowrap;
-  }
-
-  &__menu-btn {
-    display: flex;
-    width: 40px;
-    height: 40px;
+    gap: 10px;
     flex-shrink: 0;
+    color: var(--color-ink-primary);
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  &__brand-icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--color-creative-violet);
+    color: var(--color-on-media);
+    font-size: 19px;
+  }
+  &__nav {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--color-ink-secondary);
-    cursor: pointer;
-    font-size: 20px;
-
-    &:hover {
-      background: var(--color-surface-2);
+    gap: 4px;
+    margin-right: auto;
+    margin-left: 24px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    a {
+      flex-shrink: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: var(--color-ink-secondary);
+      font-size: 13px;
+      text-decoration: none;
+      white-space: nowrap;
+      &:hover,
+      &.active {
+        background: var(--color-accent-soft);
+        color: var(--color-creative-violet);
+      }
+      &.active {
+        font-weight: 600;
+      }
     }
-
-    @media (min-width: 768px) {
-      display: none;
-    }
+  }
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid var(--color-creative-violet);
+    outline-offset: 2px;
   }
 
   &--floating {
@@ -176,7 +207,8 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
     box-shadow: none;
   }
 
-  &__detail-btn, &__credit-btn {
+  &__detail-btn,
+  &__credit-btn {
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
@@ -190,11 +222,23 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
-    &:hover { background: var(--color-accent-soft); }
+    &:hover {
+      background: var(--color-accent-soft);
+    }
   }
-  &__credit-btn { color: var(--color-creative-violet); font-weight: 600; }
-  &__credit-icon { color: var(--color-warning-amber); font-size: 15px; }
-  &__credit-divider { width: 1px; height: 14px; background: var(--color-border-whisper); }
+  &__credit-btn {
+    color: var(--color-creative-violet);
+    font-weight: 600;
+  }
+  &__credit-icon {
+    color: var(--color-warning-amber);
+    font-size: 15px;
+  }
+  &__credit-divider {
+    width: 1px;
+    height: 14px;
+    background: var(--color-border-whisper);
+  }
 
   &__message-btn {
     position: relative;
@@ -232,9 +276,48 @@ const displayUserAvatar = computed(() => props.userInfo?.avatar)
     color: var(--color-on-media);
   }
 }
+@media (max-width: 1000px) {
+  .top-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .top-bar__actions {
+    margin-left: auto;
+  }
+  .top-bar__nav {
+    order: 3;
+    flex-basis: 100%;
+    margin: 0;
+  }
+}
 @media (max-width: 520px) {
-  .top-bar__page-name { display: none; }
-  .top-bar__detail-btn { padding-inline: 8px; font-size: 12px; }
-  .top-bar__credit-btn { padding-inline: 8px; font-size: 12px; }
+  .top-bar {
+    padding: 10px 14px;
+  }
+  .top-bar__brand {
+    font-size: 13px;
+    gap: 7px;
+  }
+  .top-bar__brand-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .top-bar__detail-btn,
+  .top-bar__credit-divider,
+  .top-bar__message-btn {
+    display: none;
+  }
+  .top-bar__nav a {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  .top-bar__detail-btn {
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+  .top-bar__credit-btn {
+    padding-inline: 8px;
+    font-size: 12px;
+  }
 }
 </style>

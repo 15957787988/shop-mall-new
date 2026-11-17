@@ -82,7 +82,7 @@ function stopEditLabel() {
 .group-label {
   font-size: 12px;
   font-weight: 600;
-  color: #a8b0ff;
+  color: $accent-text;
   cursor: text;
   flex: 1;
   user-select: none;
@@ -93,7 +93,7 @@ function stopEditLabel() {
   background: transparent;
   border: none;
   border-bottom: 1px solid $accent-primary;
-  color: #a8b0ff;
+  color: $accent-text;
   font-size: 12px;
   font-weight: 600;
   outline: none;

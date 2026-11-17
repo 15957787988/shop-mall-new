@@ -37,10 +37,12 @@ import type {
   TabFormState,
   TabKey,
 } from '@/pages/tools/ViralVideos/utils/types'
+import { CommonModelType, fetchCommonAiModels, type CommonAiModelItem } from '@/service/api/ai-model'
+import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { MODEL_ID_SHOP_VIDEO } from '@/constants/ai-model'
 
 export function useShopVideo() {
-  const { isLoggedIn, openLogin } = useAuth()
+  const { isLoggedIn, openLogin, userInfo } = useAuth()
   const { addToast } = useToast()
 
   const activeTab = ref<TabKey>('generate')
@@ -309,9 +311,26 @@ export function useShopVideo() {
       !replicatePolling.isPolling.value
   )
 
-  const estimateHint = computed(() =>
-    activeTab.value === 'generate' ? '首条生成可享 129 算力优惠' : '按 volcanArk 多模态单条计价'
-  )
+  const pricingModel = ref<CommonAiModelItem | null>(null)
+  const estimateHint = computed(() => formatModelPoints(estimateModelPoints(pricingModel.value, {
+    duration: 10,
+    ratio: ratioValue.value,
+    imageCount: currentForm.value.uploadedUrls.slice(0, activeTab.value === 'generate' ? 3 : 5).length,
+    referenceVideo: activeTab.value === 'replicate' && !!currentForm.value.referenceVideoUrl,
+    count: activeTab.value === 'generate' ? totalVideoCount.value : 1,
+  })))
+  const retryPointsText = computed(() => formatModelPoints(estimateModelPoints(pricingModel.value, {
+    duration: 10,
+    ratio: videoDetail.record?.aspectRatio,
+  })))
+  async function loadPricing() {
+    try {
+      const models = await fetchCommonAiModels(CommonModelType.VIDEO)
+      pricingModel.value = models.find((model) => model.id === MODEL_ID_SHOP_VIDEO) ?? null
+    } catch {
+      pricingModel.value = null
+    }
+  }
 
   const showHistoryGallery = computed(
     () => isLoggedIn.value && (historyLoading.value || historyTotal.value > 0)
@@ -351,7 +370,13 @@ export function useShopVideo() {
     }
   }
 
-  async function loadHistory(page = historyPageNo.value) {
+  let historyVersion = 0
+  let moreHistoryQueued = false
+  async function loadHistory(page = historyPageNo.value, append = false) {
+    if (historyLoading.value && append) { moreHistoryQueued = true; return }
+    const token = ++historyVersion
+    const tab = activeTab.value
+    const owner = userInfo.value?.id
     if (!isLoggedIn.value) {
       history.value = []
       historyTotal.value = 0
@@ -359,24 +384,28 @@ export function useShopVideo() {
     }
     historyLoading.value = true
     try {
-      const pageResult = await pageShopVideo({
-        pageNo: page,
+      const pages = await Promise.all(Array.from({ length: append ? 1 : page }, (_, index) => pageShopVideo({
+        pageNo: append ? page : index + 1,
         pageSize: HISTORY_PAGE_SIZE,
-        type: activeTab.value === 'generate' ? SHOP_VIDEO_TYPE.GENERATE : SHOP_VIDEO_TYPE.REPLICATE,
-      })
-      history.value = pageResult.list ?? []
-      historyTotal.value = pageResult.total ?? 0
+        type: tab === 'generate' ? SHOP_VIDEO_TYPE.GENERATE : SHOP_VIDEO_TYPE.REPLICATE,
+      })))
+      if (token !== historyVersion || tab !== activeTab.value || owner !== userInfo.value?.id) return
+      const pageResult = { list: pages.flatMap(result => result.list ?? []), total: pages[0].total }
+      history.value = append ? [...new Map([...history.value, ...(pageResult.list ?? [])].map(work => [work.id, work])).values()] : (pageResult.list ?? [])
+      historyTotal.value = pageResult.list?.length ? (pageResult.total ?? 0) : history.value.length
       historyPageNo.value = page
     } catch {
       // 历史加载失败不阻断主流程
     } finally {
-      historyLoading.value = false
+      if (token === historyVersion) {
+        historyLoading.value = false
+        if (moreHistoryQueued) { moreHistoryQueued = false; void loadHistory(historyPageNo.value + 1, true) }
+      }
     }
   }
 
   function handleHistoryPageChange(page: number) {
-    void loadHistory(page)
-    document.querySelector('.t8__main')?.scrollTo({ top: 0, behavior: 'smooth' })
+    void loadHistory(page, true)
   }
 
   function handleGalleryItemClick(item: ShopVideoRecord) {
@@ -511,6 +540,7 @@ export function useShopVideo() {
   })
 
   onMounted(() => {
+    void loadPricing()
     loadHistory()
   })
 
@@ -536,6 +566,7 @@ export function useShopVideo() {
     canGenerate,
     canReplicate,
     estimateHint,
+    retryPointsText,
     showHistoryGallery,
     toggleTypeChecked,
     changeTypeCount,

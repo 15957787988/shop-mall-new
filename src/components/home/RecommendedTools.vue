@@ -45,13 +45,13 @@ const FEATURED_TOOLS = [
   {
     name: 'AI 制图',
     description: '用文字和参考图，把创意变成画面。',
-    href: '/ai/image',
+    href: '/image',
     icon: PictureOutlined,
   },
   {
     name: 'AI 视频',
     description: '让商品、人物与故事动起来。',
-    href: '/ai/video',
+    href: '/video',
     icon: VideoCameraOutlined,
   },
   {

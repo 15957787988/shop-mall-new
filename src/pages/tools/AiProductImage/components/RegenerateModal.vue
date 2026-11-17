@@ -2,7 +2,7 @@
   <Modal
     :open="open"
     title="重新生成"
-    ok-text="开始生成"
+    :ok-text="`开始生成（${pointsText}）`"
     cancel-text="取消"
     :confirm-loading="loading"
     @ok="handleConfirm"
@@ -24,13 +24,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { Modal, Select } from 'ant-design-vue'
+import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { DEFAULT_SALEOR_MODEL_ID } from '@/constants/ai-model'
 import { useProductImageModels } from '../hook/useProductImageModels'
 
 const {
   modelSelectOptions,
+  getModelById,
   loading: modelsLoading,
   loadProductImageModels,
   defaultModelId: resolveDefaultModelId,
@@ -40,6 +42,7 @@ const props = defineProps<{
   open: boolean
   defaultModelId?: number
   loading?: boolean
+  imageCount?: number
 }>()
 
 const emit = defineEmits<{
@@ -48,6 +51,10 @@ const emit = defineEmits<{
 }>()
 
 const selectedModelId = ref<number>(DEFAULT_SALEOR_MODEL_ID)
+const pointsText = computed(() => formatModelPoints(estimateModelPoints(
+  getModelById(selectedModelId.value),
+  { count: props.imageCount ?? 1 },
+)))
 
 onMounted(() => {
   void loadProductImageModels()

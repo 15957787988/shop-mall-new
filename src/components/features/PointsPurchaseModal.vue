@@ -178,11 +178,11 @@ watch(
 
     &--active {
       border-color: var(--color-creative-violet);
-      background: rgba(124, 92, 255, 0.04);
+      background: var(--color-accent-soft);
     }
 
     &:hover:not(&--active) {
-      border-color: rgba(124, 92, 255, 0.35);
+      border-color: var(--color-accent-border);
     }
   }
 

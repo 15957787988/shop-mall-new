@@ -32,7 +32,7 @@ export function useLiveMemberInfo() {
       stop()
       if (!loggedIn) return
       refresh()
-      interval = setInterval(() => refresh(), 5000)
+      interval = setInterval(() => refresh(), 30000)
     },
     { immediate: true },
   )

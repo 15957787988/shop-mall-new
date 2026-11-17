@@ -191,7 +191,7 @@ import { libraryUploadAccept, matchesLibraryUpload } from './selection'
 import { uploadFile } from '@/components/UploadFile/api'
 import { useToast } from '@/composables/useToast'
 import { useAuth } from '@/composables/useAuth'
-import { downloadStudioFile } from '@/pages/ai/api'
+import { downloadStudioFile } from '@/service/api/studio'
 
 interface Props {
   selectable?: boolean

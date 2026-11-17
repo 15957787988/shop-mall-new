@@ -42,7 +42,7 @@ const emit = defineEmits(['update:modelValue', 'update:activeTab'])
   padding: 6px 0;
 }
 .asset-tabs button.active {
-  color: #3d63e8;
-  border-bottom: 2px solid #3d63e8;
+  color: var(--color-creative-violet);
+  border-bottom: 2px solid var(--color-creative-violet);
 }
 </style>

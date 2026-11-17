@@ -51,10 +51,10 @@ function findFreePosition(startX, startY, newW, newH) {
 
 // 上传节点无输入连接点，不作为"下一节点"选项
 const TYPE_OPTIONS = [
-  { type: 'textNode', icon: 'T', label: '文本节点', color: '#E9CD86' },
-  { type: 'imageGenNode', icon: '🎨', label: '图片节点', color: '#42b883' },
-  { type: 'videoGenNode', icon: '🎬', label: '视频节点', color: '#B58F3F' },
-  { type: 'audioUploadNode', icon: '🎧', label: '音频节点', color: '#C4A484' }
+  { type: 'textNode', icon: 'T', label: '文本节点' },
+  { type: 'imageGenNode', icon: '🎨', label: '图片节点' },
+  { type: 'videoGenNode', icon: '🎬', label: '视频节点' },
+  { type: 'audioUploadNode', icon: '🎧', label: '音频节点' }
   // { type: 'noteNode',     icon: '📝', label: '备注',     color: '#F1D08A' },
 ]
 
@@ -233,7 +233,7 @@ function create(e, type, disabled) {
           @click="create($event, opt.type, opt.disabled)"
           @mousedown.stop
         >
-          <span class="nab-icon" :style="{ color: opt.disabled ? undefined : opt.color }">{{
+          <span class="nab-icon">{{
             opt.icon
           }}</span>
           <span class="nab-label">{{ opt.label }}</span>
@@ -254,9 +254,9 @@ function create(e, type, disabled) {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: #292927;
+  background: $bg-surface;
   border: 2px solid rgba($accent-primary, 0.53);
-  color: #b5b3ac;
+  color: $text-secondary;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
@@ -275,7 +275,7 @@ function create(e, type, disabled) {
 
   &:hover {
     background: $accent-primary;
-    border-color: #b5b3ac;
+    border-color: $text-secondary;
     color: #fff;
     transform: translateY(-50%) scale(1.15);
   }
@@ -299,7 +299,7 @@ function create(e, type, disabled) {
 .nab-picker {
   position: fixed;
   z-index: 9001;
-  background: #20201f;
+  background: $bg-surface;
   border: 1px solid $border-default;
   border-radius: $radius-lg;
   padding: 4px;
@@ -337,7 +337,7 @@ function create(e, type, disabled) {
   background: none;
   border: 1px solid transparent;
   border-radius: 7px;
-  color: #c8c7c1;
+  color: $text-secondary;
   font-size: 12px;
   cursor: pointer;
   text-align: left;

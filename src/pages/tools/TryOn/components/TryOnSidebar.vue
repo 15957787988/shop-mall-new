@@ -493,7 +493,7 @@ defineExpose({ form })
 
     &--active {
       border-color: var(--color-creative-violet);
-      background: rgba(124, 58, 237, 0.06);
+      background: var(--color-accent-soft);
       color: var(--color-creative-violet);
       font-weight: 600;
     }

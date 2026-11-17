@@ -235,7 +235,7 @@
             @click="createFromEdgeDrop($event, opt.type, opt.disabled)"
             @mousedown.stop
           >
-            <span class="edrop-icon" :style="{ color: opt.disabled ? undefined : opt.color }">{{
+            <span class="edrop-icon">{{
               opt.icon
             }}</span>
             <span class="edrop-label">{{ opt.label }}</span>
@@ -742,11 +742,11 @@ const ghostLine = ref({ visible: false, x1: 0, y1: 0, x2: 0, y2: 0 })
 let connectStartInfo = null
 
 const EDGE_DROP_TYPES = [
-  { type: 'textNode', icon: 'T', label: '文本节点', color: '#B5B3AC' },
-  { type: 'imageGenNode', icon: '🎨', label: '图片节点', color: '#8e8a82' },
-  { type: 'videoGenNode', icon: '🎬', label: '视频节点', color: '#B58F3F' },
-  { type: 'audioUploadNode', icon: '🎧', label: '音频节点', color: '#C4A484' },
-  { type: 'noteNode', icon: '📝', label: '便签', color: '#8e8a82' }
+  { type: 'textNode', icon: 'T', label: '文本节点' },
+  { type: 'imageGenNode', icon: '🎨', label: '图片节点' },
+  { type: 'videoGenNode', icon: '🎬', label: '视频节点' },
+  { type: 'audioUploadNode', icon: '🎧', label: '音频节点' },
+  { type: 'noteNode', icon: '📝', label: '便签' }
 ]
 
 const edgeDropOptions = computed(() => {
@@ -1644,7 +1644,7 @@ function onKeydown(e) {
 
 .collab-caption {
   font-size: 12px;
-  color: #bcbac9;
+  color: $text-secondary;
 }
 .canvas-error,
 .video-recovery-notice {
@@ -1656,7 +1656,7 @@ function onKeydown(e) {
   align-items: center;
 }
 .video-recovery-notice {
-  background: #242331;
+  background: $bg-surface;
   color: #e0c077;
   font-size: 12px;
   flex-shrink: 0;
@@ -1679,8 +1679,8 @@ function onKeydown(e) {
   gap: 12px 24px;
   padding: 14px 20px;
   flex-shrink: 0;
-  background: #23202b;
-  border-bottom: 1px solid #514354;
+  background: $bg-surface;
+  border-bottom: 1px solid $border-default;
   color: #f7e7c6;
 }
 .video-sync-copy {
@@ -1720,9 +1720,9 @@ function onKeydown(e) {
     outline-offset: 3px;
   }
   &:disabled {
-    background: #3a3440;
+    background: $border-default;
     color: #ddd1bd;
-    border-color: #776879;
+    border-color: $text-faint;
     cursor: wait;
   }
 }
@@ -1802,7 +1802,7 @@ function onKeydown(e) {
 .topbar-name {
   font-size: 13px;
   font-weight: 600;
-  color: #deddd7;
+  color: $text-secondary;
   cursor: pointer;
   padding: 6px 12px;
   border-radius: 999px;
@@ -1820,7 +1820,7 @@ function onKeydown(e) {
 .topbar-name-input {
   font-size: 13px;
   font-weight: 600;
-  color: #deddd7;
+  color: $text-secondary;
   background: $bg-surface;
   border: 1px solid $accent-primary;
   border-radius: 999px;
@@ -2048,7 +2048,7 @@ html.canvas-overscroll-lock body {
 }
 
 .flow-run {
-  stroke: rgba(77, 168, 255, 0.85);
+  stroke: rgba($accent-text, 0.85);
   stroke-width: 2;
   stroke-linecap: round;
   stroke-dasharray: 42 78;
@@ -2082,7 +2082,7 @@ html.canvas-overscroll-lock body {
 
 // ── Controls ──────────────────────────────────────────────────────────────────
 .vue-flow__controls {
-  background: #292927 !important;
+  background: $bg-surface !important;
   border: 1px solid $border-default !important;
   border-radius: 10px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
@@ -2093,14 +2093,14 @@ html.canvas-overscroll-lock body {
   background: transparent !important;
   border: none !important;
   border-bottom: 1px solid $border-default !important;
-  color: #e1e3eb !important;
+  color: $text-primary !important;
 
   svg {
     fill: currentColor !important;
   }
 
   &:focus-visible {
-    outline: 2px solid #a9adba;
+    outline: 2px solid $text-secondary;
     outline-offset: -3px;
   }
 
@@ -2203,7 +2203,7 @@ html.canvas-overscroll-lock body {
   background: none;
   border: 1px solid transparent;
   border-radius: 7px;
-  color: #b5b3ac;
+  color: $text-secondary;
   font-size: 12px;
   cursor: pointer;
   text-align: left;
@@ -2244,7 +2244,7 @@ html.canvas-overscroll-lock body {
 <style lang="scss">
 
 .canvas-node-delete-msgbox.el-message-box {
-  background: #20201f;
+  background: $bg-surface;
   border: 1px solid $border-default;
   border-radius: $radius-xl;
   padding: 20px 22px 16px;

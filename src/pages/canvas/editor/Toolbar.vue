@@ -229,8 +229,8 @@ function isToolActive(tool) {
   align-items: center;
   gap: 6px;
   padding: 8px 6px;
-  background: #292927;
-  border: 1px solid #45453f;
+  background: $bg-surface;
+  border: 1px solid $border-default;
   border-radius: 14px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(12px);
@@ -268,7 +268,7 @@ function isToolActive(tool) {
   transition:
     background 0.12s,
     color 0.12s;
-  color: #deddd7;
+  color: $text-secondary;
 
   &:hover {
     background: rgba(255, 255, 255, 0.09);
@@ -321,7 +321,7 @@ function isToolActive(tool) {
 .add-menu {
   position: absolute;
   z-index: 9001;
-  background: #292927;
+  background: $bg-surface;
   border: 1px solid $border-default;
   border-radius: $radius-lg;
   padding: 6px;
@@ -350,7 +350,7 @@ function isToolActive(tool) {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #aaa9a4;
+  color: $text-faint;
   padding: 4px 8px 6px;
 }
 
@@ -367,12 +367,12 @@ function isToolActive(tool) {
   border-radius: $radius-md;
   cursor: grab;
   transition: background 0.12s;
-  color: #c8c7c1;
+  color: $text-secondary;
   font-size: 12px;
 
   &:hover {
     background: rgba(255, 255, 255, 0.09);
-    color: #f1f0ed;
+    color: $text-primary;
   }
 
   &:active {

@@ -196,7 +196,7 @@ const emit = defineEmits<{
   width: 44px;
   height: 28px;
   margin-bottom: 36px;
-  color: #93c5fd;
+  color: var(--color-on-media);
 
   svg {
     display: block;

@@ -64,10 +64,7 @@ const offer = {
     pointer-events: none;
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(circle at 20% 20%, rgba(255, 138, 101, 0.18) 0%, transparent 50%),
-      radial-gradient(circle at 80% 30%, rgba(109, 40, 217, 0.12) 0%, transparent 45%),
-      linear-gradient(180deg, #fff7ed 0%, #fdf4ff 55%, #ffffff 100%);
+    background: linear-gradient(180deg, var(--color-surface-1), var(--color-surface-0));
   }
 
   &__content {

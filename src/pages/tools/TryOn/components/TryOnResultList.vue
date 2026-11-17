@@ -2,7 +2,7 @@
   <div class="tryon-results">
     <Spin v-if="loading" class="tryon-results__loading" />
 
-    <div v-else class="tryon-results__scroll scroll-area">
+    <div v-else class="tryon-results__scroll">
       <TryOnResultToolbar
         :results="results"
         :deleting="deleting"
@@ -17,11 +17,13 @@
         v-model:group="results[index]"
         @download="handleDownloadGroup"
       />
+      <AutoLoadMore :has-more="!!hasMore" :loading="loadingMore" :count="results.length" @load="emit('load-more')" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { ref } from 'vue'
 import { Spin } from 'ant-design-vue'
 import { useToast } from '@/composables/useToast'
@@ -39,10 +41,13 @@ const results = defineModel<TryOnResultGroup[]>('results', { default: () => [] }
 
 defineProps<{
   loading?: boolean
+  loadingMore?: boolean
+  hasMore?: boolean
 }>()
 
 const { addToast } = useToast()
 const deleting = ref(false)
+const emit = defineEmits<{ 'load-more': [] }>()
 
 function getDownloadableUrls(group: TryOnResultGroup): string[] {
   return group.images
@@ -110,10 +115,7 @@ async function handleDeleteSelected() {
 
 <style scoped lang="scss">
 .tryon-results {
-  height: 100%;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--color-surface-2);
+  min-height: 100%;
 
   &__loading {
     display: flex;
@@ -123,8 +125,7 @@ async function handleDeleteSelected() {
   }
 
   &__scroll {
-    height: 100%;
-    padding: 16px;
+    min-height: 0;
   }
 }
 </style>

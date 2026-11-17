@@ -93,22 +93,22 @@ function closeInfo() {
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 
   &.direct {
-    color: #7fd1f5;
-    background: rgba(127, 209, 245, 0.1);
-    border-color: rgba(127, 209, 245, 0.25);
+    color: $accent-text;
+    background: rgba($accent-text, 0.1);
+    border-color: rgba($accent-text, 0.25);
     &:hover {
-      background: rgba(127, 209, 245, 0.2);
-      border-color: rgba(127, 209, 245, 0.5);
+      background: rgba($accent-text, 0.2);
+      border-color: rgba($accent-text, 0.5);
     }
   }
 
   &.global {
-    color: #d07ff5;
-    background: rgba(208, 127, 245, 0.1);
-    border-color: rgba(208, 127, 245, 0.25);
+    color: $accent-text;
+    background: rgba($accent-text, 0.1);
+    border-color: rgba($accent-text, 0.25);
     &:hover {
-      background: rgba(208, 127, 245, 0.2);
-      border-color: rgba(208, 127, 245, 0.5);
+      background: rgba($accent-text, 0.2);
+      border-color: rgba($accent-text, 0.5);
     }
   }
 }
@@ -145,7 +145,7 @@ function closeInfo() {
 .scope-popup {
   position: fixed;
   z-index: 9001;
-  background: #20201f;
+  background: $bg-surface;
   border: 1px solid $border-default;
   border-radius: $radius-lg;
   padding: 10px 12px;
@@ -207,15 +207,15 @@ function closeInfo() {
   margin-top: 1px;
 
   &.direct {
-    color: #7fd1f5;
-    background: rgba(127, 209, 245, 0.12);
-    border: 1px solid rgba(127, 209, 245, 0.3);
+    color: $accent-text;
+    background: rgba($accent-text, 0.12);
+    border: 1px solid rgba($accent-text, 0.3);
   }
 
   &.global {
-    color: #d07ff5;
-    background: rgba(208, 127, 245, 0.12);
-    border: 1px solid rgba(208, 127, 245, 0.3);
+    color: $accent-text;
+    background: rgba($accent-text, 0.12);
+    border: 1px solid rgba($accent-text, 0.3);
   }
 }
 </style>

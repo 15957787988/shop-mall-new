@@ -41,7 +41,7 @@ const tab = ref<Tab>('模板推荐')
     gap: 16px;
     margin-bottom: 12px;
     overflow-x: auto;
-    border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+    border-bottom: 1px solid var(--color-border-whisper);
   }
 
   &__tab {

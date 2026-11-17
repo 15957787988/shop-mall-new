@@ -57,16 +57,7 @@
           </div>
         </article>
       </div>
-      <Pagination
-        v-if="total > 0"
-        class="hist__pager"
-        :current="pageNo"
-        :page-size="PAGE_SIZE"
-        :total="total"
-        :show-size-changer="false"
-        :show-total="showTotal"
-        @change="load"
-      />
+      <AutoLoadMore :has-more="list.length < total" :loading="loading" :count="list.length" @load="load(pageNo + 1)" />
     </Spin>
   </Modal>
 
@@ -94,9 +85,10 @@
 </template>
 
 <script setup lang="ts">
+import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { reactive, ref, watch } from 'vue'
 import { DownloadOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
-import { Button, Image, Modal, Pagination, Spin } from 'ant-design-vue'
+import { Button, Image, Modal, Spin } from 'ant-design-vue'
 import { useToast } from '@/composables/useToast'
 import {
   downloadStudioFile,
@@ -104,7 +96,7 @@ import {
   studioFileName,
   type StudioKind,
   type StudioWork,
-} from './api'
+} from '@/service/api/studio'
 
 const PAGE_SIZE = 30
 
@@ -112,6 +104,7 @@ const open = defineModel<boolean>('open', { default: false })
 
 const props = defineProps<{
   kind: StudioKind
+  creationTool?: string
 }>()
 
 const { addToast } = useToast()
@@ -174,19 +167,19 @@ function formatTime(value: StudioWork['createTime']) {
 }
 
 async function load(page: number) {
+  if (loading.value && page > 1) return
   const current = ++seq
   loading.value = true
   loadError.value = ''
   try {
-    const pageData = await pageStudioWorks(props.kind, page, PAGE_SIZE)
+    const pageData = await pageStudioWorks(props.kind, page, PAGE_SIZE, props.creationTool || props.kind)
     if (current !== seq) return
-    list.value = pageData.list ?? []
-    total.value = pageData.total ?? 0
+    list.value = page === 1 ? (pageData.list ?? []) : [...new Map([...list.value, ...(pageData.list ?? [])].map(work => [work.id, work])).values()]
+    total.value = pageData.list?.length ? (pageData.total ?? 0) : list.value.length
     pageNo.value = page
   } catch (error: unknown) {
     if (current !== seq) return
-    list.value = []
-    total.value = 0
+    if (page === 1) { list.value = []; total.value = 0 }
     const msg = error instanceof Error ? error.message : '历史加载失败'
     loadError.value = msg.includes('登录') ? '请先登录' : msg
     addToast(loadError.value, 'error')
@@ -195,9 +188,7 @@ async function load(page: number) {
   }
 }
 
-function showTotal(count: number) {
-  return `共 ${count} 条`
-}
+
 
 function openPreview(item: StudioWork) {
   previewItem.value = item

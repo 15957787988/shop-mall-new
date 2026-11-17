@@ -261,9 +261,6 @@
 
       <!-- Right: points + submit -->
       <div class="toolbar-right">
-        <span v-if="currentMode !== 'text'" class="points-estimate" :title="currentModel?.pricing?.note">
-          {{ estimatedPoints }}
-        </span>
         <button
           class="submit-btn"
           :aria-label="operationLabel || '开始生成'"
@@ -280,7 +277,7 @@
           "
         >
           <span v-if="operationLabel" class="submit-spinner" aria-hidden="true" />
-          <Top v-else class="submit-icon" aria-hidden="true" />
+          <span>{{ operationLabel || '生成' }}<template v-if="currentMode !== 'text'">（{{ estimatedPoints }}）</template></span>
         </button>
       </div>
     </div>
@@ -299,7 +296,7 @@ import { isSeedance } from '../../utils/seedanceConstraints.js'
  * 资产墙 + 富文本提示词 + 多模态工具栏
  */
 import { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
-import { Picture, VideoCamera, Document, Top } from '../../shims/icons'
+import { Picture, VideoCamera, Document } from '../../shims/icons'
 import { useResizeObserver } from '@vueuse/core'
 import {
   createVideoReferencePreflight,
@@ -3040,20 +3037,20 @@ const panelStyle = computed(() => {
   min-height: 13rem;
   height: auto;
   overflow: visible;
-  background: #292927;
+  background: $bg-surface;
   border: 1px solid $border-default;
   border-radius: 10px;
   box-shadow: 0 0 0 0.0625rem rgba(0, 0, 0, 0.016),
-    0 0.125rem 1.25rem -0.25rem rgba(15, 23, 42, 0.06),
-    0 0.875rem 2.375rem -1rem rgba(15, 23, 42, 0.16);
+    0 0.125rem 1.25rem -0.25rem rgba(0, 0, 0, 0.06),
+    0 0.875rem 2.375rem -1rem rgba(0, 0, 0, 0.16);
   backdrop-filter: blur(16px);
   z-index: 100;
   transition: box-shadow 0.2s;
 
   &:hover {
     box-shadow: 0 0 0 0.0625rem rgba(0, 0, 0, 0.024),
-      0 0.125rem 1.25rem -0.25rem rgba(15, 23, 42, 0.1),
-      0 0.875rem 2.375rem -1rem rgba(15, 23, 42, 0.22);
+      0 0.125rem 1.25rem -0.25rem rgba(0, 0, 0, 0.1),
+      0 0.875rem 2.375rem -1rem rgba(0, 0, 0, 0.22);
   }
 }
 
@@ -3194,13 +3191,13 @@ const panelStyle = computed(() => {
   position: relative;
   margin: 0 14px 8px;
   min-width: 0;
-  background: #20201f;
-  border: 1px solid #45453f;
+  background: $bg-surface;
+  border: 1px solid $border-default;
   border-radius: $radius-md;
 
   &:focus-within {
-    border-color: #9aaeff;
-    box-shadow: 0 0 0 2px rgba(147, 151, 165, 0.16);
+    border-color: $accent-text;
+    box-shadow: 0 0 0 2px rgba($accent-text, 0.16);
   }
 }
 
@@ -3221,7 +3218,7 @@ const panelStyle = computed(() => {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  color: #f1f0ed;
+  color: $text-primary;
 
   :deep(.mention-chip) {
     border-radius: 4px;
@@ -3232,28 +3229,28 @@ const panelStyle = computed(() => {
   }
 
   :deep(.mention-chip--image) {
-    color: #8fd0b0;
-    background: rgba(66, 184, 131, 0.22);
+    color: $accent-text;
+    background: rgba($accent-text, 0.22);
   }
 
   :deep(.mention-chip--video) {
-    color: #e2c98a;
-    background: rgba(181, 143, 63, 0.28);
+    color: $accent-text;
+    background: rgba($accent-text, 0.28);
   }
 
   :deep(.mention-chip--audio) {
-    color: #f0b48a;
-    background: rgba(255, 140, 75, 0.2);
+    color: $accent-text;
+    background: rgba($accent-text, 0.2);
   }
 
   :deep(.mention-chip--text) {
-    color: #b7c4ff;
+    color: $accent-text;
     background: rgba($accent-primary, 0.28);
   }
 
   :deep(.mention-chip--document) {
-    color: #d2cdc4;
-    background: rgba(184, 178, 169, 0.2);
+    color: $text-secondary;
+    background: rgba($accent-text, 0.2);
   }
 }
 
@@ -3279,8 +3276,8 @@ const panelStyle = computed(() => {
   }
 
   &::placeholder {
-    color: #9aaeff;
-    -webkit-text-fill-color: #9aaeff;
+    color: $accent-text;
+    -webkit-text-fill-color: $accent-text;
     opacity: 1;
   }
 
@@ -3308,7 +3305,7 @@ const panelStyle = computed(() => {
   max-height: 200px;
   overflow-y: auto;
   padding: 4px 0;
-  background: #292927;
+  background: $bg-surface;
   border: 1px solid $border-default;
   border-radius: $radius-md;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
@@ -3364,7 +3361,7 @@ const panelStyle = computed(() => {
   transform: translateX(-50%);
   padding: 4px 12px;
   border-radius: 8px;
-  background: rgba(35, 38, 48, 0.96);
+  background: rgba($bg-surface, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: $text-secondary;
   font-size: 13px;
@@ -3462,10 +3459,10 @@ const panelStyle = computed(() => {
 }
 
 .model-select {
-  background: #33332f;
-  border: 1px solid #565650;
+  background: $border-default;
+  border: 1px solid $text-faint;
   border-radius: $radius-sm;
-  color: #f1f0ed;
+  color: $text-primary;
   font-size: 12px;
   padding: 0 32px 0 12px;
   height: 34px;
@@ -3476,7 +3473,7 @@ const panelStyle = computed(() => {
   max-width: 160px;
 
   &:focus {
-    border-color: #9aaeff;
+    border-color: $accent-text;
   }
 }
 
@@ -3490,20 +3487,20 @@ select.param-select {
 .model-icon {
   width: 18px;
   height: 18px;
-  color: #deddd7;
+  color: $text-secondary;
   flex-shrink: 0;
 }
 .model-select option,
 .param-select option {
-  background: #33332f;
-  color: #f1f0ed;
+  background: $border-default;
+  color: $text-primary;
 }
 .model-select option:disabled,
 .param-select option:disabled {
-  color: #aaa9a4;
+  color: $text-faint;
 }
 .submit-btn:focus-visible {
-  outline: 2px solid #9aaeff;
+  outline: 2px solid $accent-text;
   outline-offset: 3px;
 }
 
@@ -3529,10 +3526,10 @@ select.param-select {
 }
 
 .param-select {
-  background: #33332f;
-  border: 1px solid #565650;
+  background: $border-default;
+  border: 1px solid $text-faint;
   border-radius: $radius-sm;
-  color: #f1f0ed;
+  color: $text-primary;
   font-size: 12px;
   padding: 0 32px 0 12px;
   height: 34px;
@@ -3542,7 +3539,7 @@ select.param-select {
   font-family: inherit;
 
   &:focus {
-    border-color: #9aaeff;
+    border-color: $accent-text;
   }
 }
 
@@ -3587,9 +3584,10 @@ select.param-select {
 }
 
 .submit-btn {
-  width: 34px;
+  min-width: 34px;
+  padding: 0 12px;
   height: 34px;
-  border-radius: 50%;
+  border-radius: 8px;
   border: none;
   background: $accent-primary;
   color: #fff;
@@ -3608,8 +3606,8 @@ select.param-select {
   }
 
   &:disabled {
-    background: #41444e;
-    color: #bcc0cb;
+    background: $border-default;
+    color: $text-dim;
     cursor: not-allowed;
   }
 

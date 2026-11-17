@@ -167,11 +167,11 @@
           isCurrentTabBusy
             ? '生成中...'
             : activeTab === 'generate'
-              ? `生成 10s 爆款视频（共 ${totalVideoCount} 条）`
-              : '复刻 10s 爆款视频（共 1 条）'
+              ? `生成 ${totalVideoCount} 条爆款视频`
+              : '复刻爆款视频'
         }}
+        （{{ estimateHint }}）
       </Button>
-      <p class="t8__estimate-hint">{{ estimateHint }}</p>
     </div>
   </aside>
 </template>

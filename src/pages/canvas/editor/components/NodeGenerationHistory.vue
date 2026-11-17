@@ -120,22 +120,22 @@ function time(value) {
   flex-shrink: 0;
   border: 0;
   background: transparent;
-  color: #9aaeff;
+  color: $accent-text;
   font-size: 12px;
   padding: 3px 4px;
   cursor: pointer;
 }
 .history-trigger:focus-visible {
-  outline: 2px solid #9aaeff;
+  outline: 2px solid $accent-text;
   outline-offset: 2px;
 }
 .history-picker {
-  color: #f0f0ff;
+  color: $text-primary;
   font-size: 12px;
 }
 .picker-hint {
   margin: 0 0 10px;
-  color: #c2c6d6;
+  color: $text-secondary;
 }
 .history-thumbs {
   display: grid;
@@ -150,12 +150,12 @@ function time(value) {
   border: 1px solid transparent;
   background: transparent;
   border-radius: 6px;
-  color: #c2c6d6;
+  color: $text-secondary;
   cursor: pointer;
 }
 .history-thumb.current {
-  border-color: #9aaeff;
-  color: #9aaeff;
+  border-color: $accent-text;
+  color: $accent-text;
 }
 .history-thumb:disabled {
   cursor: default;
@@ -168,7 +168,7 @@ function time(value) {
   width: 100%;
   height: 70px;
   object-fit: cover;
-  background: #292e40;
+  background: $bg-surface;
   border-radius: 4px;
 }
 .video-placeholder {
@@ -188,7 +188,7 @@ function time(value) {
 .load-more {
   background: transparent;
   border: 0;
-  color: #9aaeff;
+  color: $accent-text;
   cursor: pointer;
   padding: 6px;
 }

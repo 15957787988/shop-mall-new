@@ -2,13 +2,9 @@
   <div class="result-list">
     <Spin v-if="loading" class="result-list__loading" />
 
-    <EmptyState
-      v-else-if="!results.length"
-      :loading="loading"
-      :results="results"
-    />
+    <EmptyState v-else-if="!results.length" :loading="loading" :results="results" />
 
-    <div v-else ref="scrollRef" class="result-list__scroll scroll-area">
+    <div v-else ref="scrollRef" class="result-list__scroll">
       <ResultGroup
         v-for="group in pagedResults"
         :key="group.id"
@@ -16,80 +12,73 @@
         :refresh-results="refreshResults"
         @regenerated="emit('regenerated')"
       />
-      <Pagination
-        v-if="results.length > pageSize"
-        v-model:current="currentPage"
-        :total="results.length"
-        :page-size="pageSize"
-        :show-size-changer="false"
-        class="result-list__pagination"
-      />
+      <AutoLoadMore :has-more="pagedResults.length < results.length || !!hasMore" :loading="loadingMore" :count="pagedResults.length" @load="pagedResults.length < results.length ? currentPage++ : emit('load-more')" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { Spin, Pagination } from "ant-design-vue";
-import EmptyState from "./EmptyState.vue";
-import ResultGroup from "./ResultGroup.vue";
-import type { SaleorResultGroup } from "../utils/types";
+import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
+import { ref, computed, inject, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { Spin } from 'ant-design-vue'
+import EmptyState from './EmptyState.vue'
+import ResultGroup from './ResultGroup.vue'
+import type { SaleorResultGroup } from '../utils/types'
 
 interface LazyloadInstance {
-  config: (options: { observerOptions?: IntersectionObserverInit }) => void;
+  config: (options: { observerOptions?: IntersectionObserverInit }) => void
 }
 
 defineProps<{
-  loading?: boolean;
-  refreshResults?: () => Promise<void>;
-}>();
+  loading?: boolean
+  loadingMore?: boolean
+  hasMore?: boolean
+  refreshResults?: () => Promise<void>
+}>()
 
-const results = defineModel<SaleorResultGroup[]>("results", { default: () => [] });
+const results = defineModel<SaleorResultGroup[]>('results', { default: () => [] })
 
-const pageSize = 10;
-const currentPage = ref(1);
-const scrollRef = ref<HTMLElement>();
-const lazyload = inject<LazyloadInstance>("Lazyload");
+const pageSize = 10
+const currentPage = ref(1)
+const scrollRef = ref<HTMLElement>()
+const lazyload = inject<LazyloadInstance>('Lazyload')
 
 const pagedResults = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  return results.value.slice(start, start + pageSize);
-});
+  return results.value.slice(0, currentPage.value * pageSize)
+})
 
 const emit = defineEmits<{
-  regenerated: [];
-}>();
+  regenerated: []
+  'load-more': []
+}>()
 
 function bindLazyRoot() {
   if (scrollRef.value && lazyload) {
     lazyload.config({
-      observerOptions: { root: scrollRef.value, rootMargin: "0px", threshold: 0 },
-    });
+      observerOptions: { root: scrollRef.value.closest('.saleor-page__results'), rootMargin: '0px', threshold: 0 },
+    })
   }
 }
 
 onMounted(() => {
-  bindLazyRoot();
-});
+  bindLazyRoot()
+})
 
 watch(scrollRef, async () => {
-  await nextTick();
-  bindLazyRoot();
-});
+  await nextTick()
+  bindLazyRoot()
+})
 
 onUnmounted(() => {
   lazyload?.config({
-    observerOptions: { root: null, rootMargin: "0px", threshold: 0 },
-  });
-});
+    observerOptions: { root: null, rootMargin: '0px', threshold: 0 },
+  })
+})
 </script>
 
 <style scoped lang="scss">
 .result-list {
-  height: 100%;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--color-surface-2);
+  min-height: 100%;
 
   &__loading {
     display: flex;
@@ -99,8 +88,7 @@ onUnmounted(() => {
   }
 
   &__scroll {
-    height: 100%;
-    padding: 16px;
+    min-height: 0;
   }
 
   &__pagination {

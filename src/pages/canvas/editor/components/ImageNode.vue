@@ -306,8 +306,8 @@ function onLocalFileChange(e) {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  background: rgba(59, 91, 178, 0.9);
-  color: #ecebe6;
+  background: rgba($bg-surface, 0.9);
+  color: $text-primary;
 }
 .img-body {
   padding: 0 !important;

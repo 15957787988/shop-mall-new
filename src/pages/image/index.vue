@@ -1,11 +1,7 @@
 <template>
   <PageContainer flush>
-    <div class="studio">
+    <div class="studio studio--gallery">
       <aside class="studio__form">
-        <header class="studio__form-heading">
-          <span class="studio__form-icon"><PictureOutlined /></span>
-          <div><h1>图片创作</h1><p>从商品图到创意画面，用文字与参考图开始创作。</p></div>
-        </header>
         <div class="studio__form-scroll scroll-area">
           <section class="studio__section">
             <h3 class="studio__label">模型</h3>
@@ -86,24 +82,9 @@
           <strong>开始你的第一个图片作品</strong>
           <span>填写提示词、选择模型后点击生成，结果会保存在这里。</span>
         </div>
+        <div v-if="works.length" class="studio__gallery-grid">
         <article v-for="item in works" :key="item.id" class="studio__card">
           <div class="studio__card-body">
-            <header class="studio__card-head">
-              <span class="studio__card-model">{{ item.modelName || item.model || '生成结果' }}</span>
-              <span
-                v-if="statusLabel(item)"
-                class="studio__card-status"
-                :data-fail="item.status === 30"
-              >
-                {{ statusLabel(item) }}
-              </span>
-              <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
-            </header>
-            <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
-            <StudioParams :work="item" />
-            <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
-              {{ item.errorMessage }}
-            </p>
             <div class="studio__media">
               <button
                 v-if="imageSrc(item)"
@@ -117,7 +98,23 @@
               <span v-else-if="isPending(item)" class="studio__media-wait"
                 >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
               >
+              <span v-else class="studio__media-wait">{{ item.status === 30 ? '生成失败' : '结果暂不可用' }}</span>
             </div>
+            <header class="studio__card-head">
+              <span class="studio__card-model">{{ item.creationTitle || item.creationLabel || item.modelName || item.model || '生成结果' }}</span>
+              <span
+                v-if="statusLabel(item)"
+                class="studio__card-status"
+                :data-fail="item.status === 30"
+              >
+                {{ statusLabel(item) }}
+              </span>
+              <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
+            </header>
+            <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
+            <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
+              {{ item.errorMessage }}
+            </p>
             <div class="studio__actions">
               <button
                 type="button"
@@ -142,15 +139,8 @@
             </div>
           </div>
         </article>
-        <button
-          v-if="hasMore"
-          type="button"
-          class="studio__more"
-          :disabled="listLoading"
-          @click="loadMore"
-        >
-          {{ listLoading ? '加载中…' : '加载更多' }}
-        </button>
+        </div>
+<AutoLoadMore :has-more="hasMore" :loading="listLoading" :count="works.length" @load="loadMore" />
       </main>
     </div>
     <HistoryModal v-model:open="historyOpen" kind="image" />
@@ -197,14 +187,16 @@
 </template>
 
 <script setup lang="ts">
+import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { PictureOutlined, CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { Button, Input, Modal, Select } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
-import HistoryModal from '../HistoryModal.vue'
-import StudioParams from '../StudioParams.vue'
-import StudioReferences from '../StudioReferences.vue'
+import HistoryModal from '@/components/studio/HistoryModal.vue'
+import StudioParams from '@/components/studio/StudioParams.vue'
+import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useAuth } from '@/composables/useAuth'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useToast } from '@/composables/useToast'
@@ -218,7 +210,7 @@ import {
   studioFileName,
   submitStudioImage,
   type StudioWork,
-} from '../api'
+} from '@/service/api/studio'
 
 const { isLoggedIn, openLogin } = useAuth()
 const { addToast } = useToast()
@@ -227,7 +219,9 @@ const models = ref<CommonAiModelItem[]>([])
 const modelsLoading = ref(true)
 const modelsError = ref('')
 const modelId = ref<number>()
-const prompt = ref('')
+const route = useRoute()
+const prompt = ref(typeof route.query.prompt === 'string' ? route.query.prompt.slice(0, 2000) : '')
+watch(() => route.query.prompt, value => { if (typeof value === 'string') prompt.value = value.slice(0, 2000) })
 const aspect = ref('')
 const resolution = ref('')
 const refImages = ref<string[]>([])
@@ -267,7 +261,7 @@ const maxRefs = computed(() => {
   return Number.isFinite(n) && n >= 0 ? n : 9
 })
 const estimatedPoints = computed(() => estimateModelPoints(currentModel.value, { resolution: resolution.value, ratio: aspect.value }))
-const pointsText = computed(() => ` · ${formatModelPoints(estimatedPoints.value)}`)
+const pointsText = computed(() => `（${formatModelPoints(estimatedPoints.value)}）`)
 const canSubmit = computed(() => Boolean(!submitting.value && modelId.value && prompt.value.trim() && estimatedPoints.value != null))
 const hasMore = computed(() => works.value.length < total.value)
 
@@ -357,11 +351,11 @@ async function fetchPage(reset: boolean) {
   listLoading.value = true
   const nextPage = reset ? 1 : pageNo.value + 1
   try {
-    const page = await pageStudioWorks('image', nextPage)
+    const page = await pageStudioWorks('image', nextPage, 10, 'image')
     if (seq !== pageSeq) return
     const list = page.list ?? []
     works.value = reset ? list : works.value.concat(list)
-    total.value = page.total ?? works.value.length
+    total.value = list.length ? (page.total ?? works.value.length) : works.value.length
     pageNo.value = nextPage
     schedulePoll()
   } catch (error: unknown) {

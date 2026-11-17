@@ -4,6 +4,7 @@
       <section class="saleor-sidebar__section">
         <h3 class="saleor-sidebar__section-title">
           商品原图
+          <span class="saleor-sidebar__upload-note">支持 1-3 张图片，多角度效果更佳</span>
           <Popover placement="bottomLeft" :overlay-inner-style="{ padding: 0 }">
             <template #content>
               <img
@@ -22,14 +23,12 @@
           :existing-urls="form.productImages"
           @upload-complete="form.productImages = $event"
         />
-        <p class="saleor-sidebar__tip">同一产品最多 3 张 · 支持 JPG/PNG/WEBP · 单张不超过 10MB</p>
       </section>
 
       <section class="saleor-sidebar__section">
-        <h3 class="saleor-sidebar__section-title">生成设置</h3>
         <div class="saleor-sidebar__settings">
           <label class="saleor-sidebar__field">
-            <span>平台</span>
+            <span>上架平台</span>
             <Select v-model:value="form.platform" :options="platformOptions" />
           </label>
           <label class="saleor-sidebar__field">
@@ -70,21 +69,23 @@
             @click="handleAiWrite"
           >
             <Spin v-if="aiWriting" size="small" />
-            <BulbOutlined v-else />
             AI 帮写
           </button>
         </div>
         <Input.TextArea
           v-model:value="form.sellingPoints"
-          :rows="5"
-          placeholder="请输入商品名称、核心卖点、目标人群、期望场景、具体参数等..."
+          :rows="3"
+          placeholder="如产品名称、核心卖点、适用人群等信息"
         />
       </section>
 
       <section class="saleor-sidebar__section">
         <h3 class="saleor-sidebar__section-title">套图结构配置</h3>
         <Radio.Group v-model:value="form.structureMode" class="saleor-sidebar__mode">
-          <Radio value="custom">自定义配置（7-20 张）</Radio>
+          <Radio value="custom">
+            <strong>自定义配置</strong>
+            <span class="saleor-sidebar__mode-desc">可自由调整各类型图片数量，至少选择 1 张</span>
+          </Radio>
         </Radio.Group>
 
         <div v-if="form.structureMode === 'custom'" class="saleor-sidebar__structure-list">
@@ -100,7 +101,6 @@
             <div class="saleor-sidebar__counter">
               <Button
                 size="small"
-                shape="circle"
                 :disabled="item.count <= (item.min ?? 0) || totalImageCount <= MIN_TOTAL_IMAGES"
                 @click="changeCount(item.key, -1)"
               >
@@ -109,7 +109,6 @@
               <span>{{ item.count }}</span>
               <Button
                 size="small"
-                shape="circle"
                 :disabled="totalImageCount >= MAX_TOTAL_IMAGES"
                 @click="changeCount(item.key, 1)"
               >
@@ -131,7 +130,10 @@
         :loading="generating"
         @click="handleGenerate"
       >
-        一键生成套图（{{ totalImageCount }} 张 · {{ totalCostPoints }} 算力）
+        <span class="saleor-sidebar__generate-label">
+          <span>生成商品套图</span>
+          <span class="saleor-sidebar__generate-points">（{{ estimatedPointsText }}）</span>
+        </span>
       </Button>
     </div>
   </div>
@@ -140,12 +142,7 @@
 <script setup lang="ts">
 import { reactive, computed, ref, watch, onMounted } from 'vue'
 import { Input, Select, Button, Radio, Spin, Popover } from 'ant-design-vue'
-import {
-  PlusOutlined,
-  MinusOutlined,
-  BulbOutlined,
-  QuestionCircleOutlined,
-} from '@ant-design/icons-vue'
+import { PlusOutlined, MinusOutlined, QuestionCircleOutlined } from '@ant-design/icons-vue'
 import uploadGuideImg from '@/assets/image/aiProductImage-tips.png'
 import { aiWriteSellingPoints } from '@/service/api/shop-image-group'
 import { useAuth } from '@/composables/useAuth'
@@ -159,13 +156,14 @@ import {
   defaultStructureConfig,
   MIN_TOTAL_IMAGES,
   MAX_TOTAL_IMAGES,
-  POINTS_PER_IMAGE,
 } from '../utils/constants'
+import { estimateModelPoints } from '@/lib/modelPricing'
 import { useProductImageModels } from '../hook/useProductImageModels'
 import type { SaleorFormData } from '../utils/types'
 
 const {
-  modelSelectOptions,
+  models,
+  getModelById,
   loading: modelsLoading,
   loadProductImageModels,
   ratioOptionsFor,
@@ -173,6 +171,11 @@ const {
   switchModel,
   defaultModelId,
 } = useProductImageModels()
+
+const modelSelectOptions = computed(() => models.value.map((model) => ({
+  label: model.name,
+  value: model.modelId,
+})))
 
 const emit = defineEmits<{
   generate: [form: SaleorFormData, done: () => void]
@@ -187,12 +190,15 @@ const aiWriting = ref(false)
 
 const form = reactive<SaleorFormData>({
   productImages: [
+    'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a4a681586879ll2lywdlc6589.png?imageView2/2/w/400/format/webp/q/80/ignore-error/1',
     //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a7176f2da293pc37y18y33346.png',
     //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a714ae9cd2a4aas5aef735391.jpeg',
     //'https://muxunai.oss-cn-hangzhou.aliyuncs.com/20260802/1785656437489.webp',
-    //'https://try-clothes.cn/shop-mall-img/uploads/1785119646460_5b5f921b47174cb78765bf54a58442ce.jpg',
-    // 'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a8da053abb93inj4a7k8l5836.png',
+    //'https://try-c0lothes.cn/shop-mall-img/uploads/178511964646_5b5f921b47174cb78765bf54a58442ce.jpg',
+    //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a8da053abb93inj4a7k8l5836.png',
     //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a8db806b80191grv578318250.png',
+    //'https://img.alicdn.com/imgextra/i2/2220869854318/O1CN01913XAlEYF2E1WPjS_!!4611686018427380846-0-item_pic.jpg_.webp',
+    //'https://img.alicdn.com/imgextra/i3/2206896265887/O1CN01TlN9s3wcuLD1chua_!!2206896265887.jpg_.webp',
   ],
   platform: '阿里巴巴',
   country: '中国',
@@ -223,7 +229,7 @@ function applyModel(id: number, prevId = 0) {
 
 watch(
   () => form.modelId,
-  (id, prev) => applyModel(id, prev ?? 0),
+  (id, prev) => applyModel(id, prev ?? 0)
 )
 
 async function ensureModels() {
@@ -247,7 +253,18 @@ const totalImageCount = computed(() =>
   form.structureConfig.reduce((sum, item) => sum + item.count, 0)
 )
 
-const totalCostPoints = computed(() => totalImageCount.value * POINTS_PER_IMAGE)
+const estimatedPoints = computed(() => estimateModelPoints(
+  getModelById(form.modelId),
+  {
+    resolution: form.resolution,
+    ratio: form.aspectRatio,
+    imageCount: form.productImages.length,
+    count: totalImageCount.value,
+  },
+))
+const estimatedPointsText = computed(() => estimatedPoints.value == null
+  ? '价格未配置'
+  : `${estimatedPoints.value.toFixed(3)} 积分`)
 
 const canGenerate = computed(
   () =>
@@ -275,10 +292,10 @@ function changeCount(key: string, delta: number) {
 }
 
 async function handleAiWrite() {
-  // if (!isLoggedIn.value) {
-  //   openLogin()
-  //   return
-  // }
+  if (!isLoggedIn.value) {
+    openLogin()
+    return
+  }
   if (!form.productImages.length || aiWriting.value) {
     return
   }
@@ -296,10 +313,10 @@ async function handleAiWrite() {
 }
 
 function handleGenerate() {
-  // if (!isLoggedIn.value) {
-  //   openLogin()
-  //   return
-  // }
+  if (!isLoggedIn.value) {
+    openLogin()
+    return
+  }
   if (!canGenerate.value || generating.value) {
     return
   }
@@ -318,17 +335,21 @@ function handleGenerate() {
   flex-direction: column;
   overflow: hidden;
   border-radius: 12px;
-  background: #fff;
-  box-shadow: var(--shadow-soft);
+  background: var(--color-surface-0);
 
   &__scroll {
     flex: 1;
     min-height: 0;
+    overflow-x: hidden;
+    padding: 8px 16px 24px;
   }
 
   &__section {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--color-border-whisper);
+    padding: 12px 0;
+
+    & + & {
+      margin-top: 8px;
+    }
   }
 
   &__section-title {
@@ -354,10 +375,12 @@ function handleGenerate() {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    border: none;
+    padding: 3px 10px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
     background: transparent;
     font-size: 12px;
-    color: var(--color-creative-violet);
+    color: var(--color-proposal-blue);
     cursor: pointer;
 
     &:disabled {
@@ -366,24 +389,19 @@ function handleGenerate() {
     }
   }
 
-  &__tip {
-    margin: 8px 0 0;
-    font-size: 12px;
-    color: var(--color-ink-muted);
-  }
-
   &__settings {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 12px;
   }
 
   &__field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    font-size: 12px;
-    color: var(--color-ink-secondary);
+    gap: 8px;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--color-ink-primary);
 
     :deep(.ant-select) {
       width: 100%;
@@ -409,8 +427,10 @@ function handleGenerate() {
     justify-content: space-between;
     gap: 8px;
     border-radius: 8px;
-    background: var(--color-surface-2);
-    padding: 8px 10px;
+    background: var(--color-surface-0);
+    border: 1px solid var(--color-border-whisper);
+    box-shadow: var(--shadow-soft);
+    padding: 14px 12px;
   }
 
   &__structure-info {
@@ -447,12 +467,79 @@ function handleGenerate() {
 
   &__footer {
     padding: 12px 16px;
-    border-top: 1px solid var(--color-border-whisper);
+    background: var(--color-surface-0);
   }
 
   &__generate {
-    height: 42px;
+    height: 46px;
+    padding-inline: 8px;
+    font-size: 14px;
     font-weight: 600;
+  }
+
+  &__generate-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+
+  &__generate-points {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  &__upload-note {
+    margin-left: 4px;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--color-ink-muted);
+  }
+
+  &__mode-desc {
+    display: block;
+    margin: 4px 0 0 24px;
+    font-size: 11px;
+    color: var(--color-ink-muted);
+  }
+
+  &__mode :deep(.ant-radio-wrapper) {
+    margin: 0;
+    padding: 12px;
+    border: 1px solid var(--color-border-whisper);
+    border-radius: 8px;
+    background: var(--color-surface-0);
+    box-shadow: var(--shadow-soft);
+  }
+
+  :deep(.ant-select-selector),
+  :deep(textarea.ant-input) {
+    border-radius: 8px;
+    background: var(--color-surface-0);
+    box-shadow: var(--shadow-soft);
+  }
+
+  :deep(.image-upload__empty),
+  :deep(.image-upload__add) {
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 12px;
+    border: 1px solid var(--color-border-whisper);
+    background: transparent;
+  }
+
+  :deep(.image-upload__empty) {
+    width: calc((100% - 16px) / 3);
+  }
+
+  :deep(.image-upload__empty-desc) {
+    display: none;
+  }
+
+  :deep(.image-upload__empty-icon) {
+    background: transparent;
+    box-shadow: none;
   }
 
   &__upload-guide-img {

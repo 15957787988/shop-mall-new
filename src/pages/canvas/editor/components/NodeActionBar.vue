@@ -340,8 +340,8 @@ function saveExpand() {
   align-items: center;
   gap: 4px;
   padding: 4px 6px;
-  background: #292927;
-  border: 1px solid #45453f;
+  background: $bg-surface;
+  border: 1px solid $border-default;
   border-radius: $radius-lg;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(12px);
@@ -350,7 +350,7 @@ function saveExpand() {
 .nab-meta {
   padding: 0 6px;
   font-size: 12px;
-  color: #deddd7;
+  color: $text-secondary;
   white-space: nowrap;
 }
 
@@ -368,7 +368,7 @@ function saveExpand() {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid $border-default;
   border-radius: $radius-sm;
-  color: #deddd7;
+  color: $text-secondary;
   font-size: 12px;
   cursor: pointer;
   font-family: inherit;
@@ -419,7 +419,7 @@ function saveExpand() {
   .expand-hint {
     margin: 0 0 10px;
     font-size: 12px;
-    color: #aaa9a4;
+    color: $text-faint;
   }
 
   .expand-editor {

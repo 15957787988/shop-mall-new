@@ -106,7 +106,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #20201f;
+  background: $bg-surface;
 }
 img {
   width: 100%;

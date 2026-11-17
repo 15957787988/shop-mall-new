@@ -79,7 +79,7 @@ const MEMBERSHIP_PLANS = [
       background: var(--sub-plan-active-bg);
       box-shadow: var(--shadow-lift);
       opacity: 1;
-      outline: 2px solid rgba(255, 176, 136, 0.4);
+      outline: 2px solid var(--color-accent-border);
     }
   }
 
@@ -103,8 +103,8 @@ const MEMBERSHIP_PLANS = [
     }
 
     &--yearly {
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--color-success-mint);
+      background: var(--color-accent-soft);
+      color: var(--color-ink-primary);
     }
   }
 

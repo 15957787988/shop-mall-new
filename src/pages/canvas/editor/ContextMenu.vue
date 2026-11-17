@@ -58,7 +58,7 @@ function act(action) {
 .ctx-menu {
   position: fixed;
   z-index: 9999;
-  background: rgba(#20201f, 0.97);
+  background: rgba($bg-surface, 0.97);
   border: 1px solid $border-default;
   border-radius: $radius-lg;
   padding: 4px;
@@ -91,7 +91,7 @@ function act(action) {
   background: none;
   border: none;
   border-radius: 7px;
-  color: #c8c7c1;
+  color: $text-secondary;
   font-size: 12px;
   cursor: pointer;
   text-align: left;
@@ -100,7 +100,7 @@ function act(action) {
 
   span { width: 16px; text-align: center; opacity: 0.8; }
 
-  &:hover { background: rgba($accent-primary, 0.1); color: #f1f0ed; }
+  &:hover { background: rgba($accent-primary, 0.1); color: $text-primary; }
   &.danger { color: #ff8080; &:hover { background: rgba(#ff4d4d, 0.09); color: #ff4d4d; } }
 }
 

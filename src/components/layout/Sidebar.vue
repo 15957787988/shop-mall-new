@@ -53,16 +53,12 @@ import {
   HomeOutlined,
   ToolOutlined,
   AppstoreOutlined,
-  ClockCircleOutlined,
   FolderOpenOutlined,
   ContainerOutlined,
-  StarOutlined,
-  CreditCardOutlined,
   PartitionOutlined,
   CloseOutlined,
   PictureOutlined,
   VideoCameraOutlined,
-  HighlightOutlined,
   PlayCircleOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -89,40 +85,23 @@ interface NavItem {
 }
 
 const NAV_GROUPS: NavItem[][] = [
-  [{ href: '/', label: '首页', icon: HomeOutlined }],
+  [{ href: '/', label: '创作工作台', icon: HomeOutlined }, { href: '/tools', label: '全部工具', icon: ToolOutlined }],
   [
     { href: '/canvas/index', label: '无限画布', icon: PartitionOutlined },
-    { href: '/tools/ai-product-image', label: '商品套图', icon: PictureOutlined },
-    // { href: '/tools/viral-videos', label: '视频制作', icon: VideoCameraOutlined },
-    { href: '/ai/image', label: 'AI制图', icon: HighlightOutlined },
-    { href: '/ai/video', label: 'AI视频', icon: PlayCircleOutlined },
-    { href: '/tools/video-replicate', label: '爆款复刻', icon: VideoCameraOutlined },
-    { href: '/agent-lib', label: '我的资产', icon: ContainerOutlined },
-    // { href: '/tools', label: '工具', icon: ToolOutlined },
+    { href: '/image', label: '图片创作', icon: PictureOutlined },
+    { href: '/video', label: '视频创作', icon: PlayCircleOutlined },
+    { href: '/product-set', label: '商品套图', icon: AppstoreOutlined },
+    { href: '/video-remix', label: '视频复刻', icon: VideoCameraOutlined },
   ],
-  // [{ href: '/templates', label: '模板', icon: AppstoreOutlined }],
-  // [
-  //   { href: '/space', label: '我的作品', icon: FolderOpenOutlined },
-  //   { href: '/recent', label: '最近打开', icon: ClockCircleOutlined },
-  // ],
-  // [
-  //   { href: '/team', label: '帮我设计', icon: StarOutlined },
-  //   { href: '/pricing', label: '套餐', icon: CreditCardOutlined },
-  // ],
+  [{ href: '/space', label: '我的作品', icon: FolderOpenOutlined }, { href: '/agent-lib', label: '资产库', icon: ContainerOutlined }],
 ]
 
-const TOOL_LEAVES = ['/tools/ai-product-image', '/tools/viral-videos', '/tools/video-replicate']
-
 function isNavActive(pathname: string, href: string) {
-  if (href === '/tools/video-replicate' && pathname === '/video-replicate') return true
-  if (href === '/') return pathname === '/'
-  if (href === '/canvas/index') return pathname === '/canvas' || pathname.startsWith('/canvas/')
-  if (href === '/tools') {
-    if (pathname === '/tools') return true
-    if (!pathname.startsWith('/tools/')) return false
-    return !TOOL_LEAVES.some((leaf) => pathname === leaf || pathname.startsWith(`${leaf}/`))
-  }
-  return pathname === href || pathname.startsWith(`${href}/`)
+  const path = pathname
+  if (href === '/') return path === '/'
+  if (href === '/canvas/index') return path === '/canvas' || path.startsWith('/canvas/')
+  if (href === '/tools') return path === '/tools' || (!!route.meta.creationWorkspace && !NAV_GROUPS.flat().some(item => item.href === path))
+  return path === href || path.startsWith(`${href}/`)
 }
 </script>
 
