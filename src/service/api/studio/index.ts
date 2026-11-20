@@ -17,6 +17,9 @@ const VideoGenType = {
 } as const
 
 export interface StudioWork {
+  targetPlatform?: string
+  country?: string
+  language?: string
   id: number
   status: number
   prompt?: string

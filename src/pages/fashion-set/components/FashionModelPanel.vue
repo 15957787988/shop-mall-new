@@ -37,7 +37,7 @@ import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { Button, Input, Select } from 'ant-design-vue'
 import { ThunderboltOutlined, UploadOutlined } from '@ant-design/icons-vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
-import { getStudioWork, submitStudioImage, type CommonAiModelItem } from '@/service/api/studio'
+import { getStudioWork, submitStudioImage, type CommonAiModelItem } from '@/pages/fashion-set/api'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useAuth } from '@/composables/useAuth'
 const props = defineProps<{ urls: string[]; models?: CommonAiModelItem[]; modelsLoading?: boolean; disabled?: boolean; batch?: boolean }>()

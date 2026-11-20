@@ -2,7 +2,7 @@
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { FileTextOutlined, LoadingOutlined } from '@ant-design/icons-vue'
-import { analyzeReplicatePrompt } from '@/pages/tools/VideoReplicate/api'
+import { analyzeReplicatePrompt } from '@/service/api/video-remix'
 import { Download, View, FullScreen } from '../../shims/icons'
 import { storeToRefs } from 'pinia'
 import { useVueFlow } from '@vue-flow/core'

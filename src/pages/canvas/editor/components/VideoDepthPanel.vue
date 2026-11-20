@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useVueFlow } from '@vue-flow/core'
 import { LoadingOutlined } from '@ant-design/icons-vue'
@@ -71,10 +71,12 @@ async function poll(version) {
   }))
   if (!disposed && version === epoch) timer = setTimeout(() => poll(version), 3000)
 }
-watch(() => props.projectId, () => {
+function resetProject() {
   epoch++; clearTimeout(timer); config.value = null; checking.value = false
   if (props.projectId) { void refreshConfig(); void poll(epoch) }
-}, { immediate: true })
+}
+watch(() => props.projectId, resetProject)
+onMounted(resetProject)
 async function start() {
   const node = target.value
   if (!node || busy.value || props.readonly || active.value && node.data.depthTaskId || !props.saveCanvas) return

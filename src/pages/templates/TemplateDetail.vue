@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowLeftOutlined } from '@ant-design/icons-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
@@ -101,9 +101,11 @@ watch(
   () => route.params.id,
   (id) => {
     if (typeof id === 'string') loadTemplate(id)
-  },
-  { immediate: true }
+  }
 )
+onMounted(() => {
+  if (typeof route.params.id === 'string') loadTemplate(route.params.id)
+})
 </script>
 
 <style scoped lang="scss">

@@ -21,3 +21,10 @@ export async function getBannerList(): Promise<BannerItem[]> {
   )
   return result.list ?? []
 }
+
+/** 首页灵感分类与模板列表，独立于画布页面请求。 */
+export const templateApi = {
+  clone: (id: number, name?: string) => http.post<{ id: number }>(`/admin-api/canvas/templates/${id}/clone`, name ? { name } : {}),
+  categories: () => http.get<{ id: number; name: string }[]>('/admin-api/canvas/templates/categories'),
+  list: (params: { current?: number; size?: number; categoryId?: number; keyword?: string } = {}) => http.get<{ list: { id: number; title: string; cover: string; previewUrl?: string; description?: string; tags?: string[] }[]; total: number }>('/admin-api/canvas/templates', { current: params.current ?? 1, size: params.size ?? 20, categoryId: params.categoryId || undefined, keyword: params.keyword || undefined }),
+}

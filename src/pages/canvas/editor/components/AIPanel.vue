@@ -2110,10 +2110,13 @@ const claimingTaskIds = new Set()
 const submittingTaskIds = new Set()
 let discoveryBusy = false
 let lastDiscoveryAt = 0
-const discoveryTimer = setInterval(() => {
-  taskWaitNow.value = Date.now()
-  if (!document.hidden) void resumePendingGenTasks()
-}, 5000)
+let discoveryTimer
+onMounted(() => {
+  discoveryTimer = setInterval(() => {
+    taskWaitNow.value = Date.now()
+    if (!document.hidden) void resumePendingGenTasks()
+  }, 5000)
+})
 const retryAfterByNode = new Map()
 
 function videoTaskErrorPatch(nodeId, err) {

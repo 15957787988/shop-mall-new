@@ -1,0 +1,59 @@
+import type { GenerationSettings } from '@/lib/creation/generation-settings'
+
+/** 套图单张图片 */
+export interface SaleorImageItem {
+  id: string;
+  picUrl: string;
+  label: string;
+  texts: string[];
+  selected?: boolean;
+  status?: number;
+  progress?: string;
+  errorMessage?: string;
+}
+
+/** 商品上架文案 */
+export interface SaleorCopyContent {
+  title: string;
+  sellingPoints: string;
+  detailCopy: string;
+  keywords: string;
+}
+
+/** 一次生成结果（套图 + 文案） */
+export interface SaleorResultGroup extends GenerationSettings {
+  id: string;
+  title: string;
+  createTime: string;
+  images: SaleorImageItem[];
+  copyContent: SaleorCopyContent;
+  status?: number;
+  originalUrls?: string[];
+  modelId?: number;
+}
+
+/** 套图结构配置项 */
+export interface StructureConfigItem {
+  key: string;
+  label: string;
+  desc: string;
+  count: number;
+  min?: number;
+  max?: number;
+}
+
+/** 左侧表单数据 */
+export interface SaleorFormData {
+  productImages: string[];
+  platform: string;
+  country: string;
+  language: string;
+  /** 对应上游 size，如 1:1、16:9 */
+  aspectRatio: string;
+  /** 对应上游 resolution，如 1k / 2K；无档位时为空 */
+  resolution: string;
+  sellingPoints: string;
+  structureMode: "smart" | "custom";
+  structureConfig: StructureConfigItem[];
+  modelId: number;
+}

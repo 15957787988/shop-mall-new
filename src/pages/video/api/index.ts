@@ -1,0 +1,186 @@
+import http from '@/service/http'
+import type { PageResult } from '@/types/api'
+import { CommonModelType, fetchCommonAiModels, type CommonAiModelItem } from '@/service/api/ai-model'
+
+
+export type StudioKind = 'image' | 'video'
+
+const PAGE_SIZE = 10
+
+/** 与画布 POST /ai/video/common/generate 的 type 一致。2 = 全能参考（图/视频/音频混合） */
+const VideoGenType = {
+  MULTI_IMAGE: 1,
+  MIXED: 2,
+  TEXT: 3,
+  FRAME: 4,
+} as const
+
+export interface StudioWork {
+  targetPlatform?: string
+  country?: string
+  language?: string
+  id: number
+  status: number
+  prompt?: string
+  model?: string
+  modelName?: string
+  creationTool?: string
+  creationBatchId?: string
+  creationTitle?: string
+  creationIndex?: number
+  creationLabel?: string
+  ratio?: string
+  resolution?: string
+  duration?: number
+  cost?: number
+  points?: number
+  errorMessage?: string
+  createTime?: string | number | number[]
+  picUrl?: string
+  picUrls?: Array<string | { url?: string }>
+  videoUrl?: string
+  previewUrl?: string
+  lastFrameUrl?: string
+  progress?: string
+  referenceImageUrls?: string[]
+  referenceVideoUrls?: string[]
+  referenceAudioUrls?: string[]
+}
+
+export function loadStudioModels(kind: StudioKind) {
+  const type = kind === 'image' ? CommonModelType.IMAGE : CommonModelType.VIDEO
+  return fetchCommonAiModels(type, undefined, kind === 'video')
+}
+
+export function pageStudioWorks(_kind: StudioKind, pageNo: number, pageSize = PAGE_SIZE, _creationTool?: string) {
+  const creationTool = "video"
+  const url = '/admin-api/ai/video/my-page'
+  return http.get<PageResult<StudioWork>>(url, {
+    pageNo,
+    pageSize,
+    excludeCanvas: true,
+    ...(creationTool ? { creationTool } : {}),
+  })
+}
+
+export function getStudioWork(_kind: StudioKind, id: number) {
+  const url = '/admin-api/ai/video/get-my'
+  return http.get<StudioWork | null>(url, { id })
+}
+
+export function deleteStudioWork(_kind: StudioKind, id: number) {
+  const url = '/admin-api/ai/video/delete-my'
+  return http.delete<boolean>(url, { id })
+}
+
+function fileExt(url: string, fallback: string) {
+  const match = /\.([a-z0-9]{2,5})$/i.exec(url.split(/[?#]/)[0] || '')
+  return (match?.[1] || fallback).toLowerCase()
+}
+
+export function studioFileName(kind: StudioKind, id: number, url: string) {
+  return `${kind}-${id}.${fileExt(url, kind === 'video' ? 'mp4' : 'png')}`
+}
+
+/** 优先保存为本地文件。跨域无法读取时改为新窗口打开，方便另存。 */
+export async function downloadStudioFile(url: string, fileName: string) {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error('下载失败')
+    const blob = await res.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = objectUrl
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(objectUrl)
+  } catch {
+    window.open(url, '_blank', 'noopener')
+  }
+}
+
+function countLimit(primary: unknown, secondary: unknown, fallback: number) {
+  const first = Number(primary)
+  if (Number.isFinite(first) && first >= 0) return first
+  const second = Number(secondary)
+  if (Number.isFinite(second) && second >= 0) return second
+  return fallback
+}
+
+function httpUrls(list: string[] | undefined, max: number) {
+  const urls = (list ?? []).filter((url) => /^https?:/.test(url))
+  return [...new Set(urls)].slice(0, max)
+}
+
+/**
+ * 文生 / 参考图 / 全能参考。不传 canvasProjectId，记录留在列表。
+ * 有参考视频或参考音频时 type=2，对齐画布 buildCommonVideoParams。
+ */
+export function buildVideoParams(input: {
+  prompt: string
+  aspect: string
+  duration: number
+  resolution: string
+  refImages: string[]
+  refVideos?: string[]
+  refAudios?: string[]
+  mediaLimits?: Record<string, number> | null
+}) {
+  const text = input.prompt.trim()
+  const limits = input.mediaLimits
+  const images = httpUrls(
+    input.refImages,
+    countLimit(limits?.platformMaxImages, limits?.maxImages, 9),
+  )
+  const videos = httpUrls(
+    input.refVideos,
+    countLimit(limits?.platformMaxVideos, limits?.maxVideos, 3),
+  )
+  const audios = httpUrls(
+    input.refAudios,
+    countLimit(limits?.platformMaxAudios, limits?.maxAudios, 3),
+  )
+  if (!text && !images.length && !videos.length && !audios.length) return null
+
+  const params: Record<string, unknown> = {
+    resolution: input.resolution || '720p',
+    ratio: input.aspect || '16:9',
+    duration: input.duration || 5,
+    generateAudio: true,
+  }
+
+  if (videos.length || audios.length) {
+    params.type = VideoGenType.MIXED
+    params.prompt = text || '根据参考素材生成'
+    if (images.length) params.imageUrls = images
+    if (videos.length) params.videoUrls = videos
+    if (audios.length) params.audioUrls = audios
+  } else if (images.length === 2 && !text) {
+    params.type = VideoGenType.FRAME
+    params.imageUrls = images
+  } else if (images.length) {
+    params.type = VideoGenType.MULTI_IMAGE
+    if (text) params.prompt = text
+    params.imageUrls = images
+  } else {
+    params.type = VideoGenType.TEXT
+    params.prompt = text
+  }
+  return params
+}
+
+export function submitStudioVideo(body: {
+  creationTool?: 'video' | 'product-video'
+  idempotencyKey?: string
+  modelId: number
+  model?: string
+  params: Record<string, unknown>
+}) {
+  return http.post<number>('/admin-api/ai/video/common/generate', {
+    ...body,
+    creationTool: body.creationTool || 'video',
+    idempotencyKey: body.idempotencyKey || crypto.randomUUID(),
+  })
+}

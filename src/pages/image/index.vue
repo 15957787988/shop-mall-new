@@ -72,16 +72,12 @@
       </aside>
 
       <main class="studio__results scroll-area" ref="listEl">
-        <header class="studio__results-heading">
+        <header v-if="works.length" class="studio__results-heading">
           <div><h2>我的图片</h2><p>查看生成进度，预览和下载作品</p></div>
           <span class="studio__result-count">{{ total }} 个作品</span>
         </header>
         <div v-if="listLoading && !works.length" class="studio__empty">加载中…</div>
-        <div v-else-if="!works.length" class="studio__empty">
-          <span class="studio__empty-icon"><PictureOutlined /></span>
-          <strong>开始你的第一个图片作品</strong>
-          <span>填写提示词、选择模型后点击生成，结果会保存在这里。</span>
-        </div>
+        <CreationDemo v-else-if="!works.length" tool="image" />
         <div v-if="works.length" class="studio__gallery-grid">
         <article v-for="item in works" :key="item.id" class="studio__card">
           <div class="studio__card-body">
@@ -111,9 +107,9 @@
               </span>
               <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
             </header>
-            <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
-            <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
-              {{ item.errorMessage }}
+            <p class="studio__card-prompt" :title="item.prompt">{{ item.prompt }}</p>
+            <p class="studio__card-error" :title="item.status === 30 ? item.errorMessage : undefined">
+              {{ item.status === 30 ? item.errorMessage : '' }}
             </p>
             <div class="studio__actions">
               <button
@@ -187,6 +183,7 @@
 </template>
 
 <script setup lang="ts">
+import CreationDemo from '@/components/CreationDemo.vue'
 import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -194,7 +191,7 @@ import { PictureOutlined, CopyOutlined, DeleteOutlined, DownloadOutlined } from 
 import { Button, Input, Modal, Select } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
-import HistoryModal from '@/components/studio/HistoryModal.vue'
+import HistoryModal from './components/HistoryModal.vue'
 import StudioParams from '@/components/studio/StudioParams.vue'
 import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useAuth } from '@/composables/useAuth'
@@ -210,7 +207,7 @@ import {
   studioFileName,
   submitStudioImage,
   type StudioWork,
-} from '@/service/api/studio'
+} from '@/pages/image/api'
 
 const { isLoggedIn, openLogin } = useAuth()
 const { addToast } = useToast()

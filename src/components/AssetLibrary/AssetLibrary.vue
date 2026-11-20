@@ -176,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Alert, Button, Empty, Pagination, Popconfirm, Select, Spin } from 'ant-design-vue'
 import {
   DeleteOutlined,
@@ -384,7 +384,7 @@ watch([sessionVersion, isLoggedIn], () => {
   void load()
 })
 defineExpose({ reload: load })
-void load()
+onMounted(() => { void load() })
 </script>
 
 <style src="./asset-library.scss" lang="scss" scoped />

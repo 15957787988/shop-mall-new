@@ -12,16 +12,31 @@
               placeholder="加载模型…"
               class="studio__control"
             />
-            <p v-if="currentModel?.pricing?.billingSource === 'LOCAL_TARIFF'" class="studio__hint">{{ currentModel.pricing.note }}</p>
+            <p v-if="currentModel?.pricing?.billingSource === 'LOCAL_TARIFF'" class="studio__hint">
+              {{ currentModel.pricing.note }}
+            </p>
             <p v-if="modelsError" class="studio__error">{{ modelsError }}</p>
             <p v-else-if="!modelsLoading && !models.length" class="studio__hint">暂无可用模型</p>
           </section>
 
           <section v-if="productMode" class="studio__section">
             <h3 class="studio__label">商品信息</h3>
-            <label class="studio__field">商品名称<Input v-model:value="productTitle" :maxlength="100" placeholder="填写真实商品名称" /></label>
-            <label class="studio__field studio__duration">商品卖点 / 口播文案<Input.TextArea v-model:value="productSellingPoints" :rows="3" :maxlength="1000" placeholder="如：轻便通勤、可拆卸肩带；请勿填写未经证实的功效" /></label>
-            <p class="studio__hint">下方至少添加一张商品图。参考图决定商品外观，卖点和创作要求决定展示内容。</p>
+            <label class="studio__field"
+              >商品名称<Input
+                v-model:value="productTitle"
+                :maxlength="100"
+                placeholder="填写真实商品名称"
+            /></label>
+            <label class="studio__field studio__duration"
+              >商品卖点 / 口播文案<Input.TextArea
+                v-model:value="productSellingPoints"
+                :rows="3"
+                :maxlength="1000"
+                placeholder="如：轻便通勤、可拆卸肩带；请勿填写未经证实的功效"
+            /></label>
+            <p class="studio__hint">
+              下方至少添加一张商品图。参考图决定商品外观，卖点和创作要求决定展示内容。
+            </p>
           </section>
           <section class="studio__section">
             <h3 class="studio__label">{{ productMode ? '创作要求' : '提示词' }}</h3>
@@ -70,7 +85,9 @@
                 :max-count="maxRefs"
                 :file-size="10"
                 :existing-urls="refImages"
-                :empty-desc="productMode ? '上传商品图，JPG / PNG / WebP' : '可选，JPG / PNG / WebP'"
+                :empty-desc="
+                  productMode ? '上传商品图，JPG / PNG / WebP' : '可选，JPG / PNG / WebP'
+                "
                 @upload-complete="refImages = $event"
               />
             </div>
@@ -105,7 +122,9 @@
               />
             </div>
           </section>
-          <p v-if="productMode && currentModel && !maxRefs" class="studio__error studio__section">当前模型不支持商品参考图，请更换支持图片参考的视频模型。</p>
+          <p v-if="productMode && currentModel && !maxRefs" class="studio__error studio__section">
+            当前模型不支持商品参考图，请更换支持图片参考的视频模型。
+          </p>
         </div>
 
         <div class="studio__footer">
@@ -125,96 +144,105 @@
       </aside>
 
       <main class="studio__results scroll-area" ref="listEl">
-        <header class="studio__results-heading">
-          <div><h2>我的视频</h2><p>查看生成进度，预览和下载作品</p></div>
-          <span class="studio__result-count">{{ total }} 个作品</span>
-        </header>
         <div v-if="listLoading && !works.length" class="studio__empty">加载中…</div>
-        <div v-else-if="!works.length" class="studio__empty">
-          <span class="studio__empty-icon"><VideoCameraOutlined /></span>
-          <strong>开始你的第一个视频作品</strong>
-          <span>填写提示词、选择模型后点击生成，结果会保存在这里。</span>
-        </div>
+        <CreationDemo v-else-if="!works.length" :tool="productMode ? 'product-video' : 'video'" />
         <div v-if="works.length" class="studio__gallery-grid">
-        <article v-for="item in works" :key="item.id" class="studio__card">
-          <div class="studio__card-body">
-            <div class="studio__media">
-              <button
-                v-if="videoSrc(item)"
-                type="button"
-                class="studio__poster"
-                aria-label="播放"
-                @click="openPreview(item)"
-              >
-                <img
-                  v-if="poster(item) && !brokenPosters[item.id]"
-                  :src="poster(item)"
-                  alt=""
-                  @error="brokenPosters[item.id] = true"
-                />
-                <video
-                  v-else
-                  :src="videoSrc(item)"
-                  muted
-                  playsinline
-                  preload="metadata"
-                  tabindex="-1"
-                  @loadedmetadata="paintThumb"
-                />
-                <span class="studio__play" aria-hidden="true" />
-                <span v-if="item.duration" class="studio__duration-badge">{{ item.duration }}s</span>
-              </button>
-              <span v-else-if="isPending(item)" class="studio__media-wait"
-                >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
-              >
-              <span v-else class="studio__media-wait">{{ item.status === 30 ? '生成失败' : '结果暂不可用' }}</span>
+          <article v-for="item in works" :key="item.id" class="studio__card">
+            <div class="studio__card-body">
+              <div class="studio__media">
+                <button
+                  v-if="videoSrc(item)"
+                  type="button"
+                  class="studio__poster"
+                  aria-label="播放"
+                  @click="openPreview(item)"
+                >
+                  <img
+                    v-if="poster(item) && !brokenPosters[item.id]"
+                    :src="poster(item)"
+                    alt=""
+                    @error="brokenPosters[item.id] = true"
+                  />
+                  <video
+                    v-else
+                    :src="videoSrc(item)"
+                    muted
+                    playsinline
+                    preload="metadata"
+                    tabindex="-1"
+                    @loadedmetadata="paintThumb"
+                  />
+                  <span class="studio__play" aria-hidden="true" />
+                  <span v-if="item.duration" class="studio__duration-badge"
+                    >{{ item.duration }}s</span
+                  >
+                </button>
+                <span v-else-if="isPending(item)" class="studio__media-wait"
+                  >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
+                >
+                <span v-else class="studio__media-wait">{{
+                  item.status === 30 ? '生成失败' : '结果暂不可用'
+                }}</span>
+              </div>
+              <header class="studio__card-head">
+                <span class="studio__card-model">{{
+                  item.creationTitle ||
+                  item.creationLabel ||
+                  item.modelName ||
+                  item.model ||
+                  '生成结果'
+                }}</span>
+                <span
+                  v-if="statusLabel(item)"
+                  class="studio__card-status"
+                  :data-fail="item.status === 30"
+                >
+                  {{ statusLabel(item) }}
+                </span>
+                <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
+              </header>
+              <p class="studio__card-prompt" :title="item.prompt">{{ item.prompt }}</p>
+              <p class="studio__card-error" :title="item.status === 30 ? item.errorMessage : undefined">
+                {{ item.status === 30 ? item.errorMessage : '' }}
+              </p>
+              <div class="studio__actions">
+                <button
+                  type="button"
+                  class="studio__action"
+                  title="下载"
+                  aria-label="下载"
+                  :disabled="!videoSrc(item) || downloadingId === item.id"
+                  @click="handleDownload(item)"
+                >
+                  <DownloadOutlined />
+                </button>
+                <button
+                  type="button"
+                  class="studio__action studio__action--danger"
+                  title="删除"
+                  aria-label="删除"
+                  :disabled="deletingId === item.id"
+                  @click="handleDelete(item)"
+                >
+                  <DeleteOutlined />
+                </button>
+              </div>
             </div>
-            <header class="studio__card-head">
-              <span class="studio__card-model">{{
-                item.creationTitle || item.creationLabel || item.modelName || item.model || '生成结果'
-              }}</span>
-              <span
-                v-if="statusLabel(item)"
-                class="studio__card-status"
-                :data-fail="item.status === 30"
-              >
-                {{ statusLabel(item) }}
-              </span>
-              <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
-            </header>
-            <p v-if="item.prompt" class="studio__card-prompt">{{ item.prompt }}</p>
-            <p v-if="item.status === 30 && item.errorMessage" class="studio__card-error">
-              {{ item.errorMessage }}
-            </p>
-            <div class="studio__actions">
-              <button
-                type="button"
-                class="studio__action"
-                title="下载"
-                aria-label="下载"
-                :disabled="!videoSrc(item) || downloadingId === item.id"
-                @click="handleDownload(item)"
-              >
-                <DownloadOutlined />
-              </button>
-              <button
-                type="button"
-                class="studio__action studio__action--danger"
-                title="删除"
-                aria-label="删除"
-                :disabled="deletingId === item.id"
-                @click="handleDelete(item)"
-              >
-                <DeleteOutlined />
-              </button>
-            </div>
-          </div>
-        </article>
+          </article>
         </div>
-<AutoLoadMore :has-more="hasMore" :loading="listLoading" :count="works.length" @load="loadMore" />
+        <AutoLoadMore
+          :has-more="hasMore"
+          :loading="listLoading"
+          :count="works.length"
+          @load="loadMore"
+        />
       </main>
     </div>
-    <HistoryModal v-model:open="historyOpen" kind="video" :creation-tool="productMode ? 'product-video' : 'video'" />
+    <HistoryModal
+      v-model:open="historyOpen"
+      kind="video"
+      :creation-tool="productMode ? 'product-video' : 'video'"
+    />
     <Modal
       v-model:open="previewOpen"
       :footer="null"
@@ -258,11 +286,17 @@
 </template>
 
 <script setup lang="ts">
+import CreationDemo from '@/components/CreationDemo.vue'
 import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { buildProductVideoPrompt } from '@/lib/creation/product-video'
-import { VideoCameraOutlined, CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import {
+  VideoCameraOutlined,
+  CopyOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+} from '@ant-design/icons-vue'
 import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
@@ -274,7 +308,7 @@ import {
 import { isSeedance, assertSeedanceDimensions } from '@/pages/canvas/utils/seedanceConstraints'
 import { readReferenceVideoMetadata } from '@/pages/canvas/utils/videoReferencePreflight'
 import UploadFile from '@/components/UploadFile/src/UploadFile.vue'
-import HistoryModal from '@/components/studio/HistoryModal.vue'
+import HistoryModal from './components/HistoryModal.vue'
 import StudioParams from '@/components/studio/StudioParams.vue'
 import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useAuth } from '@/composables/useAuth'
@@ -291,10 +325,9 @@ import {
   studioFileName,
   submitStudioVideo,
   type StudioWork,
-} from '@/service/api/studio'
+} from '@/pages/video/api'
 
-interface Props { productMode?: boolean }
-const props = withDefaults(defineProps<Props>(), { productMode: false })
+const productMode = false
 const route = useRoute()
 const productTitle = ref('')
 const productSellingPoints = ref('')
@@ -331,7 +364,9 @@ let pageSeq = 0
 const currentModel = computed(() => models.value.find((item) => item.id === modelId.value))
 const modelOptions = computed(() =>
   models.value.map((item) => ({
-    label: `${item.name || item.model || String(item.id)}${item.disabledReason ? `（${item.disabledReason}）` : ''}`,
+    label: `${item.name || item.model || String(item.id)}${
+      item.disabledReason ? `（${item.disabledReason}）` : ''
+    }`,
     disabled: item.disabled === true,
     value: item.id,
   }))
@@ -348,8 +383,16 @@ function bound(model: CommonAiModelItem | undefined, key: string, fallback: numb
   return Number.isFinite(n) && n > 0 ? n : fallback
 }
 
-const durationMin = computed(() => currentModel.value?.pricing?.minDuration ?? bound(currentModel.value, 'minTotalVideoDuration', 4))
-const durationMax = computed(() => currentModel.value?.pricing?.maxDuration ?? bound(currentModel.value, 'maxTotalVideoDuration', 15))
+const durationMin = computed(
+  () =>
+    currentModel.value?.pricing?.minDuration ??
+    bound(currentModel.value, 'minTotalVideoDuration', 4)
+)
+const durationMax = computed(
+  () =>
+    currentModel.value?.pricing?.maxDuration ??
+    bound(currentModel.value, 'maxTotalVideoDuration', 15)
+)
 const sliderMax = computed(() => Math.max(durationMin.value, durationMax.value))
 
 function countLimit(primary: unknown, secondary: unknown, fallback: number) {
@@ -375,11 +418,27 @@ const maxAudios = computed(() => {
 const maxVideoDuration = computed(() => bound(currentModel.value, 'maxTotalVideoDuration', 15))
 const maxAudioDuration = computed(() => bound(currentModel.value, 'maxTotalAudioDuration', 15))
 const showRefs = computed(() => maxRefs.value > 0 || maxVideos.value > 0 || maxAudios.value > 0)
-const estimatedPoints = computed(() => estimateModelPoints(currentModel.value, { resolution: resolution.value, ratio: aspect.value, duration: duration.value, imageCount: refImages.value.length, referenceVideo: refVideos.value.length > 0, generateAudio: true }))
+const estimatedPoints = computed(() =>
+  estimateModelPoints(currentModel.value, {
+    resolution: resolution.value,
+    ratio: aspect.value,
+    duration: duration.value,
+    imageCount: refImages.value.length,
+    referenceVideo: refVideos.value.length > 0,
+    generateAudio: true,
+  })
+)
 const pointsText = computed(() => `（${formatModelPoints(estimatedPoints.value)}）`)
 const canSubmit = computed(() => {
-  if (submitting.value || !modelId.value || currentModel.value?.disabled || estimatedPoints.value == null) return false
-  if (props.productMode) return maxRefs.value > 0 && refImages.value.length > 0 && !!productTitle.value.trim()
+  if (
+    submitting.value ||
+    !modelId.value ||
+    currentModel.value?.disabled ||
+    estimatedPoints.value == null
+  )
+    return false
+  if (productMode)
+    return maxRefs.value > 0 && refImages.value.length > 0 && !!productTitle.value.trim()
   return Boolean(
     prompt.value.trim() ||
       refImages.value.length ||
@@ -660,11 +719,16 @@ async function fetchPage(reset: boolean) {
   listLoading.value = true
   const nextPage = reset ? 1 : pageNo.value + 1
   try {
-    const page = await pageStudioWorks('video', nextPage, 10, props.productMode ? 'product-video' : 'video')
+    const page = await pageStudioWorks(
+      'video',
+      nextPage,
+      10,
+      productMode ? 'product-video' : 'video'
+    )
     if (seq !== pageSeq) return
     const list = page.list ?? []
     works.value = reset ? list : works.value.concat(list)
-    total.value = list.length ? (page.total ?? works.value.length) : works.value.length
+    total.value = list.length ? page.total ?? works.value.length : works.value.length
     pageNo.value = nextPage
     schedulePoll()
   } catch (error: unknown) {
@@ -757,14 +821,19 @@ async function handleGenerate() {
         const result = await validateAiImageConstraints(refImages.value[i])
         if (!result.valid)
           throw new Error(
-            `参考图不合格：${formatAiImageValidationError(result, `参考图${i + 1}`)}；宽高需300–6000px，宽高比需0.4–2.5`
+            `参考图不合格：${formatAiImageValidationError(
+              result,
+              `参考图${i + 1}`
+            )}；宽高需300–6000px，宽高比需0.4–2.5`
           )
       }
     }
     if (refVideos.value.length) await assertRefVideos(refVideos.value, currentModel.value)
     if (refAudios.value.length) await assertRefAudios(refAudios.value, maxAudioDuration.value)
     const params = buildVideoParams({
-      prompt: props.productMode ? buildProductVideoPrompt(productTitle.value, productSellingPoints.value, prompt.value) : prompt.value,
+      prompt: productMode
+        ? buildProductVideoPrompt(productTitle.value, productSellingPoints.value, prompt.value)
+        : prompt.value,
       aspect: aspect.value,
       duration: duration.value,
       resolution: resolution.value,
@@ -778,7 +847,7 @@ async function handleGenerate() {
       return
     }
     await submitStudioVideo({
-      creationTool: props.productMode ? 'product-video' : 'video',
+      creationTool: productMode ? 'product-video' : 'video',
       modelId: modelId.value,
       model: currentModel.value?.model,
       params,
@@ -802,11 +871,18 @@ watch(isLoggedIn, (loggedIn) => {
   void fetchPage(true)
 })
 
-watch(() => [props.productMode, route.query.prompt], () => {
-  prompt.value = typeof route.query.prompt === 'string' ? route.query.prompt.slice(0, 30000) : ''
-  productTitle.value = ''; productSellingPoints.value = ''
-  refImages.value = []; refVideos.value = []; refAudios.value = []
-}, { immediate: true })
+watch(
+  () => [productMode, route.query.prompt],
+  () => {
+    prompt.value = typeof route.query.prompt === 'string' ? route.query.prompt.slice(0, 30000) : ''
+    productTitle.value = ''
+    productSellingPoints.value = ''
+    refImages.value = []
+    refVideos.value = []
+    refAudios.value = []
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   void loadModels()

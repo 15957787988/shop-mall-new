@@ -1,4 +1,4 @@
-import { computed, h, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from '../shims/feedback'
 import { generationApi } from '../api/generationApi'
 import { createHistorySelection } from '../utils/generationHistorySelection'
@@ -53,9 +53,9 @@ export function useGenerationHistory({
       openNodeId.value = ''
       notice?.close()
       void refresh()
-    },
-    { immediate: true }
+    }
   )
+  onMounted(() => { void refresh() })
   watch(refreshKey, () => void refresh())
   // Discovery after reload does not emit generation-complete. Refresh once per new success,
   // not on every poll of the same task snapshot.

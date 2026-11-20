@@ -154,7 +154,6 @@ export const useAuthStore = defineStore('auth', () => {
     if (at) {
       isLoggedIn.value = true
       restoreUserInfoFromCache()
-      void fetchUserInfo()
     }
     isLoading.value = false
     setOnUnauthorized(handleUnauthorized)

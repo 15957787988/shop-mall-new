@@ -66,7 +66,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/tools',
     name: 'Tools',
-    component: () => import('@/pages/tools/Tools.vue'),
+    component: () => import('@/pages/all-tools/index.vue'),
   },
   {
     path: '/product-set',
@@ -164,7 +164,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/tools/:id',
     name: 'ToolDetail',
-    component: () => import('@/pages/tools/ToolDetail.vue'),
+    component: () => import('@/pages/tool-detail/index.vue'),
   },
   {
     path: '/templates',

@@ -13,12 +13,14 @@ src/
 ├── pages/          # 页面组件
 ├── hooks/          # 自定义 Hooks
 ├── composables/    # 组合式函数
-├── service/        # API 请求封装
+├── service/        # HTTP 基础设施与跨页面公共接口
 ├── store/          # Pinia
 ├── lib/            # 领域逻辑
 ├── router/         # 路由
 ├── types/          # 类型定义
 └── constants/      # 常量
+
+页面专用请求放在 `src/pages/<页面>/api/index.ts`，直接使用公共 HTTP 客户端；不同页面分别维护接口参数、作品来源及返回类型。右侧结果列表、历史弹窗和业务样式归属各自页面，不使用参数切换整页业务。只有跨页面通用的组件放在 `src/components`。
 
 ## Coding Style
 

@@ -34,36 +34,6 @@
         </div>
         <router-link to="/canvas/index">全部模板<ArrowRightOutlined /></router-link>
       </header>
-      <form class="inspiration__toolbar" @submit.prevent="load(true)">
-        <div class="inspiration__categories" aria-label="灵感分类">
-          <button
-            type="button"
-            :class="{ active: categoryId === undefined }"
-            :aria-pressed="categoryId === undefined"
-            @click="selectCategory()"
-          >
-            全部
-          </button>
-          <button
-            v-for="item in categories"
-            :key="item.id"
-            type="button"
-            :class="{ active: categoryId === item.id }"
-            :aria-pressed="categoryId === item.id"
-            @click="selectCategory(item.id)"
-          >
-            {{ item.name }}
-          </button>
-        </div>
-        <div class="inspiration__search">
-          <SearchOutlined /><input
-            v-model="keyword"
-            maxlength="100"
-            aria-label="搜索灵感模板"
-            placeholder="搜索适合你的模板"
-          /><button type="submit" :disabled="loading || !isLoggedIn">搜索</button>
-        </div>
-      </form>
       <div v-if="!isLoggedIn" class="inspiration__state">
         <PictureOutlined />
         <h3>找到下一件作品的灵感</h3>
@@ -76,12 +46,12 @@
       </div>
       <div v-else-if="error && !templates.length" class="inspiration__state" role="alert">
         <p>{{ error }}</p>
-        <Button @click="load(true)">重新加载</Button>
+        <Button @click="load()">重新加载</Button>
       </div>
       <div v-else-if="!templates.length" class="inspiration__state">
         <PictureOutlined />
         <h3>暂时没有匹配的模板</h3>
-        <p>换个关键词或分类试试。</p>
+        <p>稍后再来看看，或前往画布浏览更多模板。</p>
       </div>
       <div v-else class="inspiration__grid">
         <article
@@ -107,7 +77,9 @@
         </article>
       </div>
       <p v-if="error && templates.length" class="inspiration__error" role="alert">{{ error }}</p>
-<AutoLoadMore :has-more="templates.length < total && isLoggedIn" :loading="loading" :count="templates.length" @load="load(false)" />
+      <!-- <router-link v-if="templates.length" class="inspiration__more" to="/canvas/index"
+        >查看更多模板<ArrowRightOutlined
+      /></router-link> -->
     </section>
     <Modal
       :open="!!detail"
@@ -144,13 +116,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button, Modal, Spin } from 'ant-design-vue'
-import { ArrowRightOutlined, PictureOutlined, SearchOutlined } from '@ant-design/icons-vue'
+import { ArrowRightOutlined, PictureOutlined } from '@ant-design/icons-vue'
 import { useAuth } from '@/composables/useAuth'
-import { templateApi } from '@/pages/canvas/api/templateApi'
+import { templateApi } from '@/pages/home/api'
 import GalleryMedia from '@/pages/canvas/index/GalleryMedia.vue'
 import PreviewVideo from '@/pages/canvas/index/PreviewVideo.vue'
 import { isVideoUrl } from '@/pages/canvas/utils/galleryMedia'
@@ -163,10 +134,6 @@ interface InspirationTemplate {
   description?: string
   tags?: string[]
 }
-interface TemplateCategory {
-  id: number
-  name: string
-}
 const recommendations = [
   {
     title: '一张商品图，一套品牌视觉',
@@ -178,7 +145,7 @@ const recommendations = [
   },
   {
     title: '把日常穿搭，变成灵感大片',
-    label: '模特穿戴',
+    label: '',
     cover: 'fashion',
     path: '/virtual-try-on',
     description: '让服装与人物自然地融合。',
@@ -205,56 +172,29 @@ const recommendations = [
 const router = useRouter()
 const { isLoggedIn, userInfo, openLogin } = useAuth()
 const templates = ref<InspirationTemplate[]>([])
-const categories = ref<TemplateCategory[]>([])
-const categoryId = ref<number>()
-const keyword = ref('')
-const page = ref(1)
-const total = ref(0)
 const loading = ref(false)
 const error = ref('')
 const detail = ref<InspirationTemplate>()
 const cloning = ref(false)
 const cloneError = ref('')
 let version = 0
-let ownerVersion = 0
 function poster(item: InspirationTemplate) {
   return !isVideoUrl(item.previewUrl) ? item.previewUrl || '' : ''
 }
-async function load(reset: boolean) {
-  if (!isLoggedIn.value || (loading.value && !reset)) return
+async function load() {
+  if (!isLoggedIn.value) return
   const token = ++version
-  const current = reset ? 1 : page.value + 1
-  if (reset) templates.value = []
+  templates.value = []
   loading.value = true
   error.value = ''
   try {
-    const result = await templateApi.list({
-      current,
-      size: 12,
-      keyword: keyword.value.trim(),
-      categoryId: categoryId.value,
-    })
+    const result = await templateApi.list({ current: 1, size: 8 })
     if (token !== version) return
-    templates.value = reset ? result.list || [] : [...templates.value, ...(result.list || [])]
-    total.value = result.total ?? templates.value.length
-    page.value = current
+    templates.value = (result.list || []).slice(0, 8)
   } catch (e) {
     if (token === version) error.value = e instanceof Error ? e.message : '灵感加载失败，请重试'
   } finally {
     if (token === version) loading.value = false
-  }
-}
-function selectCategory(id?: number) {
-  if (id === categoryId.value) return
-  categoryId.value = id
-  load(true)
-}
-async function loadCategories(token: number) {
-  try {
-    const result = await templateApi.categories()
-    if (isLoggedIn.value && token === ownerVersion) categories.value = result || []
-  } catch {
-    /* 分类不可用时仍可浏览全部模板。 */
   }
 }
 async function cloneTemplate() {
@@ -281,23 +221,16 @@ watch(
   [isLoggedIn, () => userInfo.value?.id],
   () => {
     version++
-    ownerVersion++
     templates.value = []
-    categories.value = []
-    total.value = 0
     detail.value = undefined
     loading.value = false
     error.value = ''
-    if (isLoggedIn.value) {
-      loadCategories(ownerVersion)
-      load(true)
-    }
-  },
-  { immediate: true }
+    if (isLoggedIn.value) load()
+  }
 )
+onMounted(() => { void load() })
 onBeforeUnmount(() => {
   version++
-  ownerVersion++
 })
 </script>
 <style scoped lang="scss">
@@ -477,10 +410,18 @@ onBeforeUnmount(() => {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 22px;
+    > :nth-child(n + 9) {
+      display: none;
+    }
   }
   &__more {
-    display: block;
-    margin: 28px auto 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: fit-content;
+    margin: 24px auto 0;
+    color: var(--color-ink-secondary);
   }
   &__error {
     color: var(--color-danger);
@@ -569,6 +510,9 @@ button:focus-visible,
   }
   .inspiration__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    > :nth-child(n + 7) {
+      display: none;
+    }
   }
 }
 @media (max-width: 700px) {
@@ -594,6 +538,9 @@ button:focus-visible,
   .inspiration__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
+    > :nth-child(n + 5) {
+      display: none;
+    }
   }
   .inspiration__toolbar {
     align-items: stretch;

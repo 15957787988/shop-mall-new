@@ -1,7 +1,109 @@
 <template>
-  <ProductSetPage />
+  <PageContainer flush>
+    <div class="saleor-page">
+
+      <div class="saleor-page__body">
+        <aside class="saleor-page__sidebar">
+          <Sidebar v-model:generating="generating" @generate="handleGenerate" />
+        </aside>
+        <main class="saleor-page__results scroll-area">
+          <ResultList
+            v-model:results="results"
+            :loading="loading"
+            :page="page"
+            :total="total"
+            :page-size="pageSize"
+            @change-page="changePage"
+            :refresh-results="() => fetchResults(true)"
+            @regenerated="handleRegenerated"
+          />
+        </main>
+      </div>
+    </div>
+  </PageContainer>
 </template>
 
 <script setup lang="ts">
-import ProductSetPage from '@/pages/tools/AiProductImage/index.vue'
+import PageContainer from "@/components/ui/PageContainer.vue";
+import Sidebar from "./components/Sidebar.vue";
+import ResultList from "./components/ResultList.vue";
+import { useSaleorImageGroup } from "./hook/useSaleorImageGroup";
+import type { SaleorFormData } from "./utils/types";
+
+const { results, page, total, pageSize, changePage, loading, generating, fetchResults, handleGenerate: submitGenerate } =
+  useSaleorImageGroup();
+
+async function handleGenerate(form: SaleorFormData, done: () => void) {
+  try {
+    await submitGenerate(form);
+  } finally {
+    done();
+  }
+}
+
+function handleRegenerated() {
+  void fetchResults(true)
+}
 </script>
+
+<style scoped lang="scss">
+.saleor-page {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+
+  &__head {
+    flex-shrink: 0;
+    padding: 24px 24px 20px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-ink-primary);
+  }
+
+  &__body {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    gap: 24px;
+    padding: 0 24px 24px;
+  }
+
+  &__sidebar {
+    width: 360px;
+    flex-shrink: 0;
+    min-height: 0;
+  }
+
+  &__results {
+    min-width: 0;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 960px) {
+  .saleor-page {
+    height: auto;
+    min-height: calc(100dvh - var(--app-header-height));
+    overflow: visible;
+
+    &__body {
+      flex-direction: column;
+    }
+
+    &__sidebar {
+      width: 100%;
+      height: auto;
+    }
+
+    &__results {
+      min-height: 480px;
+    }
+  }
+}
+</style>

@@ -26,17 +26,18 @@ export function useLiveMemberInfo() {
     scheduled = undefined
   }
 
+  function start() {
+    stop()
+    if (!auth.isLoggedIn) return
+    refresh()
+    interval = setInterval(() => refresh(), 30000)
+  }
   const stopWatching = watch(
     [() => auth.isLoggedIn, () => auth.sessionVersion],
-    ([loggedIn]) => {
-      stop()
-      if (!loggedIn) return
-      refresh()
-      interval = setInterval(() => refresh(), 30000)
-    },
-    { immediate: true },
+    start,
   )
   onMounted(() => {
+    start()
     setOnPointsChanged(scheduleRefresh)
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', onVisible)

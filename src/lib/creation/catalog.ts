@@ -178,23 +178,10 @@ export const imageTools: ImageTool[] = [
     icon: 'copy',
     cover: 'fashion',
     tone: 'peach',
-    groups: [
-      {
-        key: 'layout',
-        label: '构图参考图',
-        hint: '确定构图、背景、光线与视觉风格',
-        min: 1,
-        max: 1,
-      },
-      product,
-    ],
-    modules: modules([
-      'remix',
-      '复刻画面',
-      '沿用构图参考图的主体位置、画面层次、灯光方向和配色，将其中商品替换为商品参考图。不要把商品图的背景复制进画面。',
-    ]),
-    defaults: ['remix'],
-    rule: '构图参考与商品参考用途不同，明确区分。原参考中未提供替代内容的文字不要擅自改写为虚构品牌宣传。',
+    groups: [],
+    modules: [],
+    defaults: [],
+    rule: '',
   },
   {
     code: 'product-retouch',
@@ -203,22 +190,10 @@ export const imageTools: ImageTool[] = [
     icon: 'magic',
     cover: 'shoe',
     tone: 'cream',
-    groups: [product],
-    modules: modules(
-      [
-        'clean',
-        '商业精修',
-        '保持参考图1的构图、结构和颜色，改善曝光、清理背景杂物，保留真实材质纹理，不改变商标与包装内容。',
-      ],
-      ['white', '白底精修', '将背景处理为干净白色，保留自然接触阴影与完整商品轮廓。'],
-      [
-        'texture',
-        '质感优化',
-        '柔和调整反光与光线，呈现参考中真实存在的材质纹理，不新增构造和配件。',
-      ]
-    ),
-    defaults: ['clean'],
-    rule: '这是商品参考图的精修，不是重新设计商品；避免过度磨皮和材质塑料化。',
+    groups: [],
+    modules: [],
+    defaults: [],
+    rule: '',
   },
   {
     code: 'virtual-try-on',

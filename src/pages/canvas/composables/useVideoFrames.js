@@ -1,5 +1,5 @@
 // 视频帧提取 composable：基于 HTML5 Canvas 对视频进行逐帧截图
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, onMounted } from 'vue'
 
 // 缩略图尺寸（16:9 比例，宽120px）
 const THUMB_W = 120
@@ -108,8 +108,11 @@ export function useVideoFrames(srcRef, activeRef, intervalRef) {
       if (active && src) extract(src, interval ?? 1)
       else { frames.value = []; loading.value = false; progress.value = 0 }
     },
-    { immediate: true },  // 组件挂载时立即执行一次
   )
+
+  onMounted(() => {
+    if (activeRef.value && srcRef.value) void extract(srcRef.value, intervalRef.value ?? 1)
+  })
 
   // 组件卸载时中止截帧，避免内存泄漏
   onUnmounted(() => { if (abortCtrl) abortCtrl.abort() })

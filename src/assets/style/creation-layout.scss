@@ -1,5 +1,9 @@
 // Shared presentation for creation pages; gallery and navigation pages keep their own layout.
 #app {
+  --creation-pane-padding: 20px;
+  --creation-item-gap: 12px;
+  --creation-group-gap: 16px;
+
   .saleor-page__body,
   .tryon-page__body {
     gap: 0;
@@ -75,8 +79,10 @@
   }
 
   .saleor-page__results,
-  .tryon-page__main {
-    padding: 20px;
+  .tryon-page__main,
+  .creation-results,
+  .studio__results {
+    padding: var(--creation-pane-padding);
     border-radius: 0;
   }
 

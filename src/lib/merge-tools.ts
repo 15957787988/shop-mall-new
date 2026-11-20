@@ -1,6 +1,6 @@
 import { tools as localTools, TOOL_CATEGORIES, type ToolCategory } from "@/mock/tools";
 import { TOOL_CAPABILITY, type ToolStatus } from "./tool-capability";
-import { getAiToolSimpleList, type AiToolSimpleResp } from '@/pages/tools/api'
+import { getAiToolSimpleList, type AiToolSimpleResp } from '@/service/api/tools'
 import { apiEnv } from '@/service/env'
 
 /** 合并后的工具信息 */

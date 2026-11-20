@@ -118,12 +118,12 @@
 </template>
 <script setup lang="ts">
 import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Alert, Button, Modal, Spin } from 'ant-design-vue'
 import { DeleteOutlined, DownloadOutlined, FolderOpenOutlined, PictureOutlined, PlayCircleOutlined, ReloadOutlined, WarningOutlined } from '@ant-design/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import { deleteStudioWork, downloadStudioFile, getStudioWork, pageStudioWorks, studioFileName, type StudioKind, type StudioWork } from '@/service/api/studio'
+import { deleteStudioWork, downloadStudioFile, getStudioWork, pageStudioWorks, studioFileName, type StudioKind, type StudioWork } from '@/pages/space/api'
 import StudioParams from '@/components/studio/StudioParams.vue'
 import StudioReferences from '@/components/studio/StudioReferences.vue'
 
@@ -205,7 +205,8 @@ function remove(work: StudioWork) {
     catch (e) { addToast(e instanceof Error ? e.message : '删除失败', 'error') }
   } })
 }
-watch([() => props.kind, () => props.toolCode, () => props.revision, isLoggedIn, () => userInfo.value?.id], () => { works.value = []; preview.value = undefined; load(1) }, { immediate: true })
+watch([() => props.kind, () => props.toolCode, () => props.revision, isLoggedIn, () => userInfo.value?.id], () => { works.value = []; preview.value = undefined; load(1) })
+onMounted(() => { void load(1) })
 onBeforeUnmount(() => { version++; clearTimeout(timer) })
 </script>
 <style scoped lang="scss">

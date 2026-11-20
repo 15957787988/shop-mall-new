@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeUnmount, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import { ElMessage } from '../../shims/feedback'
 import { generationApi } from '../../api/generationApi'
@@ -54,9 +54,9 @@ watch(
     previewLoader.close()
     downloadControllers.forEach((controller) => controller.abort())
     pager.reset(String(props.projectId))
-  },
-  { immediate: true }
+  }
 )
+onMounted(() => { void pager.reset(String(props.projectId)) })
 watch(
   () => props.refreshKey,
   () => pager.refresh()

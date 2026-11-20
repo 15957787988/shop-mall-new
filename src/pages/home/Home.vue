@@ -43,7 +43,7 @@
     </section>
     <ToolCatalog />
     <HomeExplore />
-    <section class="home-canvas">
+    <!-- <section class="home-canvas">
       <span class="home-canvas__icon"><PartitionOutlined /></span>
       <div>
         <p>需要更多自由？</p>
@@ -51,11 +51,11 @@
         <span>让图片、视频和文字在同一张画布中协作。</span>
       </div>
       <router-link to="/canvas/index">打开无限画布<ArrowRightOutlined /></router-link>
-    </section>
-    <footer class="workbench-home__footer">
+    </section> -->
+    <!-- <footer class="workbench-home__footer">
       <span>从一张素材开始，创作属于你的作品。</span
       ><router-link to="/agent-lib"><FolderOpenOutlined />管理我的资产</router-link>
-    </footer>
+    </footer> -->
   </div>
 </template>
 <script setup lang="ts">

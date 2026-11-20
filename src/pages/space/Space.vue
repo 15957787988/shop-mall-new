@@ -19,7 +19,7 @@ import { Tabs } from 'ant-design-vue'
 import { PlusOutlined } from '@ant-design/icons-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ResultsGallery from './components/ResultsGallery.vue'
-import type { StudioKind } from '@/service/api/studio'
+import type { StudioKind } from '@/pages/space/api'
 const kind = ref<StudioKind>('image')
 </script>
 <style scoped lang="scss">
