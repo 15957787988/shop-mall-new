@@ -47,7 +47,7 @@ export const imageTools: ImageTool[] = [
     name: '商品套图',
     description: '从一张商品图，制作风格统一的电商图片。',
     icon: 'picture',
-    cover: 'skincare',
+    cover: '/images/creation-demo/product-set-coffee.png',
     tone: 'sky',
     groups: [product],
     modules: modules(

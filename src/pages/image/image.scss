@@ -195,56 +195,6 @@
     }
   }
 
-  &__card-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-
-  &__card-model {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  &__card-status {
-    border-radius: 999px;
-    background: var(--color-surface-2);
-    padding: 2px 8px;
-    font-size: 12px;
-
-    &[data-fail='true'] {
-      color: var(--color-danger);
-    }
-  }
-
-  &__card-time {
-    margin-left: auto;
-    font-size: 12px;
-    color: var(--color-ink-muted);
-  }
-
-  &__card-prompt {
-    display: -webkit-box;
-    margin: 8px 0 0;
-    overflow: hidden;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    /* autoprefixer: ignore next */
-    -webkit-box-orient: vertical;
-    font-size: 13px;
-    line-height: 1.7;
-    color: var(--color-ink-secondary);
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  &__card-error {
-    margin: 8px 0 0;
-    font-size: 12px;
-    color: var(--color-danger);
-  }
-
   &__media {
     display: flex;
     min-height: 180px;
@@ -383,12 +333,29 @@
     color: var(--color-ink-primary);
   }
 
+  &__copy-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 16px 12px;
+  }
+
+  &__params-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding: 0 16px 16px;
+
+    .params {
+      margin: 0;
+      padding: 0;
+      justify-content: flex-end;
+    }
+  }
+
   &__copy {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    align-self: flex-end;
-    margin: 0 16px 16px;
     border: 1px solid var(--color-border-whisper);
     border-radius: 8px;
     background: var(--color-surface-0);

@@ -23,6 +23,7 @@ export interface ShopImageGroup {
   country?: string
   language?: string
   ratio?: string
+  output_format?: string
   resolution?: string
   id: number
   title: string
@@ -40,6 +41,7 @@ export interface ShopImageGenerateReq {
   title?: string
   language?: string
   size?: string
+  output_format?: string
   resolution?: string
   country?: string
   productSellingPoints?: string
@@ -52,10 +54,10 @@ export interface ShopImageGenerateReq {
 
 /** 提交套图生成，返回 groupId */
 export async function generateShopImageGroup(req: ShopImageGenerateReq): Promise<number> {
-  const { resolution, ...body } = req
+  const { resolution, output_format, ...body } = req
   return http.post<number>(`${PREFIX}/generate`, {
     ...body,
-    ...(resolution ? { params: { resolution } } : {}),
+    ...((resolution || output_format) ? { params: { ...(resolution ? { resolution } : {}), ...(output_format ? { output_format } : {}) } } : {}),
   })
 }
 

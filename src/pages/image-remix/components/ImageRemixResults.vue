@@ -10,58 +10,42 @@
       <Button :loading="loading" @click="load(1)"><ReloadOutlined />刷新</Button>
     </header>
     <Alert v-if="error" type="warning" show-icon :message="error" class="results-gallery__alert">
-      <template #action><Button size="small" :loading="loading" @click="load(1)">重试</Button></template>
+      <template #action
+        ><Button size="small" :loading="loading" @click="load(1)">重试</Button></template
+      >
     </Alert>
     <CreationDemo v-if="!isLoggedIn" :tool="toolCode" />
     <div v-else-if="loading && !works.length" class="results-gallery__empty">
-      <Spin />
-      <p>正在读取作品…</p>
+      <GenerationLoading label="正在读取作品…" />
     </div>
     <CreationDemo v-else-if="!works.length && !error" :tool="toolCode" />
     <div v-else class="results-gallery__grid">
       <article v-for="work in works" :key="work.id" class="result-tile">
         <button
           class="result-tile__media"
+          :aria-busy="pending(work)"
           type="button"
-          :disabled="!src(work)"
+          :disabled="pending(work) || !src(work)"
           @click="preview = work"
         >
+          <div v-if="pending(work)" class="result-tile__placeholder">
+            <GenerationLoading />
+          </div>
           <img
-            v-if="kind === 'image' && src(work)"
+            v-else-if="src(work)"
             :src="src(work)"
             :alt="work.creationTitle || work.creationLabel || '生成图片'"
             loading="lazy"
           />
-          <template v-else-if="kind === 'video' && src(work)"
-            ><video
-              :src="src(work)"
-              :poster="work.previewUrl"
-              preload="metadata"
-              muted
-              playsinline /><PlayCircleOutlined class="result-tile__play"
-          /></template>
-          <span v-if="kind === 'video' && work.duration" class="result-tile__duration">{{ work.duration }}s</span>
-          <div v-if="!src(work)" class="result-tile__placeholder">
-            <Spin v-if="pending(work)" /><WarningOutlined v-else /><span>{{
-              pending(work) ? '正在生成' : '生成失败'
-            }}</span>
+          <div v-if="!pending(work) && !src(work)" class="result-tile__placeholder">
+            <WarningOutlined /><span>{{ work.status === 30 ? '生成失败' : '结果暂不可用' }}</span>
           </div>
         </button>
         <div class="result-tile__info">
-          <div class="result-tile__title">
-            <strong>{{ work.creationTitle || work.creationLabel || work.modelName || work.model || '创作作品' }}</strong
-            ><span :class="['result-tile__state', { failed: work.status === 30 }]">{{
-              pending(work) ? '处理中' : work.status === 20 ? '已完成' : '失败'
-            }}</span>
-          </div>
-          <StudioParams :work="work" :show-points="false" />
-          <p v-if="work.prompt" class="result-tile__description">{{ work.prompt }}</p>
-          <p class="result-tile__date">{{ formatTime(work.createTime) }} · #{{ work.id }}</p>
-          <p v-if="work.errorMessage" class="result-tile__error">{{ work.errorMessage }}</p>
           <div class="result-tile__actions">
             <button
               type="button"
-              :disabled="!src(work) || downloading === work.id"
+              :disabled="pending(work) || !src(work) || downloading === work.id"
               @click="download(work)"
             >
               <DownloadOutlined />{{ downloading === work.id ? '下载中' : '下载' }}</button
@@ -77,7 +61,13 @@
         </div>
       </article>
     </div>
-    <ResultPagination :current="page" :total="total" :page-size="12" :loading="loading" @change="load" />
+    <ResultPagination
+      :current="page"
+      :total="total"
+      :page-size="12"
+      :loading="loading"
+      @change="load"
+    />
     <Modal
       :open="!!preview"
       :footer="null"
@@ -89,19 +79,13 @@
     >
       <div v-if="preview" class="studio-preview__body">
         <div class="studio-preview__stage">
-          <img v-if="kind === 'image'" :src="src(preview)" alt="生成图片" /><video
-            v-else
-            :src="src(preview)"
-            controls
-            playsinline
-          />
+          <img :src="src(preview)" alt="生成图片" />
           <div class="studio-preview__bar">
             <button type="button" @click="download(preview)"><DownloadOutlined />下载</button>
           </div>
         </div>
         <aside class="studio-preview__prompt">
           <h3>{{ preview.creationLabel || '作品详情' }}</h3>
-          <div class="studio-preview__text">{{ preview.prompt }}</div>
           <StudioParams :work="preview" inset /><StudioReferences :work="preview" />
         </aside>
       </div>
@@ -109,18 +93,36 @@
   </section>
 </template>
 <script setup lang="ts">
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Alert, Button, Modal, Spin } from 'ant-design-vue'
-import { DeleteOutlined, DownloadOutlined, FolderOpenOutlined, PictureOutlined, PlayCircleOutlined, ReloadOutlined, WarningOutlined } from '@ant-design/icons-vue'
+import { Alert, Button, Modal } from 'ant-design-vue'
+import {
+  DeleteOutlined,
+  DownloadOutlined,
+  ReloadOutlined,
+  WarningOutlined,
+} from '@ant-design/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import { deleteStudioWork, downloadStudioFile, getStudioWork, pageStudioWorks, studioFileName, type StudioKind, type StudioWork } from '@/pages/image-remix/api'
+import {
+  deleteStudioWork,
+  downloadStudioFile,
+  getStudioWork,
+  pageStudioWorks,
+  studioFileName,
+  type StudioKind,
+  type StudioWork,
+} from '@/pages/image-remix/api'
 import StudioParams from '@/components/studio/StudioParams.vue'
 import StudioReferences from '@/components/studio/StudioReferences.vue'
 
-interface Props { hideHeading?: boolean; title?: string; revision?: number }
+interface Props {
+  hideHeading?: boolean
+  title?: string
+  revision?: number
+}
 const props = defineProps<Props>()
 const kind = 'image' as StudioKind
 const toolCode = 'image-remix' as string
@@ -136,12 +138,7 @@ const downloading = ref<number>()
 let version = 0
 let timer: ReturnType<typeof setTimeout> | undefined
 const pending = (work: StudioWork) => work.status !== 20 && work.status !== 30
-const src = (work: StudioWork) => kind === 'video' ? work.videoUrl || '' : work.picUrl || ''
-function formatTime(value: StudioWork['createTime']) {
-  if (!value) return ''
-  const date = Array.isArray(value) ? new Date(value[0], value[1] - 1, value[2], value[3] || 0, value[4] || 0) : new Date(value)
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('zh-CN', { hour12: false })
-}
+const src = (work: StudioWork) => work.picUrl || ''
 function schedule() {
   clearTimeout(timer)
   if (!works.value.some(pending) || !isLoggedIn.value) return
@@ -150,9 +147,12 @@ function schedule() {
 async function poll() {
   const token = version
   try {
-    const updates = await Promise.all(works.value.filter(pending).map(work => getStudioWork(kind, work.id)))
+    const updates = await Promise.all(
+      works.value.filter(pending).map((work) => getStudioWork(kind, work.id))
+    )
     if (token !== version) return
-    for (const item of updates) if (item) works.value = works.value.map(work => work.id === item.id ? item : work)
+    for (const item of updates)
+      if (item) works.value = works.value.map((work) => (work.id === item.id ? item : work))
     error.value = ''
     schedule()
   } catch {
@@ -163,36 +163,71 @@ async function load(no = 1) {
   const token = ++version
   clearTimeout(timer)
   error.value = ''
-  if (!isLoggedIn.value) { works.value = []; total.value = 0; loading.value = false; return }
+  if (!isLoggedIn.value) {
+    works.value = []
+    total.value = 0
+    loading.value = false
+    return
+  }
   loading.value = true
   try {
     const result = await pageStudioWorks(kind, no, 12, toolCode)
     if (token !== version) return
     const lastPage = Math.max(1, Math.ceil(result.total / 12))
-    if (no > lastPage) { await load(lastPage); return }
+    if (no > lastPage) {
+      await load(lastPage)
+      return
+    }
     works.value = result.list || []
     total.value = result.total || 0
     page.value = no
     schedule()
   } catch (e) {
     if (token === version) error.value = e instanceof Error ? e.message : '作品加载失败，请重试'
-  } finally { if (token === version) loading.value = false }
+  } finally {
+    if (token === version) loading.value = false
+  }
 }
 async function download(work: StudioWork) {
   downloading.value = work.id
-  try { await downloadStudioFile(src(work), studioFileName(kind, work.id, src(work))) }
-  catch (e) { addToast(e instanceof Error ? e.message : '下载失败，请重试', 'error') }
-  finally { downloading.value = undefined }
+  try {
+    await downloadStudioFile(src(work), studioFileName(kind, work.id, src(work)))
+  } catch (e) {
+    addToast(e instanceof Error ? e.message : '下载失败，请重试', 'error')
+  } finally {
+    downloading.value = undefined
+  }
 }
 function remove(work: StudioWork) {
-  Modal.confirm({ title: '删除这条作品记录？', content: '不会删除已下载的文件。', okText: '删除', cancelText: '取消', async onOk() {
-    try { await deleteStudioWork(kind, work.id); await load(page.value) }
-    catch (e) { addToast(e instanceof Error ? e.message : '删除失败', 'error') }
-  } })
+  Modal.confirm({
+    title: '删除这条作品记录？',
+    content: '不会删除已下载的文件。',
+    okText: '删除',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        await deleteStudioWork(kind, work.id)
+        await load(page.value)
+      } catch (e) {
+        addToast(e instanceof Error ? e.message : '删除失败', 'error')
+      }
+    },
+  })
 }
-watch([() => props.revision, isLoggedIn, () => userInfo.value?.id], () => { works.value = []; total.value = 0; page.value = 1; preview.value = undefined; load(1) })
-onMounted(() => { void load(1) })
-onBeforeUnmount(() => { version++; clearTimeout(timer) })
+watch([() => props.revision, isLoggedIn, () => userInfo.value?.id], () => {
+  works.value = []
+  total.value = 0
+  page.value = 1
+  preview.value = undefined
+  load(1)
+})
+onMounted(() => {
+  void load(1)
+})
+onBeforeUnmount(() => {
+  version++
+  clearTimeout(timer)
+})
 </script>
 <style scoped lang="scss">
 .results-gallery {

@@ -1,17 +1,10 @@
 <template>
   <div class="workbench-home">
-    <div class="workbench-home__topline">
-      <span><i />你的电商创作空间</span
-      ><router-link to="/space">我的作品<ArrowRightOutlined /></router-link>
-    </div>
     <section class="home-hero">
-      <p class="home-hero__eyebrow">从想法，到好作品</p>
-      <h1>让好商品，拥有<span>好画面。</span></h1>
-      <p class="home-hero__description">
-        用 AI 制作商品图片、品牌内容和视频，把创意变成下一件作品。
-      </p>
-      <form class="home-composer" @submit.prevent="startCreation">
-        <div class="home-composer__modes">
+      <h1>电商图片与视频，<span>一站创作。</span></h1>
+      <p class="home-hero__description">从商品原图，到主图、详情页与带货视频。</p>
+      <div class="home-composer-shell">
+        <div class="home-composer__modes" aria-label="创作方式">
           <button
             v-for="item in modes"
             :key="item.path"
@@ -23,39 +16,37 @@
             <component :is="item.icon" />{{ item.label }}
           </button>
         </div>
-        <textarea
-          v-model="draft"
-          maxlength="1000"
-          aria-label="创作需求"
-          placeholder="描述你想创作的画面，比如：为这款香水制作一组清透蓝调的商品图…"
-        />
-        <div class="home-composer__footer">
-          <span>进入创作页后添加素材、选择模型</span
-          ><button type="submit">开始创作<ArrowRightOutlined /></button>
-        </div>
-      </form>
-      <div class="home-hero__ideas">
-        <span>试试这些灵感</span
-        ><button v-for="idea in ideas" :key="idea" type="button" @click="draft = idea">
-          {{ idea }}<ArrowRightOutlined />
-        </button>
+        <form class="home-composer" @submit.prevent="startCreation">
+          <label for="home-creative-prompt" class="home-composer__label">创作需求</label>
+        <div class="home-composer__body">
+            <router-link
+              class="home-composer__upload"
+              :to="{ path: mode, query: draft.trim() ? { prompt: draft.trim() } : {} }"
+              aria-label="添加商品素材"
+              title="添加商品素材"
+              ><PlusOutlined
+            /></router-link>
+            <textarea
+          id="home-creative-prompt"
+              v-model="draft"
+              maxlength="1000"
+              aria-label="创作需求"
+              placeholder="描述你想创作的内容，比如：为咖啡机制作一组温暖自然的商品图…"
+            />
+          </div>
+          <div class="home-composer__footer">
+            <router-link
+              class="home-composer__material-link"
+              :to="{ path: mode, query: draft.trim() ? { prompt: draft.trim() } : {} }"
+              >添加商品素材<ArrowRightOutlined
+            /></router-link>
+            <button type="submit">开始创作<ArrowRightOutlined /></button>
+          </div>
+        </form>
       </div>
     </section>
-    <ToolCatalog />
+    <ToolCatalog title="热门工具" :image-overrides="toolImages" />
     <HomeExplore />
-    <!-- <section class="home-canvas">
-      <span class="home-canvas__icon"><PartitionOutlined /></span>
-      <div>
-        <p>需要更多自由？</p>
-        <h2>在无限画布里，连接你的每一个创意。</h2>
-        <span>让图片、视频和文字在同一张画布中协作。</span>
-      </div>
-      <router-link to="/canvas/index">打开无限画布<ArrowRightOutlined /></router-link>
-    </section> -->
-    <!-- <footer class="workbench-home__footer">
-      <span>从一张素材开始，创作属于你的作品。</span
-      ><router-link to="/agent-lib"><FolderOpenOutlined />管理我的资产</router-link>
-    </footer> -->
   </div>
 </template>
 <script setup lang="ts">
@@ -64,8 +55,7 @@ import { useRouter } from 'vue-router'
 import {
   ArrowRightOutlined,
   CopyOutlined,
-  FolderOpenOutlined,
-  PartitionOutlined,
+  PlusOutlined,
   PictureOutlined,
   VideoCameraOutlined,
 } from '@ant-design/icons-vue'
@@ -79,241 +69,358 @@ const modes = [
   { label: '视频创作', path: '/video', icon: VideoCameraOutlined },
   { label: '图片复刻', path: '/image-remix', icon: CopyOutlined },
 ]
-const ideas = ['清透蓝调商品图', '自然光穿搭大片', '温暖居家产品视频']
+const toolImages: Record<string, string> = {
+  'detail-page': '/images/creation-demo/detail.png',
+  'image-remix': '/images/creation-demo/remix.png',
+  'virtual-try-on': '/images/creation-demo/wear.png',
+  'fashion-set': '/images/creation-demo/fashion.png',
+}
 function startCreation() {
   router.push({ path: mode.value, query: draft.value.trim() ? { prompt: draft.value.trim() } : {} })
 }
 </script>
 <style scoped lang="scss">
 .workbench-home {
-  max-width: 1650px;
-  margin: 0 auto;
-  padding: 24px clamp(20px, 3.8vw, 64px) 28px;
+  max-inline-size: 1560px;
+  margin-inline: auto;
+  padding: 32px clamp(20px, 3.8vw, 64px) 48px;
   color: var(--color-ink-primary);
-  &__topline {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    color: var(--color-ink-secondary);
-    span,
-    a {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    i {
-      width: 6px;
-      height: 6px;
-      background: var(--color-success-mint);
-      border-radius: 50%;
-    }
-    a {
-      color: var(--color-ink-secondary);
-    }
-  }
-  &__footer {
-    display: flex;
-    justify-content: space-between;
-    gap: 18px;
-    font-size: 12px;
-    color: var(--color-ink-muted);
-    a {
-      display: inline-flex;
-      gap: 8px;
-      color: var(--color-ink-secondary);
-    }
-  }
 }
 .home-hero {
-  max-width: 840px;
-  margin: 52px auto 62px;
+  position: relative;
+  isolation: isolate;
+  max-inline-size: 1000px;
+  margin: 0 auto 64px;
+  padding-block: 32px 24px;
   text-align: center;
-  &__eyebrow {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    color: var(--color-creative-violet);
+  animation: fade-up 0.45s var(--motion-ease) both;
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: -32px -7vw -16px;
+    border-radius: 48px;
+    background: radial-gradient(circle, var(--color-workbench-dot) 1px, transparent 1.2px) 0 0 /
+        22px 22px,
+      linear-gradient(140deg, var(--color-workbench-tint), transparent 70%);
+    mask-image: linear-gradient(to bottom, var(--color-ink-primary), transparent);
+    pointer-events: none;
   }
   h1 {
-    margin: 14px 0 16px;
-    font-size: clamp(30px, 3.6vw, 50px);
+    margin: 0;
+    font-size: clamp(1.875rem, 1rem + 2.6vw, 3.375rem);
     font-weight: 700;
-    letter-spacing: -0.05em;
+    letter-spacing: -0.045em;
     line-height: 1.35;
-    span {
-      color: var(--color-creative-violet);
-    }
+  }
+  h1 span {
+    position: relative;
+    display: inline-block;
+    color: var(--color-workbench-blue);
+    background: linear-gradient(110deg, var(--color-workbench-blue), var(--color-workbench-cyan));
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  h1 span::after {
+    content: '';
+    position: absolute;
+    inset: auto 2px -9px;
+    block-size: 5px;
+    border-radius: 50%;
+    background: linear-gradient(90deg, var(--color-workbench-cyan), var(--color-workbench-blue));
+    transform: rotate(-2deg);
+    opacity: 0.75;
   }
   &__description {
-    color: var(--color-ink-secondary);
-    line-height: 1.8;
+    margin: 24px 0 40px;
     font-size: 15px;
-    margin-bottom: 30px;
-  }
-  &__ideas {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 9px;
-    margin-top: 16px;
-    font-size: 11px;
-    color: var(--color-ink-muted);
-    button {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--color-surface-0);
-      border: 1px solid var(--color-border-whisper);
-      border-radius: 20px;
-      padding: 7px 12px;
-      color: var(--color-ink-secondary);
-      cursor: pointer;
-    }
+    line-height: 1.8;
+    color: var(--color-ink-secondary);
   }
 }
+.home-composer-shell {
+  text-align: start;
+}
 .home-composer {
-  padding: 16px 18px 16px;
-  text-align: left;
-  border: 1px solid var(--color-accent-border);
-  border-radius: 18px;
+  position: relative;
+  padding: 24px;
+  border: 1px solid var(--color-workbench-line);
+  border-radius: 0 28px 28px;
   background: var(--color-surface-0);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-workbench);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  &:focus-within {
+    border-color: var(--color-workbench-blue);
+  }
   &__modes {
     display: flex;
+    align-items: stretch;
     gap: 6px;
-    button {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 7px 12px;
-      border: 0;
-      border-radius: 7px;
-      background: transparent;
-      color: var(--color-ink-secondary);
-      cursor: pointer;
-      font-size: 12px;
-    }
-    .active {
-      background: var(--color-accent-soft);
-      color: var(--color-creative-violet);
-      font-weight: 600;
-    }
+    padding-inline-start: 0;
+    margin-block-end: -1px;
+  }
+  &__modes button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-block-size: 52px;
+    padding: 12px 28px;
+    border: 1px solid var(--color-border-whisper);
+    border-radius: 20px 20px 0 0;
+    background: var(--color-surface-1);
+    color: var(--color-ink-secondary);
+    cursor: pointer;
+    font-size: 15px;
+    transition: color 0.2s, background 0.2s;
+  }
+  &__modes button:hover {
+    color: var(--color-workbench-blue);
+    background: var(--color-workbench-tint);
+  }
+  &__modes button.active {
+    z-index: 1;
+    color: var(--color-workbench-blue);
+    border-color: var(--color-workbench-line);
+    border-block-end-color: var(--color-surface-0);
+    background: var(--color-surface-0);
+    font-weight: 600;
+  }
+  &__modes .active::after {
+    content: '';
+    position: absolute;
+    inset: auto 36% 6px;
+    block-size: 3px;
+    border-radius: 50%;
+    background: var(--color-workbench-cyan);
+  }
+  &__body {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    min-inline-size: 0;
+  }
+  &__upload {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    inline-size: 56px;
+    block-size: 72px;
+    margin-block-start: 4px;
+    border: 1px dashed var(--color-workbench-line);
+    border-radius: 14px;
+    background: var(--color-workbench-tint);
+    color: var(--color-workbench-blue);
+    font-size: 25px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  &__upload:hover {
+    border-color: var(--color-workbench-blue);
+    background: var(--color-surface-0);
   }
   textarea {
-    width: 100%;
-    min-height: 100px;
+    flex: 1;
+    min-inline-size: 0;
+    inline-size: 100%;
+    min-block-size: 128px;
+    max-block-size: 280px;
     resize: vertical;
-    max-height: 240px;
-    padding: 18px 8px;
+    padding: 8px 0;
     border: 0;
-    outline: 0;
     background: transparent;
     color: var(--color-ink-primary);
+    font: inherit;
+    font-size: 16px;
     line-height: 1.8;
-    font-size: 14px;
-    &::placeholder {
-      color: var(--color-ink-muted);
-    }
+  }
+  textarea:focus {
+    outline: none;
+  }
+  textarea::placeholder {
+    color: var(--color-ink-muted);
   }
   &__footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    color: var(--color-ink-muted);
-    font-size: 11px;
-    button {
-      border: 0;
-      border-radius: 9px;
-      background: var(--color-creative-violet);
-      color: var(--color-on-media);
-      display: flex;
-      gap: 18px;
-      align-items: center;
-      padding: 11px 20px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      flex-shrink: 0;
-    }
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-block-start: 16px;
   }
-}
-.home-canvas {
-  display: flex;
-  gap: 22px;
-  align-items: center;
-  margin: 38px 0 30px;
-  padding: 30px;
-  background: var(--color-accent-soft);
-  border: 1px solid var(--color-accent-border);
-  border-radius: 16px;
-  &__icon {
-    display: grid;
-    place-items: center;
-    width: 54px;
-    height: 54px;
-    flex-shrink: 0;
-    background: var(--color-surface-0);
-    border-radius: 14px;
-    font-size: 25px;
-    color: var(--color-creative-violet);
-  }
-  p {
-    margin: 0 0 5px;
-    font-size: 11px;
-    color: var(--color-creative-violet);
-  }
-  h2 {
-    font-size: 19px;
-    font-weight: 600;
-    margin: 0 0 6px;
-  }
-  div > span {
-    color: var(--color-ink-secondary);
+  &__material-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-block-size: 44px;
+    padding: 8px 14px;
+    border: 1px solid var(--color-border-whisper);
+    border-radius: 999px;
     font-size: 13px;
+    color: var(--color-ink-secondary);
+    transition: color 0.2s, border-color 0.2s;
   }
-  a {
+  &__material-link:hover {
+    color: var(--color-workbench-blue);
+    border-color: var(--color-workbench-line);
+  }
+  &__footer button {
     display: flex;
     align-items: center;
-    gap: 16px;
-    flex-shrink: 0;
-    margin-left: auto;
-    padding: 11px 16px;
-    background: var(--color-surface-0);
-    border: 1px solid var(--color-accent-border);
-    border-radius: 9px;
-    color: var(--color-creative-violet);
-    font-size: 13px;
+    gap: 24px;
+    min-block-size: 44px;
+    padding: 10px 24px;
+    border: 0;
+    border-radius: 999px;
+    color: var(--color-on-media);
+    background: var(--color-workbench-blue);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.2s, transform 0.2s;
+  }
+  &__footer button:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  &__footer button:active {
+    transform: translateY(1px);
   }
 }
-@media (max-width: 700px) {
+.workbench-home :deep(.tool-catalog header) {
+  margin-block-end: 18px;
+}
+.workbench-home :deep(.tool-catalog h2) {
+  font-size: 21px;
+  margin: 0;
+}
+.workbench-home :deep(.tool-catalog header p) {
+  display: none;
+}
+.workbench-home :deep(.tool-catalog__grid) {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.workbench-home :deep(.tool-card) {
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+}
+.workbench-home :deep(.tool-card__visual) {
+  inline-size: 100%;
+  block-size: auto;
+  min-block-size: 0;
+  aspect-ratio: 16 / 11;
+}
+.workbench-home :deep(.tool-card__visual img) {
+  display: block;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+  border-radius: 0;
+  transform: none;
+}
+.workbench-home :deep(.tool-card__icon),
+.workbench-home :deep(.tool-card__media) {
+  display: none;
+}
+.workbench-home :deep(.tool-card__body) {
+  padding: 15px 16px;
+  min-inline-size: 0;
+}
+.workbench-home :deep(.tool-card__body h3) {
+  margin: 0;
+  font-size: 15px;
+  gap: 8px;
+}
+.workbench-home :deep(.tool-card__body p) {
+  display: none;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-workbench-blue);
+  outline-offset: 4px;
+}
+@media (max-width: 1100px) {
+  .workbench-home :deep(.tool-catalog__grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .workbench-home {
+    padding: 24px 16px 36px;
+  }
   .home-hero {
-    margin: 30px auto 38px;
+    padding-block: 16px;
+    margin-block-end: 40px;
+  }
+  .home-hero h1 span {
+    display: block;
+  }
+  .home-hero__description {
+    margin-block: 20px 28px;
   }
   .home-hero__description {
     font-size: 13px;
   }
-  .home-canvas {
-    flex-wrap: wrap;
-    padding: 22px;
-    gap: 16px;
+  .home-composer {
+    padding: 18px 16px;
+    border-radius: 0 20px 20px;
   }
-  .home-canvas__icon {
-    display: none;
+  .home-composer__body {
+    gap: 12px;
   }
-  .home-canvas a {
-    margin-left: 0;
+  .home-composer__upload {
+    inline-size: 40px;
+    block-size: 56px;
+    font-size: 22px;
   }
-  .workbench-home__footer {
-    flex-direction: column;
+  .home-composer textarea {
+    font-size: 14px;
+    min-block-size: 130px;
   }
-  .home-composer__footer > span {
-    display: none;
+  .home-composer__modes {
+    gap: 4px;
   }
-  .home-composer__footer {
-    justify-content: flex-end;
+  .home-composer__modes button {
+    flex: 1;
+    min-inline-size: 0;
+    padding: 10px 8px;
+    font-size: 12px;
+    gap: 5px;
+    border-radius: 14px 14px 0 0;
+  }
+  .home-composer__footer button {
+    gap: 10px;
+    padding-inline: 14px;
+  }
+  .workbench-home :deep(.tool-catalog header) {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .workbench-home :deep(.tool-catalog__filters button) {
+    padding-inline: 10px;
+    min-block-size: 36px;
+  }
+  .workbench-home :deep(.tool-catalog__grid) {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    gap: 12px;
+  }
+  .workbench-home :deep(.tool-card__body) {
+    padding: 13px 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-hero {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
   }
 }
 </style>

@@ -56,6 +56,10 @@
             <span>分辨率</span>
             <Select v-model:value="form.resolution" :options="resolutionSelectOptions" />
           </label>
+          <label v-if="isGptImageFlare" class="saleor-sidebar__field">
+            <span>输出格式</span>
+            <Select v-model:value="form.outputFormat" :options="outputFormatOptions" />
+          </label>
         </div>
       </section>
 
@@ -189,9 +193,10 @@ const aiWriting = ref(false)
 
 const form = reactive<SaleorFormData>({
   productImages: [
+    // ponytail: dev 预填商品图暂关
+    //'https://static.pixpix.media/molili-agent/2026/06/06/2063154693705699328/_1780729385198_bmssm6nS.webp?x-oss-process=image/resize,m_lfit,w_640/quality,q_85/format,webp',
     //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a4a681586879ll2lywdlc6589.png?imageView2/2/w/400/format/webp/q/80/ignore-error/1',
     //'https://static.pixpix.media/molili-agent/2026/06/06/2063152208400224256/_1780728792654_0ghjjB4x.webp?x-oss-process=image/resize,m_lfit,w_640/quality,q_85/format,webp',
-    'https://static.pixpix.media/molili-agent/2026/06/06/2063154693705699328/_1780729385198_bmssm6nS.webp?x-oss-process=image/resize,m_lfit,w_640/quality,q_85/format,webp',
     //'https://muxunai.oss-cn-hangzhou.aliyuncs.com/20260802/1785656437489.webp',
     //'https://try-c0lothes.cn/shop-mall-img/uploads/178511964646_5b5f921b47174cb78765bf54a58442ce.jpg',
     //'https://xiuxiu-pro-new.meitudata.com/bizshoot/6a8da053abb93inj4a7k8l5836.png',
@@ -204,6 +209,7 @@ const form = reactive<SaleorFormData>({
   language: '中文',
   aspectRatio: '1:1',
   resolution: '',
+  outputFormat: undefined,
   sellingPoints: '',
   structureMode: 'custom',
   structureConfig: defaultStructureConfig(),
@@ -216,6 +222,13 @@ const ratioSelectOptions = computed(() => {
 })
 
 const resolutionSelectOptions = computed(() => resolutionOptionsFor(form.modelId))
+const isGptImageFlare = computed(() => getModelById(form.modelId)?.model === 'gpt-image-2.6-flare')
+const outputFormatOptions = ['png', 'jpeg', 'webp', 'svg', 'gif'].map(value => ({
+  label: ['svg', 'gif'].includes(value) ? `${value}（仅文生图）` : value,
+  value,
+  disabled: ['svg', 'gif'].includes(value),
+}))
+watch(isGptImageFlare, enabled => { form.outputFormat = enabled ? 'png' : undefined }, { immediate: true })
 
 function applyModel(id: number, prevId = 0) {
   const next = switchModel(prevId, id, form)
@@ -255,6 +268,7 @@ const totalImageCount = computed(() =>
 const estimatedPoints = computed(() =>
   estimateModelPoints(getModelById(form.modelId), {
     resolution: form.resolution,
+    outputFormat: form.outputFormat,
     ratio: form.aspectRatio,
     imageCount: form.productImages.length,
     count: totalImageCount.value,

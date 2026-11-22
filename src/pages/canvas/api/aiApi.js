@@ -137,6 +137,7 @@ export async function submitImageTask({
   model,
   aspect,
   resolution,
+  output_format,
   refImages = [],
 }) {
   const data = {
@@ -149,6 +150,7 @@ export async function submitImageTask({
   }
   if (model) data.model = model
   if (resolution) data.resolution = resolution
+  if (output_format) data.output_format = output_format
   const refs = (refImages || []).filter(Boolean)
   if (refs.length) data.image = refs
 

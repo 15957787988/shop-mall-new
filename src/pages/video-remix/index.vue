@@ -60,7 +60,9 @@
                 :disabled="formLocked"
                 class="replicate__replacement-item"
               >
-                <legend class="replicate__replacement-legend">{{ role.label }} · {{ item.id }}</legend>
+                <legend class="replicate__replacement-legend">
+                  {{ role.label }} · {{ item.id }}
+                </legend>
                 <div class="replicate__replacement-header">
                   <div class="replicate__replacement-title">
                     <strong>{{ role.label }}参考</strong>
@@ -127,7 +129,8 @@
               /></label>
               <div v-if="currentModel" class="replicate__audio">
                 <div class="replicate__section-heading">
-                  <h3>参考音频</h3><span>可选</span>
+                  <h3>参考音频</h3>
+                  <span>可选</span>
                 </div>
                 <template v-if="maxAudios > 0">
                   <p>最多 {{ maxAudios }} 段 · 合计不超过 {{ maxAudioDuration }} 秒</p>
@@ -149,7 +152,13 @@
                       <span>MP3 / WAV · 单段小于 15MB</span>
                     </div>
                   </UploadFile>
-                  <audio v-for="url in refAudios" :key="url" :src="url" controls preload="metadata" />
+                  <audio
+                    v-for="url in refAudios"
+                    :key="url"
+                    :src="url"
+                    controls
+                    preload="metadata"
+                  />
                   <p>音频作为生成参考传给视频模型，效果取决于模型能力。</p>
                 </template>
                 <p v-else>当前模型不支持参考音频</p>
@@ -159,10 +168,17 @@
           <div class="replicate__form-footer">
             <div class="replicate__analyze-action">
               <Button type="primary" :loading="submitting" :disabled="!canAnalyze" @click="analyze"
-                ><ThunderboltOutlined />{{ submitting ? '正在准备复刻' : `一键复刻（${pointsText}）` }}</Button
+                ><ThunderboltOutlined />{{
+                  submitting ? '正在准备复刻' : `一键复刻（${pointsText}）`
+                }}</Button
               >
             </div>
-            <p class="replicate__cost" v-if="currentModel?.pricing?.billingSource === 'LOCAL_TARIFF'">前2张参考图免费，超额图另计；原视频仅用于豆包反推，不收生成参考视频费用。</p>
+            <p
+              class="replicate__cost"
+              v-if="currentModel?.pricing?.billingSource === 'LOCAL_TARIFF'"
+            >
+              前2张参考图免费，超额图另计；原视频仅用于豆包反推，不收生成参考视频费用。
+            </p>
             <p v-if="submitting" role="status">
               正在保存任务，后台会继续反推和生成，可以离开页面。
             </p>
@@ -170,83 +186,63 @@
           </div>
         </section>
         <main class="studio__results replicate__results scroll-area">
-          <header v-if="tasks.length" class="replicate__results-heading">
-            <h2>
-              复刻记录 <span v-if="total">{{ total }}</span>
-            </h2>
-            <Button size="small" :loading="historyLoading" @click="refreshHistory">刷新</Button>
-          </header>
           <p v-if="historyError" class="replicate__error" role="alert">{{ historyError }}</p>
-          <div v-if="historyLoading && !tasks.length" class="studio__empty">正在加载复刻记录…</div>
-          <CreationDemo v-else-if="!tasks.length && !historyError" tool="video-remix" />
-          <div v-if="cards.length" class="studio__gallery-grid">
-          <article v-for="{ task, work } in cards" :key="task.id" class="studio__card">
-            <div class="studio__media">
-              <button
-                v-if="task.resultUrl"
-                type="button"
-                class="studio__poster"
-                aria-label="播放复刻视频"
-                @click="openPreview(task)"
-              >
-                <video
-                  :src="task.resultUrl"
-                  muted
-                  playsinline
-                  preload="metadata"
-                  tabindex="-1"
-                  @loadedmetadata="paintThumb"
-                />
-                <span class="studio__play" aria-hidden="true" />
-              </button>
-              <span v-else class="studio__media-wait">
-                <Spin v-if="pendingStatuses.has(task.status)" size="small" />
-                {{ taskDescription(task) }}
-              </span>
-            </div>
-            <header class="studio__card-head">
-              <span class="studio__card-model">{{
-                work.modelName || work.model || `复刻任务 #${task.id}`
-              }}</span>
-              <span
-                class="studio__card-status"
-                :data-fail="task.status === 'FAILED' || task.status === 'UNKNOWN'"
-                >{{ statusLabels[task.status] }}</span
-              >
-              <time class="studio__card-time">{{
-                task.createdAt.replace('T', ' ').slice(0, 16)
-              }}</time>
-            </header>
-            <StudioParams :work="work" :show-points="false" />
-            <p v-if="work.prompt" class="studio__card-prompt">{{ work.prompt }}</p>
-            <p v-if="task.errorMessage" class="studio__card-error" role="alert">
-              {{ task.errorMessage }}
-            </p>
-            <p
-              v-if="task.canvasTaskId && workErrors[task.canvasTaskId]"
-              class="studio__card-error"
-              role="alert"
-            >
-              {{ workErrors[task.canvasTaskId] }}
-            </p>
-            <div class="studio__actions replicate__card-actions">
-              <a :href="task.sourceVideoUrl" target="_blank" rel="noopener noreferrer"
-                >查看原视频 · #{{ task.id }}</a
-              >
-              <button
-                type="button"
-                class="studio__action"
-                title="下载"
-                aria-label="下载复刻视频"
-                :disabled="!task.resultUrl || downloadingId === task.id"
-                @click="handleDownload(task)"
-              >
-                <DownloadOutlined />
-              </button>
-            </div>
-          </article>
+          <div v-if="historyLoading && !tasks.length" class="studio__empty">
+            <GenerationLoading />
           </div>
-          <ResultPagination :current="historyPage" :total="total" :page-size="10" :loading="historyLoading" @change="fetchHistory" />
+          <CreationDemo v-else-if="!tasks.length && !historyError" tool="video-remix" />
+          <div v-if="tasks.length" class="studio__gallery-grid">
+            <article v-for="task in tasks" :key="task.id" class="studio__card">
+              <div class="studio__media" :aria-busy="pendingStatuses.has(task.status)">
+                <GenerationLoading
+                  v-if="pendingStatuses.has(task.status)"
+                  :label="taskDescription(task)"
+                />
+                <button
+                  v-else-if="task.resultUrl"
+                  type="button"
+                  class="studio__poster"
+                  aria-label="播放复刻视频"
+                  @click="openPreview(task)"
+                >
+                  <video
+                    :src="task.resultUrl"
+                    muted
+                    playsinline
+                    preload="metadata"
+                    tabindex="-1"
+                    @loadedmetadata="paintThumb"
+                  />
+                  <span class="studio__play" aria-hidden="true" />
+                </button>
+                <span v-else class="studio__media-wait">{{ taskDescription(task) }}</span>
+              </div>
+              <div class="result-tile__info">
+                <div class="result-tile__actions">
+                  <button
+                    type="button"
+                    :disabled="
+                      pendingStatuses.has(task.status) ||
+                      !task.resultUrl ||
+                      downloadingId === task.id
+                    "
+                    @click="handleDownload(task)"
+                  >
+                    <DownloadOutlined />{{ downloadingId === task.id ? '下载中' : '下载' }}</button
+                  ><button type="button" aria-label="删除作品" @click="removeTask(task)">
+                    <DeleteOutlined />
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+          <ResultPagination
+            :current="historyPage"
+            :total="total"
+            :page-size="10"
+            :loading="historyLoading"
+            @change="fetchHistory"
+          />
         </main>
       </div>
     </div>
@@ -258,38 +254,44 @@
       destroy-on-close
       wrap-class-name="studio-preview"
     >
-      <div v-if="previewTask && previewWork" class="studio-preview__body">
-        <div class="studio-preview__stage">
-          <video :src="previewTask.resultUrl || ''" controls autoplay playsinline />
-          <div class="studio-preview__bar">
-            <button
-              type="button"
-              :disabled="downloadingId === previewTask.id"
-              @click="handleDownload(previewTask)"
-            >
-              <DownloadOutlined />下载
-            </button>
+      <div v-if="previewTask" class="studio-preview__body">
+        <div class="studio-preview__media-col">
+          <div class="studio-preview__stage">
+            <video :src="previewTask.resultUrl || ''" controls autoplay playsinline />
+          </div>
+          <div class="result-tile__info">
+            <div class="result-tile__actions">
+              <button
+                type="button"
+                :disabled="
+                  pendingStatuses.has(previewTask.status) ||
+                  !previewTask.resultUrl ||
+                  downloadingId === previewTask.id
+                "
+                @click="handleDownload(previewTask)"
+              >
+                <DownloadOutlined />{{
+                  downloadingId === previewTask.id ? '下载中' : '下载'
+                }}</button
+              ><button
+                type="button"
+                :disabled="pendingStatuses.has(previewTask.status) || !previewTask.canvasTaskId"
+                aria-label="删除作品"
+                @click="removeTask(previewTask)"
+              >
+                <DeleteOutlined />
+              </button>
+            </div>
           </div>
         </div>
         <aside class="studio-preview__prompt">
-          <h3>提示词</h3>
-          <div class="studio-preview__text">
-            {{
-              previewWork.prompt ||
-              (previewTask.canvasTaskId && workErrors[previewTask.canvasTaskId]) ||
-              '暂无提示词'
-            }}
-          </div>
-          <StudioParams :work="previewWork" inset />
-          <StudioReferences :work="previewWork" :source-video-url="previewTask.sourceVideoUrl" />
-          <button
-            type="button"
-            class="studio-preview__copy"
-            :disabled="!previewWork.prompt"
-            @click="copyPrompt(previewWork.prompt)"
-          >
-            <CopyOutlined />复制
-          </button>
+          <h3>作品详情</h3>
+          <StudioParams v-if="previewWork" :work="previewWork" inset />
+          <StudioReferences
+            v-if="previewWork"
+            :work="previewWork"
+            :source-video-url="previewTask.sourceVideoUrl"
+          />
         </aside>
       </div>
     </Modal>
@@ -297,25 +299,48 @@
 </template>
 
 <script setup lang="ts">
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { Button, Input, Modal, Select, Slider, Spin } from 'ant-design-vue'
-import { CopyOutlined, DeleteOutlined, DownloadOutlined, SoundOutlined, VideoCameraOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
+import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
+import {
+  DeleteOutlined,
+  DownloadOutlined,
+  SoundOutlined,
+  VideoCameraOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons-vue'
 import type { UploadProps } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import UploadFile from '@/components/UploadFile/src/UploadFile.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import { useAuth } from '@/composables/useAuth'
-import { createReplicateTask, pageReplicateTasks, type ReplicateMaterials, type ReplicateTask, type ReplacementKind } from '@/pages/video-remix/api'
-import { downloadStudioFile, getStudioWork, loadStudioModels, studioFileName, type StudioWork } from '@/pages/video-remix/api'
+import {
+  createReplicateTask,
+  pageReplicateTasks,
+  type ReplicateMaterials,
+  type ReplicateTask,
+  type ReplacementKind,
+} from '@/pages/video-remix/api'
+import {
+  deleteStudioWork,
+  downloadStudioFile,
+  getStudioWork,
+  loadStudioModels,
+  studioFileName,
+  type StudioWork,
+} from '@/pages/video-remix/api'
 import StudioParams from '@/components/studio/StudioParams.vue'
 import '@/pages/video/video.scss'
 import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useToast } from '@/composables/useToast'
 import type { CommonAiModelItem } from '@/service/api/ai-model'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
-import { validateAiImageConstraints, formatAiImageValidationError } from '@/pages/canvas/shims/imageConstraints'
+import {
+  validateAiImageConstraints,
+  formatAiImageValidationError,
+} from '@/pages/canvas/shims/imageConstraints'
 import { isSeedance } from '@/pages/canvas/utils/seedanceConstraints'
 import { readAssetDuration } from '@/components/AssetLibrary/mediaMetadata'
 
@@ -359,7 +384,9 @@ const maxAudioDuration = computed(() => {
 })
 const modelOptions = computed(() =>
   models.value.map((item) => ({
-    label: `${item.name || item.model || String(item.id)}${item.disabledReason ? `（${item.disabledReason}）` : ''}`,
+    label: `${item.name || item.model || String(item.id)}${
+      item.disabledReason ? `（${item.disabledReason}）` : ''
+    }`,
     disabled: item.disabled === true,
     value: item.id,
   }))
@@ -442,13 +469,21 @@ onMounted(async () => {
   }
 })
 const statusLabels: Record<ReplicateTask['status'], string> = {
-  QUEUED: '排队中', ANALYZING: '豆包反推中', SUBMITTING: '正在提交生成', GENERATING: '视频生成中',
-  SUCCESS: '已完成', FAILED: '失败', UNKNOWN: '结果待核对', ANALYSIS_DONE: '反推已完成（旧记录）',
+  QUEUED: '排队中',
+  ANALYZING: '豆包反推中',
+  SUBMITTING: '正在提交生成',
+  GENERATING: '视频生成中',
+  SUCCESS: '已完成',
+  FAILED: '失败',
+  UNKNOWN: '结果待核对',
+  ANALYSIS_DONE: '反推已完成（旧记录）',
 }
 const pendingStatuses = new Set(['QUEUED', 'ANALYZING', 'SUBMITTING', 'GENERATING'])
 const tasks = ref<ReplicateTask[]>([])
 const selectedId = ref<number>()
-const activeTask = computed(() => tasks.value.find((task) => task.id === selectedId.value) || tasks.value[0])
+const activeTask = computed(
+  () => tasks.value.find((task) => task.id === selectedId.value) || tasks.value[0]
+)
 const historyPage = ref(1)
 const total = ref(0)
 const historyLoading = ref(false)
@@ -458,10 +493,6 @@ let session = 0
 let timer: ReturnType<typeof setTimeout> | undefined
 let retryKey = ''
 let retryInput = ''
-function refreshHistory() {
-  requestedStates = {}
-  void fetchHistory()
-}
 let historySeq = 0
 async function fetchHistory(no = historyPage.value) {
   if (!isLoggedIn.value || disposed) return
@@ -473,14 +504,18 @@ async function fetchHistory(no = historyPage.value) {
     const result = await pageReplicateTasks(no)
     if (disposed || currentSession !== session || seq !== historySeq) return
     const lastPage = Math.max(1, Math.ceil(result.total / 10))
-    if (no > lastPage) { await fetchHistory(lastPage); return }
+    if (no > lastPage) {
+      await fetchHistory(lastPage)
+      return
+    }
     tasks.value = result.list || []
     historyPage.value = no
     total.value = result.total || 0
     historyError.value = ''
     void loadWorks(result.list, currentSession)
   } catch (e: unknown) {
-    if (!disposed && currentSession === session && seq === historySeq) historyError.value = e instanceof Error ? e.message : '记录加载失败'
+    if (!disposed && currentSession === session && seq === historySeq)
+      historyError.value = e instanceof Error ? e.message : '记录加载失败'
   } finally {
     if (currentSession === session && seq === historySeq) {
       historyLoading.value = false
@@ -506,15 +541,18 @@ watch([isLoggedIn, sessionVersion], ([loggedIn]) => {
   historyError.value = ''
   if (loggedIn) void fetchHistory()
 })
-onBeforeUnmount(() => { disposed = true; historySeq++; clearTimeout(timer) })
+onBeforeUnmount(() => {
+  disposed = true
+  historySeq++
+  clearTimeout(timer)
+})
 
 const works = ref<Record<number, StudioWork>>({})
 const workErrors = ref<Record<number, string>>({})
 let requestedStates: Record<number, string> = {}
-const cards = computed(() => tasks.value.map((task) => ({ task, work: workFor(task) })))
 const previewOpen = ref(false)
 const previewTask = ref<ReplicateTask>()
-const previewWork = computed(() => previewTask.value ? workFor(previewTask.value) : undefined)
+const previewWork = computed(() => (previewTask.value ? workFor(previewTask.value) : undefined))
 const downloadingId = ref<number>()
 function workFor(task: ReplicateTask): StudioWork {
   const stored = task.canvasTaskId ? works.value[task.canvasTaskId] : undefined
@@ -527,22 +565,24 @@ function workFor(task: ReplicateTask): StudioWork {
   }
 }
 async function loadWorks(rows: ReplicateTask[], currentSession: number) {
-  await Promise.allSettled(rows.map(async (task) => {
-    const id = task.canvasTaskId
-    if (!id || requestedStates[id] === task.status) return
-    requestedStates[id] = task.status
-    try {
-      const work = await getStudioWork('video', id)
-      if (disposed || session !== currentSession || requestedStates[id] !== task.status) return
-      if (!work) throw new Error('生成信息暂不可用')
-      works.value[id] = work
-      delete workErrors.value[id]
-    } catch (e: unknown) {
-      if (disposed || session !== currentSession || requestedStates[id] !== task.status) return
-      delete requestedStates[id]
-      workErrors.value[id] = e instanceof Error ? e.message : '生成信息加载失败'
-    }
-  }))
+  await Promise.allSettled(
+    rows.map(async (task) => {
+      const id = task.canvasTaskId
+      if (!id || requestedStates[id] === task.status) return
+      requestedStates[id] = task.status
+      try {
+        const work = await getStudioWork('video', id)
+        if (disposed || session !== currentSession || requestedStates[id] !== task.status) return
+        if (!work) throw new Error('生成信息暂不可用')
+        works.value[id] = work
+        delete workErrors.value[id]
+      } catch (e: unknown) {
+        if (disposed || session !== currentSession || requestedStates[id] !== task.status) return
+        delete requestedStates[id]
+        workErrors.value[id] = e instanceof Error ? e.message : '生成信息加载失败'
+      }
+    })
+  )
 }
 function taskDescription(task: ReplicateTask) {
   if (pendingStatuses.has(task.status)) return `${statusLabels[task.status]}，任务在后台继续执行`
@@ -557,19 +597,47 @@ function openPreview(task: ReplicateTask) {
 function paintThumb(event: Event) {
   const video = event.target
   if (!(video instanceof HTMLVideoElement) || video.currentTime > 0) return
-  try { video.currentTime = 0.1 } catch { /* 元数据尚未就绪时保留默认帧。 */ }
+  try {
+    video.currentTime = 0.1
+  } catch {
+    /* 元数据尚未就绪时保留默认帧。 */
+  }
 }
 async function handleDownload(task: ReplicateTask) {
   if (!task.resultUrl || downloadingId.value) return
   downloadingId.value = task.id
-  try { await downloadStudioFile(task.resultUrl, studioFileName('video', task.canvasTaskId || task.id, task.resultUrl)) }
-  catch (e: unknown) { addToast(e instanceof Error ? e.message : '下载失败', 'error') }
-  finally { downloadingId.value = undefined }
+  try {
+    await downloadStudioFile(
+      task.resultUrl,
+      studioFileName('video', task.canvasTaskId || task.id, task.resultUrl)
+    )
+  } catch (e: unknown) {
+    addToast(e instanceof Error ? e.message : '下载失败', 'error')
+  } finally {
+    downloadingId.value = undefined
+  }
 }
-async function copyPrompt(text?: string) {
-  if (!text) return
-  try { await navigator.clipboard.writeText(text); addToast('已复制', 'success') }
-  catch { addToast('复制失败', 'error') }
+function removeTask(task: ReplicateTask) {
+  const workId = task.canvasTaskId
+  if (!workId) return
+  Modal.confirm({
+    title: '删除这条作品记录？',
+    content: '不会删除已下载的文件。',
+    okText: '删除',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        await deleteStudioWork('video', workId)
+        if (previewTask.value?.id === task.id) {
+          previewOpen.value = false
+          previewTask.value = undefined
+        }
+        await fetchHistory()
+      } catch (e: unknown) {
+        addToast(e instanceof Error ? e.message : '删除失败', 'error')
+      }
+    },
+  })
 }
 
 function updateVideos(value: string | string[]) {
@@ -579,7 +647,8 @@ function updateAudios(value: string | string[]) {
   refAudios.value = Array.isArray(value) ? value : value ? [value] : []
 }
 async function validateAudios(urls: string[]) {
-  if (urls.length > maxAudios.value) throw new Error(`当前模型最多支持 ${maxAudios.value} 段参考音频`)
+  if (urls.length > maxAudios.value)
+    throw new Error(`当前模型最多支持 ${maxAudios.value} 段参考音频`)
   let total = 0
   for (const url of urls) total += await readAssetDuration(url, 'audio')
   if (total > maxAudioDuration.value)
@@ -631,12 +700,16 @@ async function analyze() {
       const images = [...new Set(body.replacements.flatMap((item) => item.imageUrls))]
       for (let i = 0; i < images.length; i += 1) {
         const result = await validateAiImageConstraints(images[i])
-        if (!result.valid) throw new Error(`参考图不合格：${formatAiImageValidationError(result, `参考图${i + 1}`)}`)
+        if (!result.valid)
+          throw new Error(`参考图不合格：${formatAiImageValidationError(result, `参考图${i + 1}`)}`)
       }
     }
     if (disposed || submitSession !== session) return
     const snapshot = JSON.stringify({ body, settings })
-    if (retryInput !== snapshot || !retryKey) { retryKey = crypto.randomUUID(); retryInput = snapshot }
+    if (retryInput !== snapshot || !retryKey) {
+      retryKey = crypto.randomUUID()
+      retryInput = snapshot
+    }
     const id = await createReplicateTask(body, settings, retryKey)
     retryKey = ''
     if (disposed || submitSession !== session) return

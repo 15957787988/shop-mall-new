@@ -29,17 +29,23 @@
           <section class="studio__section">
             <h3 class="studio__label">参数</h3>
             <div class="studio__grid">
-              <label v-if="ratioOptions.length" class="studio__field">
+              <label v-if="ratioOptions.length && !(currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'gif')" class="studio__field">
                 <span>比例</span>
                 <Select v-model:value="aspect" :options="ratioOptions" />
               </label>
-              <label v-if="resolutionOptions.length" class="studio__field">
+              <label v-if="resolutionOptions.length && !(currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'gif')" class="studio__field">
                 <span>分辨率</span>
                 <Select v-model:value="resolution" :options="resolutionOptions" />
+              </label>
+              <label v-if="currentModel?.model === 'gpt-image-2.6-flare'" class="studio__field">
+                <span>输出格式</span>
+                <Select v-model:value="outputFormat" :options="outputFormatOptions" />
               </label>
             </div>
           </section>
 
+          <p v-if="currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'gif'" class="studio__hint">GIF 使用官方费用截图的预设值，完成后按平台实际费用 × 1.1 结算。</p>
+          <p v-if="currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'svg'" class="studio__hint">SVG 使用官方费用截图的预设值，完成后按平台实际费用 × 1.1 多退少补。</p>
           <section v-if="maxRefs > 0" class="studio__section">
             <h3 class="studio__label">参考图</h3>
             <ImageUpload
@@ -72,71 +78,63 @@
       </aside>
 
       <main class="studio__results scroll-area" ref="listEl">
-        <header v-if="works.length" class="studio__results-heading">
+        <!-- <header v-if="works.length" class="studio__results-heading">
           <div><h2>我的图片</h2><p>查看生成进度，预览和下载作品</p></div>
           <span class="studio__result-count">{{ total }} 个作品</span>
-        </header>
+        </header> -->
         <div v-if="listLoading && !works.length" class="studio__empty">加载中…</div>
         <CreationDemo v-else-if="!works.length" tool="image" />
         <div v-if="works.length" class="studio__gallery-grid">
-        <article v-for="item in works" :key="item.id" class="studio__card">
-          <div class="studio__card-body">
-            <div class="studio__media">
-              <button
-                v-if="imageSrc(item)"
-                type="button"
-                class="studio__poster"
-                aria-label="查看"
-                @click="openPreview(item)"
-              >
-                <img :src="imageSrc(item)" alt="生成结果" />
-              </button>
-              <span v-else-if="isPending(item)" class="studio__media-wait"
-                >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
-              >
-              <span v-else class="studio__media-wait">{{ item.status === 30 ? '生成失败' : '结果暂不可用' }}</span>
+          <article v-for="item in works" :key="item.id" class="studio__card">
+            <div class="studio__card-body">
+              <div class="studio__media">
+                <button
+                  v-if="imageSrc(item)"
+                  type="button"
+                  class="studio__poster"
+                  aria-label="查看"
+                  @click="openPreview(item)"
+                >
+                  <img :src="imageSrc(item)" alt="生成结果" />
+                </button>
+                <span v-else-if="isPending(item)" class="studio__media-wait"
+                  >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
+                >
+                <span v-else class="studio__media-wait">{{
+                  item.status === 30 ? '生成失败' : '结果暂不可用'
+                }}</span>
+              </div>
+              <div class="studio__actions">
+                <button
+                  type="button"
+                  class="studio__action"
+                  title="下载"
+                  aria-label="下载"
+                  :disabled="!imageSrc(item) || downloadingId === item.id"
+                  @click="handleDownload(item)"
+                >
+                  <DownloadOutlined />
+                </button>
+                <button
+                  type="button"
+                  class="studio__action studio__action--danger"
+                  title="删除"
+                  aria-label="删除"
+                  :disabled="deletingId === item.id"
+                  @click="handleDelete(item)"
+                >
+                  <DeleteOutlined />
+                </button>
+              </div>
             </div>
-            <header class="studio__card-head">
-              <span class="studio__card-model">{{ item.creationTitle || item.creationLabel || item.modelName || item.model || '生成结果' }}</span>
-              <span
-                v-if="statusLabel(item)"
-                class="studio__card-status"
-                :data-fail="item.status === 30"
-              >
-                {{ statusLabel(item) }}
-              </span>
-              <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
-            </header>
-            <p class="studio__card-prompt" :title="item.prompt">{{ item.prompt }}</p>
-            <p class="studio__card-error" :title="item.status === 30 ? item.errorMessage : undefined">
-              {{ item.status === 30 ? item.errorMessage : '' }}
-            </p>
-            <div class="studio__actions">
-              <button
-                type="button"
-                class="studio__action"
-                title="下载"
-                aria-label="下载"
-                :disabled="!imageSrc(item) || downloadingId === item.id"
-                @click="handleDownload(item)"
-              >
-                <DownloadOutlined />
-              </button>
-              <button
-                type="button"
-                class="studio__action studio__action--danger"
-                title="删除"
-                aria-label="删除"
-                :disabled="deletingId === item.id"
-                @click="handleDelete(item)"
-              >
-                <DeleteOutlined />
-              </button>
-            </div>
-          </div>
-        </article>
+          </article>
         </div>
-<AutoLoadMore :has-more="hasMore" :loading="listLoading" :count="works.length" @load="loadMore" />
+        <AutoLoadMore
+          :has-more="hasMore"
+          :loading="listLoading"
+          :count="works.length"
+          @load="loadMore"
+        />
       </main>
     </div>
     <HistoryModal v-model:open="historyOpen" kind="image" />
@@ -165,17 +163,21 @@
         <aside class="studio-preview__prompt">
           <h3>提示词</h3>
           <div class="studio-preview__text">{{ previewItem.prompt || '无提示词' }}</div>
-          <StudioParams :work="previewItem" inset />
           <StudioReferences :work="previewItem" />
-          <button
-            type="button"
-            class="studio-preview__copy"
-            :disabled="!previewItem.prompt"
-            @click="copyPrompt(previewItem.prompt)"
-          >
-            <CopyOutlined />
-            复制
-          </button>
+          <div class="studio-preview__copy-bar">
+            <button
+              type="button"
+              class="studio-preview__copy"
+              :disabled="!previewItem.prompt"
+              @click="copyPrompt(previewItem.prompt)"
+            >
+              <CopyOutlined />
+              复制
+            </button>
+          </div>
+          <div class="studio-preview__params-bar">
+            <StudioParams :work="previewItem" />
+          </div>
         </aside>
       </div>
     </Modal>
@@ -187,7 +189,12 @@ import CreationDemo from '@/components/CreationDemo.vue'
 import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { PictureOutlined, CopyOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import {
+  PictureOutlined,
+  CopyOutlined,
+  DeleteOutlined,
+  DownloadOutlined,
+} from '@ant-design/icons-vue'
 import { Button, Input, Modal, Select } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
@@ -218,9 +225,22 @@ const modelsError = ref('')
 const modelId = ref<number>()
 const route = useRoute()
 const prompt = ref(typeof route.query.prompt === 'string' ? route.query.prompt.slice(0, 2000) : '')
-watch(() => route.query.prompt, value => { if (typeof value === 'string') prompt.value = value.slice(0, 2000) })
+watch(
+  () => route.query.prompt,
+  (value) => {
+    if (typeof value === 'string') prompt.value = value.slice(0, 2000)
+  }
+)
 const aspect = ref('')
 const resolution = ref('')
+const outputFormat = ref('png')
+const outputFormatOptions = computed(() =>
+  ['png', 'jpeg', 'webp', 'svg', 'gif'].map((value) => ({
+    label: value,
+    value,
+    disabled: refImages.value.length > 0 && ['svg', 'gif'].includes(value),
+  }))
+)
 const refImages = ref<string[]>([])
 const submitting = ref(false)
 const historyOpen = ref(false)
@@ -257,19 +277,24 @@ const maxRefs = computed(() => {
   const n = Number(raw)
   return Number.isFinite(n) && n >= 0 ? n : 9
 })
-const estimatedPoints = computed(() => estimateModelPoints(currentModel.value, { resolution: resolution.value, ratio: aspect.value }))
+const estimatedPoints = computed(() =>
+  estimateModelPoints(currentModel.value, {
+    resolution: resolution.value,
+    outputFormat: currentModel.value?.model === 'gpt-image-2.6-flare' ? outputFormat.value : undefined,
+    ratio: aspect.value,
+    imageCount: refImages.value.length,
+  })
+)
 const pointsText = computed(() => `（${formatModelPoints(estimatedPoints.value)}）`)
-const canSubmit = computed(() => Boolean(!submitting.value && modelId.value && prompt.value.trim() && estimatedPoints.value != null))
+const canSubmit = computed(() =>
+  Boolean(
+    !submitting.value && modelId.value && prompt.value.trim() && estimatedPoints.value != null
+  )
+)
 const hasMore = computed(() => works.value.length < total.value)
 
 function isPending(item: StudioWork) {
   return item.status === 0 || item.status === 10 || item.status === 11 || item.status === 12
-}
-
-function statusLabel(item: StudioWork) {
-  if (item.status === 30) return '失败'
-  if (isPending(item)) return '生成中'
-  return ''
 }
 
 function imageSrc(item: StudioWork) {
@@ -297,23 +322,6 @@ async function copyPrompt(text?: string) {
   }
 }
 
-function formatTime(value: StudioWork['createTime']) {
-  if (value == null || value === '') return ''
-  if (typeof value === 'number') {
-    const date = new Date(value)
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())} ${p(
-      date.getHours()
-    )}:${p(date.getMinutes())}`
-  }
-  if (Array.isArray(value)) {
-    const [y, m, d, h = 0, min = 0] = value
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${y}-${p(m)}-${p(d)} ${p(h)}:${p(min)}`
-  }
-  return value.replace('T', ' ').slice(0, 16)
-}
-
 function syncModelFields() {
   const ratios = ratioOptions.value.map((item) => item.value)
   const resolutions = resolutionOptions.value.map((item) => item.value)
@@ -325,6 +333,12 @@ function syncModelFields() {
 }
 
 watch(modelId, syncModelFields)
+watch(
+  () => refImages.value.length,
+  (count) => {
+    if (count && ['svg', 'gif'].includes(outputFormat.value)) outputFormat.value = 'png'
+  }
+)
 
 async function loadModels() {
   modelsLoading.value = true
@@ -352,7 +366,7 @@ async function fetchPage(reset: boolean) {
     if (seq !== pageSeq) return
     const list = page.list ?? []
     works.value = reset ? list : works.value.concat(list)
-    total.value = list.length ? (page.total ?? works.value.length) : works.value.length
+    total.value = list.length ? page.total ?? works.value.length : works.value.length
     pageNo.value = nextPage
     schedulePoll()
   } catch (error: unknown) {
@@ -446,6 +460,8 @@ async function handleGenerate() {
       prompt: prompt.value.trim(),
       aspectRatio: aspect.value || undefined,
       resolution: resolution.value || undefined,
+      output_format:
+        currentModel.value?.model === 'gpt-image-2.6-flare' ? outputFormat.value : undefined,
       image: refImages.value.length ? refImages.value : undefined,
     })
     listEl.value?.scrollTo({ top: 0 })

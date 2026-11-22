@@ -144,12 +144,12 @@
       </aside>
 
       <main class="studio__results scroll-area" ref="listEl">
-        <div v-if="listLoading && !works.length" class="studio__empty">加载中…</div>
+        <div v-if="listLoading && !works.length" class="studio__empty"><GenerationLoading label="正在读取作品…" /></div>
         <CreationDemo v-else-if="!works.length" :tool="productMode ? 'product-video' : 'video'" />
         <div v-if="works.length" class="studio__gallery-grid">
           <article v-for="item in works" :key="item.id" class="studio__card">
             <div class="studio__card-body">
-              <div class="studio__media">
+              <div class="studio__media" :aria-busy="isPending(item)">
                 <button
                   v-if="videoSrc(item)"
                   type="button"
@@ -177,9 +177,7 @@
                     >{{ item.duration }}s</span
                   >
                 </button>
-                <span v-else-if="isPending(item)" class="studio__media-wait"
-                  >生成中{{ item.progress ? ` ${item.progress}` : '' }}</span
-                >
+                <GenerationLoading v-else-if="isPending(item)" :label="`正在生成视频${item.progress ? ` ${item.progress}` : '…'}`" />
                 <span v-else class="studio__media-wait">{{
                   item.status === 30 ? '生成失败' : '结果暂不可用'
                 }}</span>
@@ -202,7 +200,6 @@
                 <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
               </header>
               <StudioParams :work="item" :show-points="false" />
-              <p class="studio__card-prompt" :title="item.prompt">{{ item.prompt }}</p>
               <p class="studio__card-error" :title="item.status === 30 ? item.errorMessage : undefined">
                 {{ item.status === 30 ? item.errorMessage : '' }}
               </p>
@@ -262,19 +259,9 @@
           </div>
         </div>
         <aside class="studio-preview__prompt">
-          <h3>提示词</h3>
-          <div class="studio-preview__text">{{ previewItem.prompt || '无提示词' }}</div>
+          <h3>作品详情</h3>
           <StudioParams :work="previewItem" inset />
           <StudioReferences :work="previewItem" />
-          <button
-            type="button"
-            class="studio-preview__copy"
-            :disabled="!previewItem.prompt"
-            @click="copyPrompt(previewItem.prompt)"
-          >
-            <CopyOutlined />
-            复制
-          </button>
         </aside>
       </div>
     </Modal>
@@ -282,6 +269,7 @@
 </template>
 
 <script setup lang="ts">
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
@@ -289,7 +277,6 @@ import { useRoute } from 'vue-router'
 import { buildProductVideoPrompt } from '@/lib/creation/product-video'
 import {
   VideoCameraOutlined,
-  CopyOutlined,
   DeleteOutlined,
   DownloadOutlined,
 } from '@ant-design/icons-vue'
@@ -478,17 +465,6 @@ function openPreview(item: StudioWork) {
   if (!videoSrc(item)) return
   previewItem.value = item
   previewOpen.value = true
-}
-
-async function copyPrompt(text?: string) {
-  const value = text?.trim()
-  if (!value) return
-  try {
-    await navigator.clipboard.writeText(value)
-    addToast('已复制', 'success')
-  } catch {
-    addToast('复制失败', 'error')
-  }
 }
 
 function formatTime(value: StudioWork['createTime']) {

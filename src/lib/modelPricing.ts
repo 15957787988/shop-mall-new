@@ -3,7 +3,7 @@ export interface ModelPricing {
   billingSource?: string
   freeImages?: number
   extraImagePrice?: number
-  unit: 'image' | 'second'
+  unit: 'image' | 'second' | 'request'
   defaultResolution: string
   defaultDuration: number
   minDuration: number
@@ -15,11 +15,13 @@ export interface ModelPricing {
   referencePrices?: Record<string, number>
   soundPrices?: Record<string, number>
   defaultGenerateAudio?: boolean
+  formatPrices?: Record<string, Record<string, number>>
   aspectPrices?: Record<string, Record<string, number>>
   note?: string
 }
 
 interface EstimateOptions {
+  outputFormat?: string
   resolution?: string
   ratio?: string
   duration?: number
@@ -45,6 +47,9 @@ export function estimateModelPoints(
   }
   const local = pricing.billingSource === 'LOCAL_TARIFF'
   if (pricing.unit === 'second' && options.referenceVideo && !local) table = pricing.referencePrices || {}
+  const format = options.outputFormat || 'png'
+  if (pricing.formatPrices?.[format]) table = pricing.formatPrices[format]
+  else if (['gif','svg'].includes(format)) return null
   const unit = Number(table[resolution])
   if (!Number.isFinite(unit) || unit <= 0) return null
   let units = 1
@@ -67,6 +72,11 @@ export function estimateModelPoints(
   if (!Number.isInteger(count) || count < 1) return null
   // 后端每个任务单独保留3位小数，再累加批量任务，避免逐项舍入差异。
   let total = unit * units
+  if (!local && pricing.unit === 'image' && Number(pricing.extraImagePrice || 0) > 0) {
+    const images = options.imageCount ?? 0
+    if (!Number.isInteger(images) || images < 0) return null
+    total += Math.max(0, images - (pricing.freeImages ?? 0)) * Number(pricing.extraImagePrice)
+  }
   if (local) {
     const images = options.imageCount ?? 0
     const extra = Number(pricing.extraImagePrice)

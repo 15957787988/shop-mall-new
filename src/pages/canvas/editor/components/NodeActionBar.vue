@@ -153,7 +153,11 @@ async function reverseVideoPrompt() {
     store.updateNodeData(result.id, {
       label: '视频反推提示词', content, outputValue: content,
     }, getNodes.value)
-    message.success('反推完成，已添加文本节点')
+    store.addEdge({
+      id: `reverse-prompt-${result.id}`, source: id, target: result.id,
+      sourceHandle: 'sr', targetHandle: 'tl', data: { role: 'generation-output' },
+    })
+    message.success('反推完成，已添加文本节点并连接原视频')
   } catch (error) {
     if (!disposed && route.query.projectId === projectId)
       message.error(error.message || '视频反推失败，请稍后重试')

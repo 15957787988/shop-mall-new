@@ -81,6 +81,7 @@ const navigation = [
   { label: '工作台', path: '/' },
   { label: '全部工具', path: '/tools' },
   { label: '无限画布', path: '/canvas/index' },
+  { label: '音频创作', path: '/audio' },
   { label: '我的作品', path: '/space' },
   { label: '资产库', path: '/agent-lib' },
 ]
@@ -88,7 +89,7 @@ function isActive(path: string) {
   return path === '/'
     ? route.path === '/'
     : path === '/tools'
-    ? !!route.meta.creationWorkspace || route.path === '/tools'
+    ? (route.path !== '/audio' && !!route.meta.creationWorkspace) || route.path === '/tools'
     : route.path === path
 }
 const chargeOpen = ref(false)

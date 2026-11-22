@@ -190,6 +190,7 @@ export function graphNodeToVueNode(gNode) {
 export function vueEdgeToGraphEdge(edge) {
   const out = { id: edge.id, from: edge.source, to: edge.target }
   if (edge.data?.order != null) out.order = edge.data.order
+  if (edge.data?.role === 'generation-output') out.role = edge.data.role
   return out
 }
 
@@ -203,7 +204,7 @@ export function graphEdgeToVueEdge(edge) {
     animated: true,
     type: 'default',
     style: { stroke: '#00d4c8', strokeWidth: 1.5 },
-    data: { order: edge.order ?? null, value: null },
+    data: { order: edge.order ?? null, value: null, ...(edge.role === 'generation-output' ? { role: edge.role } : {}) },
   }
 }
 

@@ -19,7 +19,7 @@
         v-for="asset in displayAssets"
         :key="asset.id"
         class="asset-card"
-        :class="{ uploading: asset.uploading }"
+        :class="[{ uploading: asset.uploading }, `asset-card--${asset.kind}`]"
         :title="asset.label"
         @click="!asset.uploading && insertMention(asset)"
       >
@@ -155,6 +155,9 @@
             aria-label="分辨率"
           >
             <option v-for="r in imageResolutions" :key="r" :value="r">{{ r }}</option>
+          </select>
+          <select v-if="currentModel?.model === 'gpt-image-2.6-ext'" v-model="imageOutputFormat" class="param-select" aria-label="输出格式">
+            <option v-for="format in ['png','jpeg','webp','svg','gif']" :key="format" :value="format">{{ format }}</option>
           </select>
           <select v-model="imageCount" class="param-select count-select">
             <option v-for="n in 10" :key="n" :value="n"># {{ n }}次</option>
@@ -1486,6 +1489,7 @@ function isModelDisabled(m) {
 // ── Image params ──────────────────────────────────────────────────────────────
 const imageRatio = ref('')
 const imageRes = ref('')
+const imageOutputFormat = ref('png')
 const imageCount = ref(1)
 
 // ── Video params ──────────────────────────────────────────────────────────────
@@ -1666,6 +1670,7 @@ function buildSettingsSnapshot() {
       selectedModel: selectedModel.value,
       imageRatio: imageRatio.value,
       imageRes: imageRes.value,
+      imageOutputFormat: imageOutputFormat.value,
       imageCount: imageCount.value,
       mediaLimits: currentModel.value?.mediaLimits || null,
     }
@@ -1681,6 +1686,7 @@ function loadSettingsFromNode(node) {
   if (mode === 'image') {
     const s = node?.data?.settings
     if (s?.mode === 'image' && s.imageRatio) imageRatio.value = s.imageRatio
+    if (s?.mode === 'image') imageOutputFormat.value = s.imageOutputFormat || 'png'
     if (s?.mode === 'image' && s.imageRes) imageRes.value = s.imageRes
     imageCount.value = s?.mode === 'image' && s.imageCount ? s.imageCount : 1
     if (s?.mode === 'image' && s.selectedModel) selectedModel.value = s.selectedModel
@@ -1920,7 +1926,7 @@ async function validateVideoRefImages(urls) {
 function currentEstimatedPoints() {
   if (currentMode.value === 'image') {
     return estimateModelPoints(currentModel.value, {
-      resolution: imageRes.value, ratio: imageRatio.value, count: imageCount.value,
+      resolution: imageRes.value, ratio: imageRatio.value, count: imageCount.value, imageCount: collectRefImages().length,
     })
   }
   if (currentMode.value === 'video') {
@@ -2732,6 +2738,7 @@ async function generate() {
                       model: model.model,
                       aspect: settings.imageRatio,
                       resolution: settings.imageRes,
+                      output_format: model.model === 'gpt-image-2.6-ext' ? settings.imageOutputFormat || 'png' : undefined,
                       refImages,
                     },
                     () => {
@@ -2773,6 +2780,7 @@ async function generate() {
               model: model.model,
               aspect: settings.imageRatio,
               resolution: settings.imageRes,
+                      output_format: model.model === 'gpt-image-2.6-ext' ? settings.imageOutputFormat || 'png' : undefined,
               refImages,
             },
             (p) => {
@@ -3159,6 +3167,10 @@ const panelStyle = computed(() => {
   opacity: 0.4;
 }
 
+@each $kind, $color in (image: $mention-image, video: $mention-video, audio: $mention-audio, text: $mention-text, document: $mention-document) {
+  .asset-card--#{$kind} .asset-name { color: $color; }
+}
+
 .asset-name {
   font-size: 12px;
   color: $text-dim;
@@ -3231,29 +3243,11 @@ const panelStyle = computed(() => {
     box-decoration-break: clone;
   }
 
-  :deep(.mention-chip--image) {
-    color: $accent-text;
-    background: rgba($accent-text, 0.22);
-  }
-
-  :deep(.mention-chip--video) {
-    color: $accent-text;
-    background: rgba($accent-text, 0.28);
-  }
-
-  :deep(.mention-chip--audio) {
-    color: $accent-text;
-    background: rgba($accent-text, 0.2);
-  }
-
-  :deep(.mention-chip--text) {
-    color: $accent-text;
-    background: rgba($accent-primary, 0.28);
-  }
-
-  :deep(.mention-chip--document) {
-    color: $text-secondary;
-    background: rgba($accent-text, 0.2);
+  @each $kind, $color in (image: $mention-image, video: $mention-video, audio: $mention-audio, text: $mention-text, document: $mention-document) {
+    :deep(.mention-chip--#{$kind}) {
+      color: $color;
+      background: rgba($color, 0.18);
+    }
   }
 }
 

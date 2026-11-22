@@ -178,6 +178,7 @@
                   :options="resolutionOptions"
                   :disabled="locked"
               /></label>
+              <label v-if="isGptImageFlare">输出格式<Select v-model:value="outputFormat" :options="outputFormatOptions" :disabled="locked" /></label>
             </div>
             <p v-if="referenceError" class="creation-error">{{ referenceError }}</p>
           </section>
@@ -286,6 +287,13 @@ const modelsError = ref('')
 const modelId = ref<number>()
 const aspect = ref('')
 const resolution = ref('')
+const outputFormat = ref('png')
+const isGptImageFlare = computed(() => currentModel.value?.model === 'gpt-image-2.6-flare')
+const outputFormatOptions = ['png', 'jpeg', 'webp', 'svg', 'gif'].map(value => ({
+  label: ['svg', 'gif'].includes(value) ? `${value}（仅文生图）` : value,
+  value,
+  disabled: ['svg', 'gif'].includes(value),
+}))
 const submitting = ref(false)
 const planning = ref(false)
 const aiWriting = ref(false)
@@ -344,6 +352,7 @@ const points = computed(() => {
   if (!currentModel.value || !outputs.value.length) return null
   return estimateModelPoints(currentModel.value, {
     resolution: resolution.value,
+    outputFormat: isGptImageFlare.value ? outputFormat.value : undefined,
     ratio: aspect.value,
     imageCount: images.value.length,
     count: outputs.value.length * productReferences.value.length,
@@ -506,6 +515,7 @@ function fashionPlanRequests() {
     modelUrl: product.person?.[0] || '',
     requirements: requirements.value,
     aspectRatio: aspect.value,
+    output_format: isGptImageFlare.value ? outputFormat.value : undefined,
     modules: [...selectedModules.value],
     counts: { ...fashionCounts },
   }))
@@ -601,6 +611,7 @@ async function generate() {
         requirements: requirements.value,
         prompt: output.prompt.trim(),
         aspectRatio: aspect.value,
+        output_format: isGptImageFlare.value ? outputFormat.value : undefined,
         resolution: resolution.value,
         image: productImages,
       }))

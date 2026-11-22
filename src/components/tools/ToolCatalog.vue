@@ -2,7 +2,7 @@
   <section class="tool-catalog">
     <header>
       <div>
-        <h2>为你的商品，找到合适的创作方式</h2>
+        <h2>{{ title }}</h2>
         <p>图片、视频与品牌内容，从这里开始。</p>
       </div>
       <div class="tool-catalog__filters" aria-label="工具类型">
@@ -21,7 +21,7 @@
     <div class="tool-catalog__grid">
       <router-link v-for="tool in visibleTools" :key="tool.code" :to="tool.href" class="tool-card"
         ><div :class="['tool-card__visual', `tool-card__visual--${tool.tone}`]">
-          <img :src="`/images/design-preview/${tool.cover}.jpg`" alt="" loading="lazy" /><span
+          <img :src="imageOverrides?.[tool.code] || (tool.cover.startsWith('/') ? tool.cover : `/images/design-preview/${tool.cover}.jpg`)" alt="" loading="lazy" /><span
             class="tool-card__icon"
             ><component :is="icons[tool.icon]" /></span
           ><span class="tool-card__media">{{ tool.media }}创作</span>
@@ -38,6 +38,8 @@
 import { computed, ref, type Component } from 'vue'
 import { AppstoreOutlined, ArrowUpOutlined, CopyOutlined, LayoutOutlined, PictureOutlined, PlayCircleOutlined, SkinOutlined, UserOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
 import { creationTools } from '@/lib/creation/catalog'
+interface Props { title?: string; imageOverrides?: Record<string, string> }
+withDefaults(defineProps<Props>(), { title: '为你的商品，找到合适的创作方式' })
 const filters = ['全部', '图片', '视频']
 const filter = ref('全部')
 const visibleTools = computed(() => creationTools.filter(tool => filter.value === '全部' || tool.media === filter.value))
@@ -105,23 +107,16 @@ const icons: Record<string, Component> = { picture: PictureOutlined, layout: Lay
   }
   &__visual {
     position: relative;
-    height: clamp(144px, 13vw, 206px);
+    aspect-ratio: 16 / 11;
     overflow: hidden;
     background: var(--color-surface-1);
     img {
       position: absolute;
-      right: -5%;
-      top: 13%;
-      width: 65%;
-      height: 112%;
-      object-fit: cover;
-      border-radius: 12px;
-      transform: rotate(-8deg);
-      transition: transform 0.25s;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
-  }
-  &:hover img {
-    transform: rotate(-4deg) scale(1.04);
   }
   &__visual--mint {
     background: var(--color-surface-2);
@@ -136,6 +131,7 @@ const icons: Record<string, Component> = { picture: PictureOutlined, layout: Lay
   &__visual--cream {
     background: var(--color-surface-1);
   }
+  &__icon, &__media { display: none; }
   &__icon {
     position: absolute;
     left: 22px;

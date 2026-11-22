@@ -36,6 +36,7 @@ export interface StudioWork {
   creationIndex?: number
   creationLabel?: string
   ratio?: string
+  output_format?: string
   resolution?: string
   duration?: number
   cost?: number
@@ -130,6 +131,7 @@ export interface CollectionItem {
   model?: string
   prompt: string
   aspectRatio?: string
+  output_format?: string
   resolution?: string
   image: string[]
 }
@@ -150,6 +152,6 @@ export function loadImageRemixConfig() {
   return http.get<ImageRemixConfig>('/admin-api/ai/image/remix/config')
 }
 
-export function planImageRemix(body: { productUrls: string[]; referenceUrl: string; mode: string; requirements: string; platform: string; language: string }) {
+export function planImageRemix(body: { productUrls: string[]; referenceUrl: string; mode: string; requirements: string; platform: string; language: string; aspectRatio?: string }) {
   return http.post<{ prompt: string }>('/admin-api/ai/image/remix/plan', body)
 }

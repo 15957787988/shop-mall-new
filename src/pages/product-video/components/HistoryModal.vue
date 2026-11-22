@@ -11,11 +11,11 @@
       <div v-else-if="!loading && !list.length" class="hist__empty">暂无历史</div>
       <div v-else class="hist__grid">
         <article v-for="item in list" :key="item.id" class="hist__card">
-          <div class="hist__media">
+          <div class="hist__media" :aria-busy="isPending(item)">
             <Image
               v-if="kind === 'image' && mediaUrl(item)"
               :src="mediaUrl(item)"
-              :alt="item.prompt || '生成图片'"
+              :alt="item.creationLabel || '生成图片'"
             />
             <button
               v-else-if="kind === 'video' && mediaUrl(item)"
@@ -40,9 +40,9 @@
               />
               <PlayCircleOutlined />
             </button>
+            <GenerationLoading v-else-if="isPending(item)" />
             <span v-else class="hist__wait">{{ statusText(item) }}</span>
           </div>
-          <p class="hist__prompt">{{ item.prompt || '无提示词' }}</p>
           <div class="hist__bar">
             <time>{{ formatTime(item.createTime) }}</time>
             <button
@@ -85,6 +85,7 @@
 </template>
 
 <script setup lang="ts">
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { reactive, ref, watch } from 'vue'
 import { DownloadOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
@@ -145,9 +146,12 @@ function paintThumb(event: Event) {
   }
 }
 
+function isPending(item: StudioWork) {
+  return item.status !== 20 && item.status !== 30
+}
+
 function statusText(item: StudioWork) {
   if (item.status === 30) return '失败'
-  if (item.status === 0 || item.status === 10 || item.status === 11 || item.status === 12) return '生成中'
   return '暂无结果'
 }
 

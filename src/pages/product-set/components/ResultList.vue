@@ -1,6 +1,6 @@
 <template>
   <div class="result-list">
-    <Spin v-if="loading && !results.length" class="result-list__loading" />
+    <GenerationLoading v-if="loading && !results.length" label="正在读取作品…" class="result-list__loading" />
 
     <EmptyState v-else-if="!results.length" :loading="loading" :results="results" />
 
@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { ref, inject, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { Spin } from 'ant-design-vue'
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import EmptyState from './EmptyState.vue'
 import ResultGroup from './ResultGroup.vue'
 import type { SaleorResultGroup } from '../utils/types'

@@ -103,6 +103,7 @@
               ><label v-if="resolutionOptions.length"
                 >分辨率<Select v-model:value="resolution" :options="resolutionOptions"
               /></label>
+              <label v-if="isGptImageFlare">输出格式<Select v-model:value="outputFormat" :options="outputFormatOptions" :disabled="locked" /></label>
             </div>
             <p v-if="modelsError" class="creation-error">
               {{ modelsError }} <button type="button" @click="loadModels">重试</button>
@@ -165,9 +166,9 @@ import {
 } from '@/pages/fashion-set/api'
 import FashionSetResults from './components/FashionSetResults.vue'
 
-// ponytail: dev 预填参考图，上线前删或改 env 门控
-const MOCK_REFERENCE_URL =
-  'https://storage.pixpix.media/pixpix/frontend/images/tools/apparel-set-1-1.webp'
+// ponytail: dev 预填参考图暂关
+// const MOCK_REFERENCE_URL =
+//   'https://storage.pixpix.media/pixpix/frontend/images/tools/apparel-set-1-1.webp'
 
 const route = useRoute()
 const fashionMode = ref<FashionMode>('basic')
@@ -216,6 +217,13 @@ const modelsError = ref('')
 const modelId = ref<number>()
 const aspect = ref('')
 const resolution = ref('')
+const outputFormat = ref('png')
+const isGptImageFlare = computed(() => currentModel.value?.model === 'gpt-image-2.6-flare')
+const outputFormatOptions = ['png', 'jpeg', 'webp', 'svg', 'gif'].map(value => ({
+  label: ['svg', 'gif'].includes(value) ? `${value}（仅文生图）` : value,
+  value,
+  disabled: ['svg', 'gif'].includes(value),
+}))
 const submitting = ref(false)
 const planning = ref(false)
 const aiWriting = ref(false)
@@ -274,6 +282,7 @@ const points = computed(() => {
   if (!currentModel.value || !outputs.value.length) return null
   return estimateModelPoints(currentModel.value, {
     resolution: resolution.value,
+    outputFormat: isGptImageFlare.value ? outputFormat.value : undefined,
     ratio: aspect.value,
     imageCount: images.value.length,
     count: outputs.value.length * productReferences.value.length,
@@ -381,17 +390,17 @@ watch(
     }
     if (typeof route.query.prompt === 'string')
       requirements.value = route.query.prompt.slice(0, 1000)
-    applyDevReferenceMock()
+    // applyDevReferenceMock()
   },
   { immediate: true }
 )
-function applyDevReferenceMock() {
-  if (!import.meta.env.DEV) return
-  for (const group of uploadGroups.value) {
-    if (group.min > 0) references[group.key] = [MOCK_REFERENCE_URL]
-  }
-}
-watch(uploadGroups, applyDevReferenceMock, { immediate: true })
+// function applyDevReferenceMock() {
+//   if (!import.meta.env.DEV) return
+//   for (const group of uploadGroups.value) {
+//     if (group.min > 0) references[group.key] = [MOCK_REFERENCE_URL]
+//   }
+// }
+// watch(uploadGroups, applyDevReferenceMock, { immediate: true })
 async function loadModels() {
   modelsLoading.value = true
   modelsError.value = ''
@@ -439,6 +448,7 @@ function fashionPlanRequests() {
     modelUrl: product.person?.[0] || '',
     requirements: requirements.value,
     aspectRatio: aspect.value,
+    output_format: isGptImageFlare.value ? outputFormat.value : undefined,
     modules: tool.value.modules
       .filter((module) => selectedModules.value.includes(module.id))
       .map((module) => (module.variants?.length ? whiteView.value : module.id)),
@@ -541,6 +551,7 @@ async function generate() {
         requirements: requirements.value,
         prompt: output.prompt.trim(),
         aspectRatio: aspect.value,
+        output_format: isGptImageFlare.value ? outputFormat.value : undefined,
         resolution: resolution.value,
         image: productImages,
       }))

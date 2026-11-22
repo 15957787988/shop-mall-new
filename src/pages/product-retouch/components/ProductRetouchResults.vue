@@ -21,8 +21,7 @@
       <Button @click="openLogin()">登录账户</Button>
     </div>
     <div v-else-if="loading && !works.length" class="results-gallery__empty">
-      <Spin />
-      <p>正在读取作品…</p>
+      <GenerationLoading label="正在读取作品…" />
     </div>
     <div v-else-if="!works.length && !error" class="results-gallery__empty">
       <PictureOutlined />
@@ -33,27 +32,29 @@
       <article v-for="work in works" :key="work.id" class="result-tile">
         <button
           class="result-tile__media"
+          :aria-busy="pending(work)"
           type="button"
-          :disabled="!src(work)"
+          :disabled="pending(work) || !src(work)"
           @click="preview = work"
         >
+          <div v-if="pending(work)" class="result-tile__placeholder">
+            <GenerationLoading />
+          </div>
           <img
-            v-if="src(work)"
+            v-else-if="src(work)"
             :src="src(work)"
             :alt="work.creationTitle || work.creationLabel || '生成图片'"
             loading="lazy"
           />
-          <div v-if="!src(work)" class="result-tile__placeholder">
-            <Spin v-if="pending(work)" /><WarningOutlined v-else /><span>{{
-              pending(work) ? '正在生成' : '生成失败'
-            }}</span>
+          <div v-if="!pending(work) && !src(work)" class="result-tile__placeholder">
+            <WarningOutlined /><span>{{ work.status === 30 ? '生成失败' : '结果暂不可用' }}</span>
           </div>
         </button>
         <div class="result-tile__info">
           <div class="result-tile__actions">
             <button
               type="button"
-              :disabled="!src(work) || downloading === work.id"
+              :disabled="pending(work) || !src(work) || downloading === work.id"
               @click="download(work)"
             >
               <DownloadOutlined />{{ downloading === work.id ? '下载中' : '下载' }}</button
@@ -101,9 +102,10 @@
   </section>
 </template>
 <script setup lang="ts">
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Alert, Button, Modal, Spin } from 'ant-design-vue'
+import { Alert, Button, Modal } from 'ant-design-vue'
 import {
   DeleteOutlined,
   DownloadOutlined,

@@ -99,6 +99,7 @@ export function submitStudioImage(body: {
   modelId: number
   model?: string
   prompt: string
+  output_format?: string
   aspectRatio?: string
   resolution?: string
   image?: string[]

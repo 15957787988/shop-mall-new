@@ -11,8 +11,7 @@
     </Alert>
     <CreationDemo v-if="!isLoggedIn" tool="fashion-set" />
     <div v-else-if="loading && !works.length" class="fashion-results__loading">
-      <Spin />
-      <p>正在读取作品…</p>
+      <GenerationLoading label="正在读取作品…" />
     </div>
     <CreationDemo v-else-if="!works.length && !error" tool="fashion-set" />
     <template v-else>
@@ -44,18 +43,20 @@
             <button
               type="button"
               class="fashion-image__media"
-              :disabled="!work.picUrl"
+              :disabled="pending(work) || !work.picUrl"
+              :aria-busy="pending(work)"
               @click="openPreview(work)"
             >
+              <span v-if="pending(work)" class="fashion-image__placeholder"><GenerationLoading /></span>
               <img
-                v-if="work.picUrl"
+                v-else-if="work.picUrl"
                 :src="work.picUrl"
                 :alt="work.creationLabel || '生成图片'"
                 loading="lazy"
               />
               <span v-else class="fashion-image__placeholder" :title="work.errorMessage">
-                <Spin v-if="pending(work)" /><WarningOutlined v-else />
-                {{ pending(work) ? '生成中' : '生成失败' }}
+                <WarningOutlined />
+                {{ work.status === 30 ? '生成失败' : '结果暂不可用' }}
               </span>
               <span class="fashion-image__label">{{ work.creationLabel || '生成图片' }}</span>
             </button>
@@ -64,7 +65,7 @@
                 type="button"
                 :aria-label="`下载${work.creationLabel || '图片'}`"
                 title="下载"
-                :disabled="!work.picUrl || downloading === work.id"
+                :disabled="pending(work) || !work.picUrl || downloading === work.id"
                 @click="download(work)"
               >
                 <DownloadOutlined />
@@ -121,12 +122,13 @@
 </template>
 
 <script setup lang="ts">
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import StudioParams from '@/components/studio/StudioParams.vue'
 import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Alert, Button, Modal, Spin } from 'ant-design-vue'
+import { Alert, Button, Modal } from 'ant-design-vue'
 import {
   DeleteOutlined,
   DownloadOutlined,

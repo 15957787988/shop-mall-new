@@ -5,7 +5,8 @@
         <div class="detail-batch__title"><h3><time>{{ formatTime(group.works[0].createTime) }}</time> {{ group.title }}</h3><StudioParams :work="group.works[0]" inline :show-points="false" /></div>
         <div class="detail-batch__actions">
           <Button :disabled="!group.works.some(work => work.picUrl)" @click="longPreview = group">预览长图</Button>
-          <Button type="primary" :loading="downloading === group.id" :disabled="!group.works.some(work => work.picUrl)" @click="downloadGroup(group)"><DownloadOutlined />下载</Button>
+          <Button :loading="downloadingLong === group.id" :disabled="!!downloadingLong || !group.works.some(work => work.picUrl)" @click="downloadLong(group)"><DownloadOutlined />下载长图</Button>
+          <Button type="primary" :loading="downloading === group.id" :disabled="!group.works.some(work => work.picUrl)" @click="downloadGroup(group)"><DownloadOutlined />下载分图</Button>
         </div>
       </header>
       <div class="detail-batch__strip">
@@ -13,20 +14,29 @@
           <img :src="url" alt="商品原图" loading="lazy" />
           <span class="detail-card__original">原图</span>
         </button>
-        <button v-for="work in group.works" :key="work.id" type="button" class="detail-card" :disabled="!work.picUrl" @click="openPreview(group, work.picUrl)">
-          <img v-if="work.picUrl" :src="work.picUrl" :alt="work.creationLabel || '详情页模块'" loading="lazy" />
-          <span v-else class="detail-card__placeholder"><Spin v-if="pending(work)" /><WarningOutlined v-else />{{ pending(work) ? '正在生成' : work.errorMessage || '生成失败' }}</span>
+        <button v-for="work in group.works" :key="work.id" type="button" class="detail-card" :disabled="pending(work) || !work.picUrl" :aria-busy="pending(work)" @click="openPreview(group, work.picUrl)">
+          <span v-if="pending(work)" class="detail-card__placeholder"><GenerationLoading /></span>
+          <img v-else-if="work.picUrl" :src="work.picUrl" :alt="work.creationLabel || '详情页模块'" loading="lazy" />
+          <span v-else class="detail-card__placeholder"><WarningOutlined />{{ work.status === 30 ? work.errorMessage || '生成失败' : '结果暂不可用' }}</span>
           <span class="detail-card__label">{{ work.creationLabel || '详情页模块' }}</span>
         </button>
       </div>
     </article>
-    <Modal :open="!!longPreview" title="详情页长图预览" :footer="null" width="800px" @cancel="longPreview = undefined">
-      <div v-if="longPreview" class="detail-long-preview">
-        <template v-for="work in longPreview.works" :key="work.id">
-          <img v-if="work.picUrl" :src="work.picUrl" :alt="work.creationLabel || '详情页模块'" />
-          <p v-else>{{ work.creationLabel }}：{{ pending(work) ? '正在生成' : '生成失败' }}</p>
-        </template>
-      </div>
+    <Modal :open="!!longPreview" title="详情页长图预览" width="800px" @cancel="longPreview = undefined">
+      <section v-if="longPreview" class="detail-long-preview">
+        <GenerationLoading v-if="previewLoading" label="正在拼接长图…" />
+        <p v-else-if="previewError" role="alert">{{ previewError }}</p>
+        <img v-else-if="previewImageUrl" :src="previewImageUrl" alt="拼接好的详情页长图" />
+      </section>
+      <template #footer>
+        <Button @click="longPreview = undefined">关闭</Button>
+        <Button
+          type="primary"
+          :loading="downloadingLong === longPreview?.id"
+          :disabled="!!downloadingLong || previewLoading || !previewBlob"
+          @click="longPreview && downloadLong(longPreview)"
+        ><DownloadOutlined />下载长图</Button>
+      </template>
     </Modal>
     <ImagePreviewGroup v-if="viewerVisible" :preview="{ visible: viewerVisible, current: viewerIndex, onVisibleChange: (visible: boolean) => viewerVisible = visible, onChange: (current: number) => viewerIndex = current }">
       <Image v-for="(url, index) in previewUrls" :key="`${index}-${url}`" :src="url" class="detail-preview-source" />
@@ -34,18 +44,55 @@
   </div>
 </template>
 <script setup lang="ts">
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import { computed, ref, watch } from 'vue'
-import { Button, Image, Modal, Spin } from 'ant-design-vue'
+import { Button, Image, Modal } from 'ant-design-vue'
 import { DownloadOutlined, WarningOutlined } from '@ant-design/icons-vue'
 import { downloadStudioFile, studioFileName, type StudioWork } from '@/pages/detail-page/api'
 import { useToast } from '@/composables/useToast'
 import { groupDetailWorks, type DetailWorkGroup } from '@/lib/creation/detail-results'
+import {
+  downloadDetailLongImage,
+  detailLongImageWorkIds,
+  requestDetailLongImage,
+} from '@/lib/creation/detail-long-image'
 import StudioParams from '@/components/studio/StudioParams.vue'
 const props = defineProps<{ works: StudioWork[] }>()
 const ImagePreviewGroup = Image.PreviewGroup
 const { addToast } = useToast()
 const groups = computed(() => groupDetailWorks(props.works))
 const longPreview = ref<DetailWorkGroup>()
+const previewBlob = ref<Blob>()
+const previewImageUrl = ref('')
+const previewLoading = ref(false)
+const previewError = ref('')
+// 预览显示合成 PNG，下载复用相同文件；轮询未改变图片时不重复拼接。
+watch(() => longPreview.value ? JSON.stringify(detailLongImageWorkIds(longPreview.value)) : '',
+  async (key, _previous, onCleanup) => {
+    let cancelled = false
+    let objectUrl = ''
+    onCleanup(() => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    })
+    previewBlob.value = undefined
+    previewImageUrl.value = ''
+    previewError.value = ''
+    previewLoading.value = !!key
+    if (!key || !longPreview.value) return
+    const ids = detailLongImageWorkIds(longPreview.value)
+    try {
+      const blob = await requestDetailLongImage(ids)
+      if (cancelled) return
+      objectUrl = URL.createObjectURL(blob)
+      previewBlob.value = blob
+      previewImageUrl.value = objectUrl
+    } catch (error) {
+      if (!cancelled) previewError.value = error instanceof Error ? error.message : '长图拼接失败，请重试'
+    } finally {
+      if (!cancelled) previewLoading.value = false
+    }
+  })
 const viewerVisible = ref(false)
 const viewerIndex = ref(0)
 const previewUrls = ref<string[]>([])
@@ -58,6 +105,7 @@ function openPreview(group: DetailWorkGroup, url?: string) {
   viewerVisible.value = true
 }
 const downloading = ref('')
+const downloadingLong = ref('')
 const pending = (work: StudioWork) => work.status !== 20 && work.status !== 30
 watch(() => props.works, () => {
   if (!groups.value.some(group => group.id === viewerGroupId.value)) viewerVisible.value = false
@@ -76,6 +124,18 @@ async function downloadGroup(group: DetailWorkGroup) {
     }
   } catch (error) { addToast(error instanceof Error ? error.message : '下载失败，请重试', 'error') }
   finally { downloading.value = '' }
+}
+async function downloadLong(group: DetailWorkGroup) {
+  if (downloadingLong.value) return
+  downloadingLong.value = group.id
+  try {
+    await downloadDetailLongImage(group, longPreview.value?.id === group.id ? previewBlob.value : undefined)
+    addToast('已开始下载长图', 'success')
+  } catch (error) {
+    addToast(error instanceof Error ? error.message : '长图下载失败，请重试', 'error')
+  } finally {
+    downloadingLong.value = ''
+  }
 }
 </script>
 <style scoped lang="scss">

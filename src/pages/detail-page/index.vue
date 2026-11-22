@@ -174,6 +174,7 @@
                   :options="resolutionOptions"
                   :disabled="locked"
               /></label>
+              <label v-if="isGptImageFlare">输出格式<Select v-model:value="outputFormat" :options="outputFormatOptions" :disabled="locked" /></label>
             </div>
             <p v-if="referenceError" class="creation-error">{{ referenceError }}</p>
           </section>
@@ -230,9 +231,12 @@ import {
 import DetailPageHistory from './components/DetailPageHistory.vue'
 import type { FashionMode } from '@/pages/detail-page/api'
 
-// ponytail: dev 预填商品图，上线前删或改 env 门控
-const MOCK_REFERENCE_URL =
-  'https://img.alicdn.com/imgextra/i2/4244469338/O1CN0109CWwaB4dcJ2vHAO_!!4611686018427385434-0-item_pic.jpg_.webp'
+// ponytail: dev 预填商品图暂关
+// const MOCK_REFERENCE_URLS = [
+//   'https://xiuxiu-pro-new.meitudata.com/bizshoot/6b001b90e4d7b7m0lsrnq26691.jpeg',
+//   'https://xiuxiu-pro-new.meitudata.com/bizshoot/6b001ba26d52ahgur825jr1292.jpeg',
+//   'https://xiuxiu-pro-new.meitudata.com/bizshoot/6b001ba222921yr52np95z9418.jpeg',
+// ]
 
 const route = useRoute()
 const fashionMode = ref<FashionMode>('wear')
@@ -269,6 +273,13 @@ const modelsError = ref('')
 const modelId = ref<number>()
 const aspect = ref('')
 const resolution = ref('')
+const outputFormat = ref('png')
+const isGptImageFlare = computed(() => currentModel.value?.model === 'gpt-image-2.6-flare')
+const outputFormatOptions = ['png', 'jpeg', 'webp', 'svg', 'gif'].map(value => ({
+  label: ['svg', 'gif'].includes(value) ? `${value}（仅文生图）` : value,
+  value,
+  disabled: ['svg', 'gif'].includes(value),
+}))
 const submitting = ref(false)
 const planning = ref(false)
 const aiWriting = ref(false)
@@ -323,6 +334,7 @@ const points = computed(() => {
   if (!currentModel.value || !outputs.value.length) return null
   return estimateModelPoints(currentModel.value, {
     resolution: resolution.value,
+    outputFormat: isGptImageFlare.value ? outputFormat.value : undefined,
     ratio: aspect.value,
     imageCount: images.value.length,
     count: outputs.value.length * productReferences.value.length,
@@ -423,17 +435,17 @@ watch(
     }
     if (typeof route.query.prompt === 'string')
       requirements.value = route.query.prompt.slice(0, 1000)
-    applyDevReferenceMock()
+    // applyDevReferenceMock()
   },
   { immediate: true }
 )
-function applyDevReferenceMock() {
-  if (!import.meta.env.DEV) return
-  for (const group of uploadGroups.value) {
-    if (group.min > 0) references[group.key] = [MOCK_REFERENCE_URL]
-  }
-}
-watch(uploadGroups, applyDevReferenceMock, { immediate: true })
+// function applyDevReferenceMock() {
+//   if (!import.meta.env.DEV) return
+//   for (const group of uploadGroups.value) {
+//     if (group.min > 0) references[group.key] = MOCK_REFERENCE_URLS.slice(0, group.max)
+//   }
+// }
+// watch(uploadGroups, applyDevReferenceMock, { immediate: true })
 async function loadModels() {
   modelsLoading.value = true
   modelsError.value = ''
@@ -586,6 +598,7 @@ async function generate() {
         requirements: requirements.value,
         prompt: output.prompt.trim(),
         aspectRatio: aspect.value,
+        output_format: isGptImageFlare.value ? outputFormat.value : undefined,
         resolution: resolution.value,
         image: productImages,
       }))

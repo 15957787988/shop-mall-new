@@ -36,6 +36,7 @@ export interface StudioWork {
   creationIndex?: number
   creationLabel?: string
   ratio?: string
+  output_format?: string
   resolution?: string
   duration?: number
   cost?: number
@@ -120,6 +121,7 @@ export function submitStudioImage(body: {
   model?: string
   prompt: string
   aspectRatio?: string
+  output_format?: string
   resolution?: string
   image?: string[]
 }) {
@@ -153,6 +155,7 @@ export interface CollectionItem {
   model?: string
   prompt: string
   aspectRatio?: string
+  output_format?: string
   resolution?: string
   image: string[]
 }

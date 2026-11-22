@@ -55,10 +55,9 @@
     @mouseenter="hovered = true"
     @mouseleave="hovered = false"
   >
-    <div class="image-card__wrap">
+    <div class="image-card__wrap" :aria-busy="showGeneratingState">
       <div v-if="showGeneratingState" class="image-card__status">
-        <Spin />
-        <span>生成中</span>
+        <GenerationLoading />
       </div>
 
       <img
@@ -74,8 +73,7 @@
       </div>
 
       <div v-else class="image-card__status">
-        <Spin />
-        <span>等待生成</span>
+        <span>结果暂不可用</span>
       </div>
 
       <div v-if="showActions && hovered" class="image-card__actions">
@@ -107,9 +105,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Spin } from 'ant-design-vue'
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import { DownloadOutlined, ReloadOutlined } from '@ant-design/icons-vue'
-import { DETAIL_STATUS_FAILED, DETAIL_STATUS_GENERATING } from '../utils/constants'
+import { DETAIL_STATUS_FAILED, DETAIL_STATUS_SUCCESS } from '../utils/constants'
 import type { SaleorImageItem } from '../utils/types'
 
 const props = withDefaults(
@@ -144,7 +142,7 @@ const collageClass = computed(() => {
   return 'image-card__wrap--original-3'
 })
 
-const isGenerating = computed(() => props.image?.status === DETAIL_STATUS_GENERATING)
+const isGenerating = computed(() => props.image != null && props.image.status !== DETAIL_STATUS_SUCCESS && props.image.status !== DETAIL_STATUS_FAILED)
 const isFailed = computed(() => props.image?.status === DETAIL_STATUS_FAILED)
 const showGeneratingState = computed(() => props.regenerating || isGenerating.value)
 const showActions = computed(

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import { Modal } from 'ant-design-vue'
 
 const routes: RouteRecordRaw[] = [
+  { path: '/audio', name: 'Audio', component: () => import('@/pages/audio/index.vue') },
   {
     path: '/design-preview',
     name: 'DesignPreview',

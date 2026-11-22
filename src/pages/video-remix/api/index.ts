@@ -108,6 +108,11 @@ export function getStudioWork(kind: StudioKind, id: number) {
   return http.get<StudioWork | null>(url, { id })
 }
 
+export function deleteStudioWork(_kind: StudioKind, id: number) {
+  const url = '/admin-api/ai/video/delete-my'
+  return http.delete<boolean>(url, { id })
+}
+
 function fileExt(url: string, fallback: string) {
   const match = /\.([a-z0-9]{2,5})$/i.exec(url.split(/[?#]/)[0] || '')
   return (match?.[1] || fallback).toLowerCase()

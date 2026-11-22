@@ -79,6 +79,7 @@
               <label v-if="resolutionOptions.length"
                 >分辨率<Select v-model:value="resolution" :options="resolutionOptions"
               /></label>
+              <label v-if="isGptImageFlare">输出格式<Select v-model:value="outputFormat" :options="outputFormatOptions" :disabled="locked" /></label>
             </div>
             <p v-if="referenceError" class="creation-error">{{ referenceError }}</p>
           </section>
@@ -132,9 +133,9 @@ import { useToast } from '@/composables/useToast'
 import { ApiError } from '@/types/api'
 import ProductRetouchResults from './components/ProductRetouchResults.vue'
 
-// ponytail: dev 预填商品图，上线前删或改 env 门控
-const MOCK_PRODUCT_URL =
-  'https://xiuxiu-pro-new.meitudata.com/bizshoot/6afd6b7430980d0i5z5vyt3896.jpeg'
+// ponytail: dev 预填商品图暂关
+// const MOCK_PRODUCT_URL =
+//   'https://xiuxiu-pro-new.meitudata.com/bizshoot/6afd6b7430980d0i5z5vyt3896.jpeg'
 
 const route = useRoute()
 const { isLoggedIn, openLogin, userInfo } = useAuth()
@@ -153,6 +154,13 @@ const modelsError = ref('')
 const modelId = ref<number>()
 const aspect = ref('')
 const resolution = ref('')
+const outputFormat = ref('png')
+const isGptImageFlare = computed(() => model.value?.model === 'gpt-image-2.6-flare')
+const outputFormatOptions = ['png', 'jpeg', 'webp', 'svg', 'gif'].map(value => ({
+  label: ['svg', 'gif'].includes(value) ? `${value}（仅文生图）` : value,
+  value,
+  disabled: ['svg', 'gif'].includes(value),
+}))
 const planning = ref(false)
 const submitting = ref(false)
 const submitError = ref('')
@@ -192,6 +200,7 @@ const points = computed(() =>
   model.value
     ? estimateModelPoints(model.value, {
         resolution: resolution.value,
+    outputFormat: isGptImageFlare.value ? outputFormat.value : undefined,
         ratio: aspect.value,
         imageCount: images.value.length,
         count: 1,
@@ -259,14 +268,14 @@ watch(
     } catch {
       submitError.value = '无法读取上次请求记录，请先在作品中核对是否已提交。'
     }
-    applyDevProductMock()
+    // applyDevProductMock()
   },
   { immediate: true }
 )
-function applyDevProductMock() {
-  if (!import.meta.env.DEV) return
-  products.value = [MOCK_PRODUCT_URL]
-}
+// function applyDevProductMock() {
+//   if (!import.meta.env.DEV) return
+//   products.value = [MOCK_PRODUCT_URL]
+// }
 async function loadConfig() {
   if (configLoading.value) return
   configLoading.value = true
@@ -302,6 +311,7 @@ function planRequest() {
     optimizations: [...optimizations.value],
     requirements: requirements.value,
     aspectRatio: aspect.value,
+    output_format: isGptImageFlare.value ? outputFormat.value : undefined,
   }
 }
 async function generate() {
@@ -320,6 +330,7 @@ async function generate() {
       request,
       modelId: modelId.value,
       aspect: aspect.value,
+      output_format: isGptImageFlare.value ? outputFormat.value : undefined,
       resolution: resolution.value,
     })
     planning.value = true
@@ -333,6 +344,7 @@ async function generate() {
             request: planRequest(),
             modelId: modelId.value,
             aspect: aspect.value,
+            output_format: isGptImageFlare.value ? outputFormat.value : undefined,
             resolution: resolution.value,
           })
       )
@@ -352,6 +364,7 @@ async function generate() {
           prompt: plan.prompt,
           image: [...images.value],
           aspectRatio: aspect.value,
+          output_format: isGptImageFlare.value ? outputFormat.value : undefined,
           resolution: resolution.value,
         },
       ]

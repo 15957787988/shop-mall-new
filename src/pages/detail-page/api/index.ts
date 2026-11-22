@@ -36,6 +36,7 @@ export interface StudioWork {
   creationIndex?: number
   creationLabel?: string
   ratio?: string
+  output_format?: string
   resolution?: string
   duration?: number
   cost?: number
@@ -135,6 +136,7 @@ export interface CollectionItem {
   model?: string
   prompt: string
   aspectRatio?: string
+  output_format?: string
   resolution?: string
   image: string[]
 }
@@ -165,3 +167,14 @@ export function planDetailPage(body: DetailPagePlanRequest) {
 }
 
 export type FashionMode = 'wear' | 'basic'
+
+/** 由 Java 服务端读取作品并返回合成PNG，浏览器不跨域拉取各张结果图。 */
+export async function composeDetailLongImage(ids: number[]): Promise<Blob> {
+  const blob = await http.getBlob('/admin-api/ai/image/detail-page/long-image', { ids: ids.join(',') })
+  if (blob.type.includes('json')) {
+    const error = JSON.parse(await blob.text()) as { msg?: string; message?: string }
+    throw new Error(error.msg || error.message || '长图拼接失败，请重试')
+  }
+  if (!blob.type.includes('image/png')) throw new Error('未返回有效的PNG长图，请重试')
+  return blob
+}

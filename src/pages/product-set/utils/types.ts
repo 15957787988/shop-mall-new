@@ -52,6 +52,8 @@ export interface SaleorFormData {
   aspectRatio: string;
   /** 对应上游 resolution，如 1k / 2K；无档位时为空 */
   resolution: string;
+  /** GPT Image Ext 输出格式；套图仅支持静态栅格格式 */
+  outputFormat?: string;
   sellingPoints: string;
   structureMode: "smart" | "custom";
   structureConfig: StructureConfigItem[];

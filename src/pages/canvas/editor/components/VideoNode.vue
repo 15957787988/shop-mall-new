@@ -6,6 +6,7 @@ import { uploadCanvasFile } from '../../utils/uploadFile'
 import { getGenCount, resolveVideoDimensionsFromSettings } from '../../utils/resolveNodeGenMeta'
 import { clearGenFailLabel } from '../../utils/genFailPatch'
 import { readVideoDuration, validateVideoSingleDuration } from '../../utils/videoConstraints'
+import { DeleteOutlined } from '@ant-design/icons-vue'
 import { useMessage } from '../../shims/message'
 import { useCanvasVideo } from '../../composables/useCanvasVideo'
 import NodeHeader from './NodeHeader.vue'
@@ -49,6 +50,10 @@ const playing = ref(false)
 const muted = ref(true)
 const currentTime = ref(0)
 const mediaDuration = ref(0)
+const playbackDuration = computed(() => {
+  const duration = mediaDuration.value || Number(props.data?.duration)
+  return Number.isFinite(duration) && duration > 0 ? duration : 0
+})
 const coverVisible = ref(!!props.data?.poster)
 const pointerLeft = ref(false)
 useCanvasVideo(videoRef, props.id)
@@ -83,7 +88,7 @@ function onVideoLeave() {
 }
 
 watch(
-  () => [props.data?.src, props.data?.poster],
+  () => props.data?.src,
   () => {
     coverVisible.value = !!props.data?.poster
     currentTime.value = 0
@@ -91,6 +96,8 @@ watch(
     playing.value = false
   }
 )
+
+watch(() => props.data?.poster, poster => { coverVisible.value = !!poster && !playing.value })
 
 function playFromCover() {
   playSelectedVideo()
@@ -114,7 +121,14 @@ function togglePlayback() {
 
 function seekVideo(event) {
   const time = Number(event.target.value)
-  if (videoRef.value && Number.isFinite(time)) videoRef.value.currentTime = time
+  if (!videoRef.value || !Number.isFinite(time) || !playbackDuration.value) return
+  const target = Math.max(0, Math.min(time, playbackDuration.value))
+  try {
+    videoRef.value.currentTime = target
+    currentTime.value = target
+  } catch {
+    message.error('视频尚未就绪，请稍后拖动进度条')
+  }
 }
 
 function toggleMute() {
@@ -162,6 +176,7 @@ watch(
 // ── Upload ────────────────────────────────────────────────────────────────────
 function clearVideo(e) {
   e.stopPropagation()
+  if (document.fullscreenElement === playerRef.value) return
   fileName.value = ''
   videoAspect.value = ''
   patchData({
@@ -183,20 +198,21 @@ function paintPausedFrame(el) {
   if (el.currentTime < 0.01 && frame > 0) el.currentTime = frame
 }
 
+function syncVideoDuration(el) {
+  const duration = Number(el?.duration)
+  if (disposed || !Number.isFinite(duration) || duration <= 0) return
+  mediaDuration.value = duration
+  if (Math.abs((Number(props.data?.duration) || 0) - duration) > 0.01) patchData({ duration })
+}
+
 function onVideoMeta(e) {
   if (disposed) return
   const el = e?.target
-  mediaDuration.value = Number.isFinite(el?.duration) ? el.duration : 0
+  syncVideoDuration(el)
   if (!el?.videoWidth || !el?.videoHeight) {
     return
   }
   videoAspect.value = `${el.videoWidth} / ${el.videoHeight}`
-  if (Number.isFinite(el.duration) && el.duration > 0) {
-    const cur = Number(props.data?.duration) || 0
-    if (Math.abs(cur - el.duration) > 0.5) {
-      patchData({ duration: el.duration })
-    }
-  }
   paintPausedFrame(el)
   refreshNodeInternals()
 }
@@ -207,6 +223,7 @@ async function applyMediaUrl(url, name = '', duration = 0, completed = false, fi
   const label = clearGenFailLabel('video', props.data?.label)
   const patch = {
     src: url,
+    duration: Number.isFinite(duration) && duration > 0 ? duration : 0,
     poster: '',
     outputValue: url,
     fileName: fileName.value,
@@ -214,9 +231,6 @@ async function applyMediaUrl(url, name = '', duration = 0, completed = false, fi
     fileSizeUrl: url,
     genError: '',
     ...(label ? { label } : {}),
-  }
-  if (Number.isFinite(duration) && duration > 0) {
-    patch.duration = duration
   }
   const commit = completed
     ? (patch) => store.updateNodeResult(props.id, patch, getNodes.value)
@@ -447,10 +461,11 @@ const wrapStyle = computed(() =>
             playsinline
             preload="auto"
             @loadedmetadata="onVideoMeta"
-            @loadeddata="paintPausedFrame($event.target)"
+            @loadeddata="syncVideoDuration($event.target); paintPausedFrame($event.target)"
+            @durationchange="syncVideoDuration($event.target)"
             @play="onVideoPlay"
             @pause="playing = false"
-            @timeupdate="currentTime = $event.target.currentTime"
+            @timeupdate="currentTime = $event.target.currentTime; syncVideoDuration($event.target)"
             @volumechange="muted = $event.target.muted"
           />
           <img
@@ -462,14 +477,19 @@ const wrapStyle = computed(() =>
             @click="playFromCover"
             @error="coverVisible = false"
           />
-          <div class="vid-controls">
-            <button class="overlay-btn overlay-btn-del" @click.stop="clearVideo">✕</button>
+          <div class="vid-controls nodrag nopan" @pointerdown.stop>
+            <button type="button" class="overlay-btn overlay-btn-del" aria-label="移除视频" title="移除视频" @click.stop="clearVideo"><DeleteOutlined /></button>
+            <button type="button" class="overlay-btn fullscreen-exit" aria-label="退出全屏" @click.stop="toggleFullscreen">✕ 退出全屏</button>
           </div>
           <div class="player-controls nodrag nopan nowheel" @pointerdown.stop @click.stop @dblclick.stop>
             <button type="button" :aria-label="playing ? '暂停' : '播放'" @click="togglePlayback">{{ playing ? '❚❚' : '▶' }}</button>
-            <span>{{ formatVideoTime(currentTime) }} / {{ formatVideoTime(mediaDuration) }}</span>
-            <input type="range" aria-label="播放进度" min="0" :max="mediaDuration || 0" step="0.1"
-              :value="currentTime" :disabled="!mediaDuration" @input="seekVideo" />
+            <span>{{ formatVideoTime(currentTime) }}</span>
+            <div class="player-progress">
+              <progress :value="currentTime" :max="playbackDuration || 1" aria-hidden="true" />
+              <input type="range" aria-label="播放进度" min="0" :max="playbackDuration" step="0.1"
+                :value="currentTime" :disabled="!playbackDuration" @input="seekVideo" />
+            </div>
+            <span>{{ playbackDuration ? formatVideoTime(playbackDuration) : '--:--' }}</span>
             <button type="button" :aria-label="muted ? '取消静音' : '静音'" @click="toggleMute">{{ muted ? '静音' : '声音' }}</button>
             <button type="button" aria-label="切换全屏" @click="toggleFullscreen">⛶</button>
           </div>
@@ -623,7 +643,49 @@ const wrapStyle = computed(() =>
     font: inherit;
   }
   span { white-space: nowrap; }
-  input { flex: 1; width: 0; min-width: 20px; accent-color: $text-primary; }
+
+}
+
+.player-progress {
+  position: relative;
+  flex: 1;
+  min-width: 20px;
+  height: 18px;
+  progress {
+    position: absolute;
+    inset: calc(50% - 1px) 0 auto;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 2px;
+    border: 0;
+    border-radius: 1px;
+    overflow: hidden;
+    background: rgba($text-primary, 0.3);
+    color: $text-primary;
+    pointer-events: none;
+    &::-webkit-progress-bar { background: rgba($text-primary, 0.3); }
+    &::-webkit-progress-value { background: $text-primary; }
+    &::-moz-progress-bar { background: $text-primary; }
+  }
+  input {
+    position: absolute;
+    inset: 0;
+    appearance: none;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    &::-webkit-slider-runnable-track { height: 2px; background: transparent; }
+    &::-webkit-slider-thumb { appearance: none; width: 6px; height: 6px; margin-top: -2px; border: 0; border-radius: 50%; background: $text-primary; }
+    &::-moz-range-track { height: 2px; background: transparent; }
+    &::-moz-range-progress { height: 2px; background: transparent; }
+    &::-moz-range-thumb { width: 6px; height: 6px; border: 0; border-radius: 50%; background: $text-primary; }
+    &:focus-visible { outline: 1px solid $accent-primary; outline-offset: 2px; border-radius: 2px; }
+    &:disabled { cursor: default; opacity: 0.5; }
+  }
 }
 
 .vid-wrap:fullscreen {
@@ -631,6 +693,9 @@ const wrapStyle = computed(() =>
   height: 100%;
   max-height: none;
   aspect-ratio: auto;
+  .vid-controls { opacity: 1; top: 16px; right: 16px; }
+  .overlay-btn-del { display: none; }
+  .fullscreen-exit { display: inline-flex; min-height: 36px; align-items: center; padding: 8px 12px; font-size: 14px; }
 }
 
 .node-poster {
@@ -654,6 +719,8 @@ const wrapStyle = computed(() =>
   transition: opacity 0.15s;
   z-index: 2;
 }
+
+.fullscreen-exit { display: none; }
 
 .overlay-btn {
   background: rgba(0, 0, 0, 0.65);

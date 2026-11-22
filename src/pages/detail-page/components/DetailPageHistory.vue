@@ -14,8 +14,7 @@
     </Alert>
     <CreationDemo v-if="!isLoggedIn" :tool="toolCode" />
     <div v-else-if="loading && !works.length" class="results-gallery__empty">
-      <Spin />
-      <p>正在读取作品…</p>
+      <GenerationLoading label="正在读取作品…" />
     </div>
     <CreationDemo v-else-if="!works.length && !error" :tool="toolCode" />
     <DetailPageResults
@@ -26,12 +25,16 @@
       <article v-for="work in works" :key="work.id" class="result-tile">
         <button
           class="result-tile__media"
+          :aria-busy="pending(work)"
           type="button"
-          :disabled="!src(work)"
+          :disabled="pending(work) || !src(work)"
           @click="preview = work"
         >
+          <div v-if="pending(work)" class="result-tile__placeholder">
+            <GenerationLoading />
+          </div>
           <img
-            v-if="kind === 'image' && src(work)"
+            v-else-if="kind === 'image' && src(work)"
             :src="src(work)"
             :alt="work.creationTitle || work.creationLabel || '生成图片'"
             loading="lazy"
@@ -45,10 +48,8 @@
               playsinline /><PlayCircleOutlined class="result-tile__play"
           /></template>
           <span v-if="kind === 'video' && work.duration" class="result-tile__duration">{{ work.duration }}s</span>
-          <div v-if="!src(work)" class="result-tile__placeholder">
-            <Spin v-if="pending(work)" /><WarningOutlined v-else /><span>{{
-              pending(work) ? '正在生成' : '生成失败'
-            }}</span>
+          <div v-if="!pending(work) && !src(work)" class="result-tile__placeholder">
+            <WarningOutlined /><span>{{ work.status === 30 ? '生成失败' : '结果暂不可用' }}</span>
           </div>
         </button>
         <div class="result-tile__info">
@@ -58,13 +59,12 @@
               pending(work) ? '处理中' : work.status === 20 ? '已完成' : '失败'
             }}</span>
           </div>
-          <p v-if="work.prompt" class="result-tile__description">{{ work.prompt }}</p>
           <p class="result-tile__date">{{ formatTime(work.createTime) }} · #{{ work.id }}</p>
           <p v-if="work.errorMessage" class="result-tile__error">{{ work.errorMessage }}</p>
           <div class="result-tile__actions">
             <button
               type="button"
-              :disabled="!src(work) || downloading === work.id"
+              :disabled="pending(work) || !src(work) || downloading === work.id"
               @click="download(work)"
             >
               <DownloadOutlined />{{ downloading === work.id ? '下载中' : '下载' }}</button
@@ -104,7 +104,6 @@
         </div>
         <aside class="studio-preview__prompt">
           <h3>{{ preview.creationLabel || '作品详情' }}</h3>
-          <div class="studio-preview__text">{{ preview.prompt }}</div>
           <StudioParams :work="preview" inset /><StudioReferences :work="preview" />
         </aside>
       </div>
@@ -112,10 +111,11 @@
   </section>
 </template>
 <script setup lang="ts">
+import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Alert, Button, Modal, Spin } from 'ant-design-vue'
+import { Alert, Button, Modal } from 'ant-design-vue'
 import { DeleteOutlined, DownloadOutlined, FolderOpenOutlined, PictureOutlined, PlayCircleOutlined, ReloadOutlined, WarningOutlined } from '@ant-design/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
