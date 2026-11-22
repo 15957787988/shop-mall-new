@@ -20,8 +20,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/space',
-    name: 'Space',
-    component: () => import('@/pages/space/Space.vue'),
+    redirect: '/',
   },
   {
     path: '/team',

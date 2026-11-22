@@ -82,7 +82,6 @@ const navigation = [
   { label: '全部工具', path: '/tools' },
   { label: '无限画布', path: '/canvas/index' },
   { label: '音频创作', path: '/audio' },
-  { label: '我的作品', path: '/space' },
   { label: '资产库', path: '/agent-lib' },
 ]
 function isActive(path: string) {

@@ -53,7 +53,6 @@ import {
   HomeOutlined,
   ToolOutlined,
   AppstoreOutlined,
-  FolderOpenOutlined,
   ContainerOutlined,
   PartitionOutlined,
   CloseOutlined,
@@ -93,7 +92,7 @@ const NAV_GROUPS: NavItem[][] = [
     { href: '/product-set', label: '商品套图', icon: AppstoreOutlined },
     { href: '/video-remix', label: '视频复刻', icon: VideoCameraOutlined },
   ],
-  [{ href: '/space', label: '我的作品', icon: FolderOpenOutlined }, { href: '/agent-lib', label: '资产库', icon: ContainerOutlined }],
+  [{ href: '/agent-lib', label: '资产库', icon: ContainerOutlined }],
 ]
 
 function isNavActive(pathname: string, href: string) {
