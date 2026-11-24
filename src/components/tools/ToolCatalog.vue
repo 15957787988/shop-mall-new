@@ -1,5 +1,5 @@
 <template>
-  <section class="tool-catalog">
+  <section :class="['tool-catalog', { 'tool-catalog--showcase': showcase }]">
     <header>
       <div>
         <h2>{{ title }}</h2>
@@ -19,27 +19,65 @@
       </div>
     </header>
     <div class="tool-catalog__grid">
-      <router-link v-for="tool in visibleTools" :key="tool.code" :to="tool.href" class="tool-card"
-        ><div :class="['tool-card__visual', `tool-card__visual--${tool.tone}`]">
-          <img :src="imageOverrides?.[tool.code] || (tool.cover.startsWith('/') ? tool.cover : `/images/design-preview/${tool.cover}.jpg`)" alt="" loading="lazy" /><span
-            class="tool-card__icon"
-            ><component :is="icons[tool.icon]" /></span
-          ><span class="tool-card__media">{{ tool.media }}创作</span>
-        </div>
-        <div class="tool-card__body">
-          <h3>{{ tool.name }}<ArrowUpOutlined /></h3>
-          <p>{{ tool.description }}</p>
-        </div></router-link
+      <router-link
+        v-for="tool in visibleTools"
+        :key="tool.code"
+        :to="tool.href"
+        :class="['tool-card', `tool-card--${tool.tone}`, `tool-card--${tool.code}`]"
       >
+        <template v-if="showcase">
+          <div class="tool-card__intro">
+            <span class="tool-card__symbol"><component :is="icons[tool.icon]" /></span>
+            <h3>{{ tool.name }}</h3>
+            <p>{{ shortDescriptions[tool.code] || tool.description }}</p>
+          </div>
+          <div class="tool-card__comparison" aria-hidden="true">
+            <div class="tool-card__before">
+              <img :src="coverUrl(tool)" alt="" loading="lazy" /><span>素材</span>
+            </div>
+            <ArrowRightOutlined class="tool-card__flow" />
+            <div class="tool-card__after">
+              <img :src="coverUrl(tool)" alt="" loading="lazy" />
+              <PlayCircleOutlined v-if="tool.media === '视频'" class="tool-card__play" />
+              <span>{{ tool.media === '视频' ? '视频创作' : '效果示例' }}</span>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div :class="['tool-card__visual', `tool-card__visual--${tool.tone}`]">
+            <img :src="coverUrl(tool)" alt="" loading="lazy" />
+            <span class="tool-card__icon"><component :is="icons[tool.icon]" /></span>
+            <span class="tool-card__media">{{ tool.media }}创作</span>
+          </div>
+          <div class="tool-card__body">
+            <h3>{{ tool.name }}<ArrowUpOutlined /></h3>
+            <p>{{ tool.description }}</p>
+          </div>
+        </template>
+      </router-link>
     </div>
   </section>
 </template>
 <script setup lang="ts">
+import { imageAssetUrl } from '@/lib/image-assets'
 import { computed, ref, type Component } from 'vue'
-import { AppstoreOutlined, ArrowUpOutlined, CopyOutlined, LayoutOutlined, PictureOutlined, PlayCircleOutlined, SkinOutlined, UserOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
+import { AppstoreOutlined, ArrowRightOutlined, ArrowUpOutlined, CopyOutlined, LayoutOutlined, PictureOutlined, PlayCircleOutlined, SkinOutlined, UserOutlined, VideoCameraOutlined } from '@ant-design/icons-vue'
 import { creationTools } from '@/lib/creation/catalog'
-interface Props { title?: string; imageOverrides?: Record<string, string> }
-withDefaults(defineProps<Props>(), { title: '为你的商品，找到合适的创作方式' })
+interface Props { title?: string; imageOverrides?: Record<string, string>; showcase?: boolean }
+const props = withDefaults(defineProps<Props>(), { title: '为你的商品，找到合适的创作方式' })
+const shortDescriptions: Record<string, string> = {
+  'product-set': '一张商品图，生成整套展示',
+  'detail-page': '主视觉、卖点与细节，一套完成',
+  'image-remix': '参考喜欢的画面，换上你的商品',
+  'video-remix': '参考原片，演绎新的内容',
+  'product-video': '让商品动起来，展示真实卖点',
+  'product-retouch': '优化光线与背景，呈现商品质感',
+  'virtual-try-on': '同一套搭配，多种穿戴姿态',
+  'fashion-set': '从服装原图，到细节与穿搭',
+}
+function coverUrl(tool: { code: string; cover: string }) {
+  return imageAssetUrl(props.imageOverrides?.[tool.code] || (tool.cover.startsWith('/') ? tool.cover : `/images/design-preview/${tool.cover}.jpg`))
+}
 const filters = ['全部', '图片', '视频']
 const filter = ref('全部')
 const visibleTools = computed(() => creationTools.filter(tool => filter.value === '全部' || tool.media === filter.value))
@@ -131,7 +169,10 @@ const icons: Record<string, Component> = { picture: PictureOutlined, layout: Lay
   &__visual--cream {
     background: var(--color-surface-1);
   }
-  &__icon, &__media { display: none; }
+  &__icon,
+  &__media {
+    display: none;
+  }
   &__icon {
     position: absolute;
     left: 22px;
@@ -209,6 +250,134 @@ const icons: Record<string, Component> = { picture: PictureOutlined, layout: Lay
   .tool-card__media {
     left: 15px;
     bottom: 15px;
+  }
+}
+</style>
+
+<style scoped lang="scss">
+.tool-catalog--showcase {
+  .tool-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 36% minmax(0, 1fr);
+    align-items: center;
+    min-height: 204px;
+    padding: 20px 14px 20px 20px;
+    border-radius: 22px;
+    background: linear-gradient(115deg, var(--color-surface-2), var(--color-surface-0) 80%);
+    &:hover {
+      transform: translateY(-2px);
+      border-color: var(--color-ink-muted);
+    }
+    &:focus-visible {
+      outline: 2px solid var(--color-ink-primary);
+      outline-offset: 3px;
+    }
+    &--peach,
+    &--rose {
+      background: linear-gradient(115deg, var(--color-surface-1), var(--color-surface-0));
+    }
+    &--cream {
+      background: linear-gradient(115deg, var(--color-surface-2), var(--color-surface-0));
+    }
+  }
+  .tool-card__intro {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+  }
+  .tool-card__symbol {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    background: var(--color-surface-0);
+    border-radius: 12px;
+    font-size: 21px;
+    margin-bottom: 14px;
+  }
+  h3 {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 650;
+  }
+  .tool-card__intro p {
+    margin: 0;
+    max-width: 12em;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--color-ink-secondary);
+  }
+  .tool-card__comparison {
+    display: grid;
+    grid-template-columns: 26% 13% minmax(0, 1fr);
+    align-items: center;
+    min-width: 0;
+    gap: 4px;
+  }
+  .tool-card__before,
+  .tool-card__after {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--color-surface-0);
+  }
+  .tool-card__before {
+    height: 88px;
+    align-self: end;
+    margin-bottom: 13px;
+  }
+  .tool-card__after {
+    height: 164px;
+    box-shadow: var(--shadow-card);
+  }
+  .tool-card__comparison img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .tool-card__before img {
+    object-fit: cover;
+    object-position: left center;
+  }
+  .tool-card__after img {
+    object-fit: cover;
+    object-position: right center;
+  }
+  .tool-card__comparison span:not(.anticon) {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 3px 2px;
+    font-size: 9px;
+    text-align: center;
+    color: var(--color-ink-secondary);
+    background: var(--color-surface-0);
+  }
+  .tool-card--product-retouch .tool-card__before img,
+  .tool-card--product-video .tool-card__before img {
+    object-fit: contain;
+    object-position: center;
+  }
+  .tool-card__flow {
+    font-size: 21px;
+    color: var(--color-ink-muted);
+  }
+  .tool-card__play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 30px;
+    color: var(--color-surface-0);
+    background: var(--color-ink-primary);
+    border-radius: 50%;
+  }
+  @media (max-width: 600px) {
+    .tool-card {
+      min-height: 170px;
+    }
   }
 }
 </style>

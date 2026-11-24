@@ -15,14 +15,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/home/Home.vue'),
   },
   {
-    path: '/login',
-    redirect: '/',
-  },
-  {
-    path: '/space',
-    redirect: '/',
-  },
-  {
     path: '/team',
     name: 'Team',
     component: () => import('@/pages/team/Team.vue'),
@@ -46,10 +38,6 @@ const routes: RouteRecordRaw[] = [
     path: '/canvas/index',
     name: 'CanvasIndex',
     component: () => import('@/pages/canvas/index/index.vue'),
-  },
-  {
-    path: '/canvas/editor',
-    redirect: (to) => ({ path: '/canvas', query: to.query }),
   },
   {
     path: '/canvas',
@@ -93,12 +81,6 @@ const routes: RouteRecordRaw[] = [
     meta: { creationWorkspace: true },
   },
   {
-    path: '/video',
-    name: 'AiVideo',
-    component: () => import('@/pages/video/index.vue'),
-    meta: { creationWorkspace: true },
-  },
-  {
     path: '/product-video',
     name: 'ProductVideo',
     component: () => import('@/pages/product-video/index.vue'),
@@ -133,33 +115,6 @@ const routes: RouteRecordRaw[] = [
     name: 'FashionSet',
     component: () => import('@/pages/fashion-set/index.vue'),
     meta: { creationWorkspace: true },
-  },
-  ...Object.entries({
-    '/create/product-set': '/product-set',
-    '/create/video-remix': '/video-remix',
-    '/create/image': '/image',
-    '/create/video': '/video',
-    '/create/product-video': '/product-video',
-    '/create/detail-page': '/detail-page',
-    '/create/image-remix': '/image-remix',
-    '/create/product-retouch': '/product-retouch',
-    '/create/virtual-try-on': '/virtual-try-on',
-    '/create/fashion-set': '/fashion-set',
-    '/ai/image': '/image',
-    '/ai/video': '/video',
-    '/tools/ai-product-image': '/product-set',
-    '/tools/video-replicate': '/video-remix',
-    '/video-replicate': '/video-remix',
-    '/tools/viral-videos': '/viral-videos',
-    '/tools/t7': '/product-video',
-  }).map(([path, target]): RouteRecordRaw => ({
-    path,
-    redirect: (to) => ({ path: target, query: to.query, hash: to.hash }),
-  })),
-  {
-    path: '/tools/try-on',
-    name: 'TryOn',
-    redirect: (to) => ({ path: '/virtual-try-on', query: to.query, hash: to.hash }),
   },
   {
     path: '/tools/:id',

@@ -332,7 +332,7 @@ import {
   type StudioWork,
 } from '@/pages/video-remix/api'
 import StudioParams from '@/components/studio/StudioParams.vue'
-import '@/pages/video/video.scss'
+import '@/pages/product-video/video.scss'
 import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useToast } from '@/composables/useToast'
 import type { CommonAiModelItem } from '@/service/api/ai-model'

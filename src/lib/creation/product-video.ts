@@ -6,7 +6,7 @@ export function buildProductVideoPrompt(
 ): string {
   return [
     '制作商品展示短视频。全部参考图片展示同一商品的不同角度，保持商品的外形、颜色、材质、包装及现有标识一致。',
-    `商品名称：${title.trim()}`,
+    ...(title.trim() ? [`商品名称：${title.trim()}`] : []),
     sellingPoints.trim()
       ? `用户提供的卖点或口播文案：${sellingPoints.trim()}`
       : '没有提供宣传文案，不自行编造口播、字幕或功效承诺。',

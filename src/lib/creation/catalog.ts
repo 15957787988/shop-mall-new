@@ -235,16 +235,16 @@ export const creationTools = [
     href: '/video-remix',
     media: '视频',
   },
-  {
-    code: 'product-video',
-    name: '带货视频',
-    description: '上传商品、描述卖点，制作产品展示短片。',
-    icon: 'play',
-    cover: 'perfume',
-    tone: 'cream',
-    href: '/product-video',
-    media: '视频',
-  },
+  // {
+  //   code: 'product-video',
+  //   name: '带货视频',
+  //   description: '上传商品、描述卖点，制作产品展示短片。',
+  //   icon: 'play',
+  //   cover: 'perfume',
+  //   tone: 'cream',
+  //   href: '/product-video',
+  //   media: '视频',
+  // },
   ...imageTools.slice(3).map((tool) => ({ ...tool, href: `/${tool.code}`, media: '图片' })),
 ]
 

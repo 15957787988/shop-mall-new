@@ -88,7 +88,7 @@ const NAV_GROUPS: NavItem[][] = [
   [
     { href: '/canvas/index', label: '无限画布', icon: PartitionOutlined },
     { href: '/image', label: '图片创作', icon: PictureOutlined },
-    { href: '/video', label: '视频创作', icon: PlayCircleOutlined },
+    { href: '/product-video', label: '视频创作', icon: PlayCircleOutlined },
     { href: '/product-set', label: '商品套图', icon: AppstoreOutlined },
     { href: '/video-remix', label: '视频复刻', icon: VideoCameraOutlined },
   ],

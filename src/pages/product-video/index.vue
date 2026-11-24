@@ -21,12 +21,6 @@
 
           <section v-if="productMode" class="studio__section">
             <h3 class="studio__label">商品信息</h3>
-            <label class="studio__field"
-              >商品名称<Input
-                v-model:value="productTitle"
-                :maxlength="100"
-                placeholder="填写真实商品名称"
-            /></label>
             <label class="studio__field studio__duration"
               >商品卖点 / 口播文案<Input.TextArea
                 v-model:value="productSellingPoints"
@@ -40,12 +34,7 @@
           </section>
           <section class="studio__section">
             <h3 class="studio__label">{{ productMode ? '创作要求' : '提示词' }}</h3>
-            <Input.TextArea
-              v-model:value="prompt"
-              :rows="6"
-              :maxlength="30000"
-              placeholder="描述想要生成的画面"
-            />
+            <ReferencePrompt v-model="prompt" :images="refImages" :videos="refVideos" :audios="refAudios" :rows="6" :maxlength="30000" />
           </section>
 
           <section class="studio__section">
@@ -144,7 +133,9 @@
       </aside>
 
       <main class="studio__results scroll-area" ref="listEl">
-        <div v-if="listLoading && !works.length" class="studio__empty"><GenerationLoading label="正在读取作品…" /></div>
+        <div v-if="listLoading && !works.length" class="studio__empty">
+          <GenerationLoading label="正在读取作品…" />
+        </div>
         <CreationDemo v-else-if="!works.length" :tool="productMode ? 'product-video' : 'video'" />
         <div v-if="works.length" class="studio__gallery-grid">
           <article v-for="item in works" :key="item.id" class="studio__card">
@@ -177,32 +168,14 @@
                     >{{ item.duration }}s</span
                   >
                 </button>
-                <GenerationLoading v-else-if="isPending(item)" :label="`正在生成视频${item.progress ? ` ${item.progress}` : '…'}`" />
+                <GenerationLoading
+                  v-else-if="isPending(item)"
+                  :label="`正在生成视频${item.progress ? ` ${item.progress}` : '…'}`"
+                />
                 <span v-else class="studio__media-wait">{{
                   item.status === 30 ? '生成失败' : '结果暂不可用'
                 }}</span>
               </div>
-              <header class="studio__card-head">
-                <span class="studio__card-model">{{
-                  item.creationTitle ||
-                  item.creationLabel ||
-                  item.modelName ||
-                  item.model ||
-                  '生成结果'
-                }}</span>
-                <span
-                  v-if="statusLabel(item)"
-                  class="studio__card-status"
-                  :data-fail="item.status === 30"
-                >
-                  {{ statusLabel(item) }}
-                </span>
-                <time class="studio__card-time">{{ formatTime(item.createTime) }}</time>
-              </header>
-              <StudioParams :work="item" :show-points="false" />
-              <p class="studio__card-error" :title="item.status === 30 ? item.errorMessage : undefined">
-                {{ item.status === 30 ? item.errorMessage : '' }}
-              </p>
               <div class="studio__actions">
                 <button
                   type="button"
@@ -228,7 +201,13 @@
             </div>
           </article>
         </div>
-        <ResultPagination :current="pageNo" :total="total" :page-size="10" :loading="listLoading" @change="fetchPage" />
+        <ResultPagination
+          :current="pageNo"
+          :total="total"
+          :page-size="10"
+          :loading="listLoading"
+          @change="fetchPage"
+        />
       </main>
     </div>
     <HistoryModal
@@ -269,17 +248,14 @@
 </template>
 
 <script setup lang="ts">
+import ReferencePrompt from '@/components/studio/ReferencePrompt.vue'
 import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { buildProductVideoPrompt } from '@/lib/creation/product-video'
-import {
-  VideoCameraOutlined,
-  DeleteOutlined,
-  DownloadOutlined,
-} from '@ant-design/icons-vue'
+import { VideoCameraOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
@@ -312,7 +288,6 @@ import {
 
 const productMode = true
 const route = useRoute()
-const productTitle = ref('')
 const productSellingPoints = ref('')
 const { isLoggedIn, openLogin } = useAuth()
 const { addToast } = useToast()
@@ -421,7 +396,7 @@ const canSubmit = computed(() => {
   )
     return false
   if (productMode)
-    return maxRefs.value > 0 && refImages.value.length > 0 && !!productTitle.value.trim()
+    return maxRefs.value > 0 && refImages.value.length > 0
   return Boolean(
     prompt.value.trim() ||
       refImages.value.length ||
@@ -432,12 +407,6 @@ const canSubmit = computed(() => {
 
 function isPending(item: StudioWork) {
   return item.status === 0 || item.status === 10 || item.status === 11 || item.status === 12
-}
-
-function statusLabel(item: StudioWork) {
-  if (item.status === 30) return '失败'
-  if (isPending(item)) return '生成中'
-  return ''
 }
 
 function videoSrc(item: StudioWork) {
@@ -465,23 +434,6 @@ function openPreview(item: StudioWork) {
   if (!videoSrc(item)) return
   previewItem.value = item
   previewOpen.value = true
-}
-
-function formatTime(value: StudioWork['createTime']) {
-  if (value == null || value === '') return ''
-  if (typeof value === 'number') {
-    const date = new Date(value)
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())} ${p(
-      date.getHours()
-    )}:${p(date.getMinutes())}`
-  }
-  if (Array.isArray(value)) {
-    const [y, m, d, h = 0, min = 0] = value
-    const p = (n: number) => String(n).padStart(2, '0')
-    return `${y}-${p(m)}-${p(d)} ${p(h)}:${p(min)}`
-  }
-  return value.replace('T', ' ').slice(0, 16)
 }
 
 function syncModelFields() {
@@ -697,7 +649,10 @@ async function fetchPage(nextPage = 1) {
     if (seq !== pageSeq) return
     const list = page.list ?? []
     const lastPage = Math.max(1, Math.ceil(page.total / 10))
-    if (nextPage > lastPage) { await fetchPage(lastPage); return }
+    if (nextPage > lastPage) {
+      await fetchPage(lastPage)
+      return
+    }
     works.value = list
     total.value = page.total ?? 0
     pageNo.value = nextPage
@@ -798,7 +753,7 @@ async function handleGenerate() {
     if (refAudios.value.length) await assertRefAudios(refAudios.value, maxAudioDuration.value)
     const params = buildVideoParams({
       prompt: productMode
-        ? buildProductVideoPrompt(productTitle.value, productSellingPoints.value, prompt.value)
+        ? buildProductVideoPrompt('', productSellingPoints.value, prompt.value)
         : prompt.value,
       aspect: aspect.value,
       duration: duration.value,
@@ -845,7 +800,6 @@ watch(
   () => [productMode, route.query.prompt],
   () => {
     prompt.value = typeof route.query.prompt === 'string' ? route.query.prompt.slice(0, 30000) : ''
-    productTitle.value = ''
     productSellingPoints.value = ''
     refImages.value = []
     refVideos.value = []

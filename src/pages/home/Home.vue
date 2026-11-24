@@ -18,7 +18,7 @@
         </div>
         <form class="home-composer" @submit.prevent="startCreation">
           <label for="home-creative-prompt" class="home-composer__label">创作需求</label>
-        <div class="home-composer__body">
+          <div class="home-composer__body">
             <router-link
               class="home-composer__upload"
               :to="{ path: mode, query: draft.trim() ? { prompt: draft.trim() } : {} }"
@@ -27,7 +27,7 @@
               ><PlusOutlined
             /></router-link>
             <textarea
-          id="home-creative-prompt"
+              id="home-creative-prompt"
               v-model="draft"
               maxlength="1000"
               aria-label="创作需求"
@@ -45,12 +45,15 @@
         </form>
       </div>
     </section>
-    <ToolCatalog title="热门工具" :image-overrides="toolImages" />
+    <ToolCatalog title="热门工具" :image-overrides="toolImages" showcase />
+    <HomeShowcases />
     <HomeExplore />
   </div>
 </template>
 <script setup lang="ts">
+import { imageAssetUrl } from '@/lib/image-assets'
 import { ref } from 'vue'
+import HomeShowcases from './HomeShowcases.vue'
 import { useRouter } from 'vue-router'
 import {
   ArrowRightOutlined,
@@ -66,14 +69,14 @@ const draft = ref('')
 const mode = ref('/image')
 const modes = [
   { label: '图片创作', path: '/image', icon: PictureOutlined },
-  { label: '视频创作', path: '/video', icon: VideoCameraOutlined },
+  { label: '视频创作', path: '/product-video', icon: VideoCameraOutlined },
   { label: '图片复刻', path: '/image-remix', icon: CopyOutlined },
 ]
 const toolImages: Record<string, string> = {
-  'detail-page': '/images/creation-demo/detail.png',
-  'image-remix': '/images/creation-demo/remix.png',
-  'virtual-try-on': '/images/creation-demo/wear.png',
-  'fashion-set': '/images/creation-demo/fashion.png',
+  'detail-page': imageAssetUrl('creation-demo/detail.png'),
+  'image-remix': imageAssetUrl('creation-demo/remix.png'),
+  'virtual-try-on': imageAssetUrl('creation-demo/wear.png'),
+  'fashion-set': imageAssetUrl('creation-demo/fashion.png'),
 }
 function startCreation() {
   router.push({ path: mode.value, query: draft.value.trim() ? { prompt: draft.value.trim() } : {} })
@@ -302,46 +305,10 @@ function startCreation() {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
-.workbench-home :deep(.tool-card) {
-  display: flex;
-  flex-direction: column;
-  border-radius: 14px;
-}
-.workbench-home :deep(.tool-card__visual) {
-  inline-size: 100%;
-  block-size: auto;
-  min-block-size: 0;
-  aspect-ratio: 16 / 11;
-}
-.workbench-home :deep(.tool-card__visual img) {
-  display: block;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: contain;
-  border-radius: 0;
-  transform: none;
-}
-.workbench-home :deep(.tool-card__icon),
-.workbench-home :deep(.tool-card__media) {
-  display: none;
-}
-.workbench-home :deep(.tool-card__body) {
-  padding: 15px 16px;
-  min-inline-size: 0;
-}
-.workbench-home :deep(.tool-card__body h3) {
-  margin: 0;
-  font-size: 15px;
-  gap: 8px;
-}
-.workbench-home :deep(.tool-card__body p) {
-  display: none;
-}
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid var(--color-workbench-blue);
-  outline-offset: 4px;
+@media (max-width: 1450px) {
+  .workbench-home :deep(.tool-catalog__grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 1100px) {
   .workbench-home :deep(.tool-catalog__grid) {
@@ -406,11 +373,8 @@ button:focus-visible {
     min-block-size: 36px;
   }
   .workbench-home :deep(.tool-catalog__grid) {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    grid-template-columns: 1fr;
     gap: 12px;
-  }
-  .workbench-home :deep(.tool-card__body) {
-    padding: 13px 12px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

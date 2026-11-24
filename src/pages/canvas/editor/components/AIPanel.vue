@@ -1131,9 +1131,10 @@ function removeMentionTokens(event) {
 
 function syncPromptHighlight(event) {
   const el = promptHighlightRef.value
-  if (!el) return
-  el.scrollTop = event.target.scrollTop
-  el.scrollLeft = event.target.scrollLeft
+  const textarea = event?.target || getTextarea()
+  if (!el || !textarea) return
+  el.scrollTop = textarea.scrollTop
+  el.scrollLeft = textarea.scrollLeft
 }
 
 // ── @mention dropdown ─────────────────────────────────────────────────────────
@@ -1201,7 +1202,8 @@ function getCaretCoordinates(textarea, position) {
   ]
 
   styleProps.forEach((prop) => {
-    mirror.style.setProperty(prop, style.getPropertyValue(prop))
+    // CSSStyleDeclaration 的驼峰属性直接取值，getPropertyValue 只接受连字符名称。
+    mirror.style[prop] = style[prop]
   })
   mirror.style.width = `${textarea.clientWidth}px`
   mirror.textContent = textarea.value.substring(0, position)
@@ -1225,16 +1227,18 @@ function updateMentionDropPosition() {
   const containerEl = textarea?.closest('.prompt-wrap')
   if (!textarea || !containerEl || mentionStart.value < 0) return
 
-  const coords = getCaretCoordinates(textarea, mentionStart.value + 1)
+  const coords = getCaretCoordinates(textarea, mentionStart.value)
   const containerRect = containerEl.getBoundingClientRect()
   const textareaRect = textarea.getBoundingClientRect()
   const top =
     textareaRect.top - containerRect.top + coords.top - textarea.scrollTop + coords.height + 4
   const left = textareaRect.left - containerRect.left + coords.left - textarea.scrollLeft
 
+  const menuWidth = containerEl.querySelector('.mention-drop')?.offsetWidth || 180
+  const maxLeft = Math.max(0, containerEl.clientWidth - menuWidth)
   mentionDropStyle.value = {
     top: `${top}px`,
-    left: `${Math.max(0, left)}px`,
+    left: `${Math.max(0, Math.min(left, maxLeft))}px`,
   }
 }
 

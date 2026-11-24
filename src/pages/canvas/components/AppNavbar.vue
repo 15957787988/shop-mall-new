@@ -10,7 +10,7 @@ const router = useRouter()
       <span class="brand-name">CanvasFlow</span>
     </div>
     <div class="nav-actions">
-      <button class="nav-btn" @click="router.push('/canvas/editor')">新建项目</button>
+      <button class="nav-btn" @click="router.push('/canvas/index')">新建项目</button>
     </div>
   </nav>
 </template>

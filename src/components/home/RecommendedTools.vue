@@ -51,19 +51,19 @@ const FEATURED_TOOLS = [
   {
     name: 'AI 视频',
     description: '让商品、人物与故事动起来。',
-    href: '/video',
+    href: '/product-video',
     icon: VideoCameraOutlined,
   },
   {
     name: '爆款复刻',
     description: '参考原片节奏，换上你的素材。',
-    href: '/tools/video-replicate',
+    href: '/video-remix',
     icon: CopyOutlined,
   },
   {
     name: '商品套图',
     description: '围绕一件商品，完成成套视觉。',
-    href: '/tools/ai-product-image',
+    href: '/product-set',
     icon: AppstoreOutlined,
   },
 ]

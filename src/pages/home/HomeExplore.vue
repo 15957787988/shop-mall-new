@@ -1,6 +1,6 @@
 <template>
   <div class="home-explore">
-    <section class="recommendations" aria-labelledby="recommendation-title">
+    <!-- <section class="recommendations" aria-labelledby="recommendation-title">
       <header class="explore-heading">
         <div>
           <p>从灵感开始</p>
@@ -15,7 +15,7 @@
           :to="{ path: item.path, query: { prompt: item.prompt } }"
           class="recommendation"
         >
-          <img :src="`/images/design-preview/${item.cover}.jpg`" alt="" loading="lazy" />
+          <img :src="imageAssetUrl(`design-preview/${item.cover}.jpg`)" alt="" loading="lazy" />
           <div>
             <span>{{ item.label }}</span>
             <h3>{{ item.title }}</h3>
@@ -24,7 +24,7 @@
           </div>
         </router-link>
       </div>
-    </section>
+    </section> -->
 
     <section class="inspiration" aria-labelledby="inspiration-title">
       <header class="explore-heading">
@@ -116,6 +116,7 @@
   </div>
 </template>
 <script setup lang="ts">
+import { imageAssetUrl } from '@/lib/image-assets'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button, Modal, Spin } from 'ant-design-vue'
@@ -217,18 +218,17 @@ async function cloneTemplate() {
 watch(detail, () => {
   cloneError.value = ''
 })
-watch(
-  [isLoggedIn, () => userInfo.value?.id],
-  () => {
-    version++
-    templates.value = []
-    detail.value = undefined
-    loading.value = false
-    error.value = ''
-    if (isLoggedIn.value) load()
-  }
-)
-onMounted(() => { void load() })
+watch([isLoggedIn, () => userInfo.value?.id], () => {
+  version++
+  templates.value = []
+  detail.value = undefined
+  loading.value = false
+  error.value = ''
+  if (isLoggedIn.value) load()
+})
+onMounted(() => {
+  void load()
+})
 onBeforeUnmount(() => {
   version++
 })

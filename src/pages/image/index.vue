@@ -18,22 +18,29 @@
 
           <section class="studio__section">
             <h3 class="studio__label">提示词</h3>
-            <Input.TextArea
-              v-model:value="prompt"
-              :rows="6"
-              :maxlength="2000"
-              placeholder="描述想要生成的画面"
-            />
+            <ReferencePrompt v-model="prompt" :images="refImages" :rows="6" :maxlength="2000" />
           </section>
 
           <section class="studio__section">
             <h3 class="studio__label">参数</h3>
             <div class="studio__grid">
-              <label v-if="ratioOptions.length && !(currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'gif')" class="studio__field">
+              <label
+                v-if="
+                  ratioOptions.length &&
+                  !(currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'gif')
+                "
+                class="studio__field"
+              >
                 <span>比例</span>
                 <Select v-model:value="aspect" :options="ratioOptions" />
               </label>
-              <label v-if="resolutionOptions.length && !(currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'gif')" class="studio__field">
+              <label
+                v-if="
+                  resolutionOptions.length &&
+                  !(currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'gif')
+                "
+                class="studio__field"
+              >
                 <span>分辨率</span>
                 <Select v-model:value="resolution" :options="resolutionOptions" />
               </label>
@@ -44,8 +51,18 @@
             </div>
           </section>
 
-          <p v-if="currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'gif'" class="studio__hint">GIF 使用官方费用截图的预设值，完成后按平台实际费用 × 1.1 结算。</p>
-          <p v-if="currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'svg'" class="studio__hint">SVG 使用官方费用截图的预设值，完成后按平台实际费用 × 1.1 多退少补。</p>
+          <p
+            v-if="currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'gif'"
+            class="studio__hint"
+          >
+            GIF 使用官方费用截图的预设值，完成后按平台实际费用 × 1.1 结算。
+          </p>
+          <p
+            v-if="currentModel?.model === 'gpt-image-2.6-flare' && outputFormat === 'svg'"
+            class="studio__hint"
+          >
+            SVG 使用官方费用截图的预设值，完成后按平台实际费用 × 1.1 多退少补。
+          </p>
           <section v-if="maxRefs > 0" class="studio__section">
             <h3 class="studio__label">参考图</h3>
             <ImageUpload
@@ -185,6 +202,7 @@
 </template>
 
 <script setup lang="ts">
+import ReferencePrompt from '@/components/studio/ReferencePrompt.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -195,7 +213,7 @@ import {
   DeleteOutlined,
   DownloadOutlined,
 } from '@ant-design/icons-vue'
-import { Button, Input, Modal, Select } from 'ant-design-vue'
+import { Button, Modal, Select } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import HistoryModal from './components/HistoryModal.vue'

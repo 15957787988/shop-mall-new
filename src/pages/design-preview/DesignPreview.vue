@@ -248,6 +248,7 @@
 </template>
 
 <script setup lang="ts">
+import { imageAssetUrl } from '@/lib/image-assets'
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
@@ -314,7 +315,7 @@ const modes = [
     icon: VideoCameraOutlined,
     model: 'AI 视频',
     output: '商品视频 / 品牌短片',
-    href: '/video',
+    href: '/product-video',
     placeholder: '描述你想拍的视频：主角、场景、动作和运镜，让每一帧都有你的想法……',
     examples: ['一支运动鞋品牌短片', '香水的微距产品镜头', '窗边自然光人物视频'],
   },
@@ -324,7 +325,7 @@ const modes = [
     icon: CopyOutlined,
     model: '视频复刻',
     output: '参考原片 / 替换素材',
-    href: '/tools/video-replicate',
+    href: '/video-remix',
     placeholder: '说说你想保留什么、替换什么，比如：保留参考片的动作和节奏，将人物换成我的参考图……',
     examples: ['保留运镜，替换人物', '保留节奏，替换产品', '用我的素材重新创作'],
   },
@@ -354,7 +355,7 @@ function previewFile(event: Event) {
 onBeforeUnmount(() => {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
 })
-const image = (name: string) => `/images/design-preview/${name}.jpg`
+const image = (name: string) => imageAssetUrl(`design-preview/${name}.jpg`)
 const filters = ['为你推荐', '商品视觉', '视频制作', '人物穿搭']
 const activeFilter = ref('为你推荐')
 const tools = [
@@ -366,7 +367,7 @@ const tools = [
     alt: '暖光下的精华液商品摄影示例',
     tag: 'PRODUCT IMAGES',
     icon: AppstoreOutlined,
-    href: '/tools/ai-product-image',
+    href: '/product-set',
   },
   {
     name: 'AI 视频',
@@ -376,7 +377,7 @@ const tools = [
     alt: '山脉风景影像示例',
     tag: 'MOTION & STORY',
     icon: VideoCameraOutlined,
-    href: '/video',
+    href: '/product-video',
   },
   {
     name: '爆款复刻',
@@ -386,7 +387,7 @@ const tools = [
     alt: '香水广告视觉示例',
     tag: 'CREATIVE REMIX',
     icon: CopyOutlined,
-    href: '/tools/video-replicate',
+    href: '/video-remix',
   },
   {
     name: 'AI 模特',
@@ -404,9 +405,9 @@ const filteredTools = computed(() =>
 )
 const shortcuts = [
   { name: 'AI 制图', href: '/image', icon: PictureOutlined },
-  { name: 'AI 视频', href: '/video', icon: VideoCameraOutlined },
-  { name: '爆款复刻', href: '/tools/video-replicate', icon: CopyOutlined },
-  { name: '商品套图', href: '/tools/ai-product-image', icon: AppstoreOutlined },
+  { name: 'AI 视频', href: '/product-video', icon: VideoCameraOutlined },
+  { name: '爆款复刻', href: '/video-remix', icon: CopyOutlined },
+  { name: '商品套图', href: '/product-set', icon: AppstoreOutlined },
   { name: '人物穿搭', href: '/tools/try-on', icon: SkinOutlined },
   { name: '无限画布', href: '/canvas/index', icon: ExpandOutlined },
   { name: '我的素材', href: '/agent-lib', icon: FolderOpenOutlined },
@@ -425,14 +426,14 @@ const inspirations = [
     category: '运动 · 商品视觉',
     image: 'shoe',
     alt: '红色运动鞋的产品摄影',
-    href: '/tools/ai-product-image',
+    href: '/product-set',
   },
   {
     title: '把香气，拍成一种心情。',
     category: '美妆 · 品牌表达',
     image: 'perfume',
     alt: '香水瓶的静物摄影',
-    href: '/video',
+    href: '/product-video',
   },
 ]
 </script>

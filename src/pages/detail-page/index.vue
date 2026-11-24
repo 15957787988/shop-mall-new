@@ -61,8 +61,8 @@
             <Select v-model:value="aspect" :options="ratioOptions" class="fashion-ratio" />
           </section>
           <section v-if="!isFashion" class="creation-section">
-            <h3>商品信息<small>建议填写真实卖点</small></h3>
-            <label
+            <h3 v-if="tool.code !== 'detail-page'">商品信息<small>建议填写真实卖点</small></h3>
+            <label v-if="tool.code !== 'detail-page'"
               >商品 / 品牌名称<Input
                 v-model:value="title"
                 :maxlength="100"
@@ -174,7 +174,12 @@
                   :options="resolutionOptions"
                   :disabled="locked"
               /></label>
-              <label v-if="isGptImageFlare">输出格式<Select v-model:value="outputFormat" :options="outputFormatOptions" :disabled="locked" /></label>
+              <label v-if="isGptImageFlare"
+                >输出格式<Select
+                  v-model:value="outputFormat"
+                  :options="outputFormatOptions"
+                  :disabled="locked"
+              /></label>
             </div>
             <p v-if="referenceError" class="creation-error">{{ referenceError }}</p>
           </section>
