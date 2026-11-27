@@ -42,7 +42,7 @@
               <PlayCircleOutlined />
             </span>
 
-            <div v-if="isShopVideoFinished(item.videoStatus)" class="t8__gallery-hover">
+            <div v-if="isShopVideoFinished(item.videoStatus)" class="t8__gallery-hover media-actions">
               <button
                 type="button"
                 class="t8__gallery-action-btn"
@@ -50,10 +50,10 @@
               >
                 重新生成
               </button>
-              <button
+              <button aria-label="下载" title="下载"
                 v-if="item.videoUrl"
                 type="button"
-                class="t8__gallery-action-btn"
+                class="t8__gallery-action-btn media-action"
                 @click.stop="emit('download', item)"
               >
                 <DownloadOutlined />

@@ -150,15 +150,19 @@
           </section>
           <section class="creation-section">
             <h3>{{ isFashionWear ? '穿戴生成设置' : '生成设置' }}</h3>
-            <label
-              >{{ isFashionWear ? '穿戴生图模型' : '图片模型'
-              }}<Select
-                v-model:value="modelId"
-                :options="modelOptions"
-                :loading="modelsLoading"
-                :disabled="locked"
-                placeholder="请选择模型"
-            /></label>
+            <div class="creation-fields">
+              <label
+                >模型<Select
+                  v-model:value="modelId"
+                  :options="modelOptions"
+                  :loading="modelsLoading"
+                  :disabled="locked"
+                  placeholder="请选择模型"
+              /></label>
+              <label v-if="resolutionOptions.length"
+                >分辨率<Select v-model:value="resolution" :options="resolutionOptions" :disabled="locked"
+              /></label>
+            </div>
             <p v-if="modelsError" class="creation-error">
               {{ modelsError }} <button type="button" @click="loadModels">重试</button>
             </p>
@@ -168,12 +172,7 @@
                   v-model:value="aspect"
                   :options="ratioOptions"
                   :disabled="locked" /></label
-              ><label v-if="resolutionOptions.length"
-                >清晰度<Select
-                  v-model:value="resolution"
-                  :options="resolutionOptions"
-                  :disabled="locked"
-              /></label>
+              >
               <label v-if="isGptImageFlare"
                 >输出格式<Select
                   v-model:value="outputFormat"

@@ -115,7 +115,7 @@ async function start() {
     :aria-busy="busy || active" @pointerdown.stop @mousedown.stop @click.stop @keydown.stop @wheel.stop>
     <header class="depth-heading">
       <h3>深度提取 <span>免费</span></h3>
-      <button class="depth-link" :disabled="checking" @click="refreshConfig">{{ checking ? '检查中…' : '刷新' }}</button>
+
     </header>
     <div class="depth-quality" role="group" aria-label="清晰度">
       <p>清晰度</p>

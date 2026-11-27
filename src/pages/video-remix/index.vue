@@ -27,12 +27,6 @@
                   ><span>MP4 / MOV · 最大 50MB · 仅用于豆包反推，不限制原片时长</span>
                 </div>
               </UploadFile>
-              <video
-                v-if="materials.videoUrl"
-                :src="materials.videoUrl"
-                controls
-                preload="metadata"
-              />
             </fieldset>
             <div class="replicate__section-heading replicate__optional-heading">
               <h3>替换参考图</h3>
@@ -117,7 +111,7 @@
                   >比例<Select v-model:value="aspect" :options="ratioOptions"
                 /></label>
                 <label v-if="resolutionOptions.length"
-                  >清晰度<Select v-model:value="resolution" :options="resolutionOptions"
+                  >分辨率<Select v-model:value="resolution" :options="resolutionOptions"
                 /></label>
               </div>
               <label v-if="currentModel"
@@ -214,13 +208,14 @@
                     @loadedmetadata="paintThumb"
                   />
                   <span class="studio__play" aria-hidden="true" />
+                  <span v-if="workFor(task).duration" class="studio__duration-badge">{{ workFor(task).duration }}s</span>
                 </button>
                 <span v-else class="studio__media-wait">{{ taskDescription(task) }}</span>
               </div>
-              <div class="studio__actions">
+              <div class="studio__actions media-actions">
                 <button
                   type="button"
-                  class="studio__action"
+                  class="studio__action media-action"
                   title="下载"
                   aria-label="下载"
                   :disabled="
@@ -234,7 +229,7 @@
                 </button>
                 <button
                   type="button"
-                  class="studio__action studio__action--danger"
+                  class="studio__action studio__action--danger media-action media-action--danger"
                   title="删除"
                   aria-label="删除作品"
                   @click="removeTask(task)"
@@ -265,8 +260,8 @@
       <div v-if="previewTask" class="studio-preview__body">
         <div class="studio-preview__stage">
           <video :src="previewTask.resultUrl || ''" controls autoplay playsinline />
-          <div class="studio-preview__bar">
-            <button type="button" :disabled="!previewTask.resultUrl || downloadingId === previewTask.id" @click="handleDownload(previewTask)"><DownloadOutlined />下载</button>
+          <div class="studio-preview__bar media-actions">
+            <button class="media-action" aria-label="下载" title="下载" type="button" :disabled="!previewTask.resultUrl || downloadingId === previewTask.id" @click="handleDownload(previewTask)"><DownloadOutlined />下载</button>
           </div>
         </div>
         <StudioPromptDetails v-if="previewWork" :work="previewWork" :source-video-url="previewTask.sourceVideoUrl" />

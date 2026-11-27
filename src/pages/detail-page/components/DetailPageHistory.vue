@@ -7,7 +7,7 @@
         </h2>
         <p>任务保存在账户中，离开页面后可继续查看。</p>
       </div>
-      <Button :loading="loading" @click="load(1)"><ReloadOutlined />刷新</Button>
+
     </header>
     <Alert v-if="error" type="warning" show-icon :message="error" class="results-gallery__alert">
       <template #action><Button size="small" :loading="loading" @click="load(1)">重试</Button></template>
@@ -61,14 +61,14 @@
           </div>
           <p class="result-tile__date">{{ formatTime(work.createTime) }} · #{{ work.id }}</p>
           <p v-if="work.errorMessage" class="result-tile__error">{{ work.errorMessage }}</p>
-          <div class="result-tile__actions">
-            <button
+          <div class="result-tile__actions media-actions">
+            <button class="media-action" aria-label="下载" title="下载"
               type="button"
               :disabled="pending(work) || !src(work) || downloading === work.id"
               @click="download(work)"
             >
               <DownloadOutlined />{{ downloading === work.id ? '下载中' : '下载' }}</button
-            ><button
+            ><button class="media-action media-action--danger" title="删除"
               type="button"
               :disabled="pending(work)"
               @click="remove(work)"
@@ -98,8 +98,8 @@
             controls
             playsinline
           />
-          <div class="studio-preview__bar">
-            <button type="button" @click="download(preview)"><DownloadOutlined />下载</button>
+          <div class="studio-preview__bar media-actions">
+            <button class="media-action" aria-label="下载" title="下载" type="button" @click="download(preview)"><DownloadOutlined />下载</button>
           </div>
         </div>
         <aside class="studio-preview__prompt">
@@ -116,7 +116,7 @@ import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Alert, Button, Modal } from 'ant-design-vue'
-import { DeleteOutlined, DownloadOutlined, FolderOpenOutlined, PictureOutlined, PlayCircleOutlined, ReloadOutlined, WarningOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, DownloadOutlined, FolderOpenOutlined, PictureOutlined, PlayCircleOutlined, WarningOutlined } from '@ant-design/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { deleteStudioWork, downloadStudioFile, getStudioWork, pageStudioWorks, studioFileName, type StudioKind, type StudioWork } from '@/pages/detail-page/api'
@@ -160,7 +160,7 @@ async function poll() {
     error.value = ''
     schedule()
   } catch {
-    if (token === version) error.value = '状态更新中断，请点击刷新核对原任务；无需重新提交生成。'
+    if (token === version) error.value = '状态更新中断，请点击重试核对原任务；无需重新提交生成。'
   }
 }
 async function load(no = 1) {

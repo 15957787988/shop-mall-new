@@ -92,3 +92,8 @@ export async function downloadShopImageGroupZip(
   const blob = await http.getBlob(`${PREFIX}/download-zip`, { groupId })
   return { blob, fileName: `shop_images_${groupId}.zip` }
 }
+
+/** 删除本人套图中的单张图片。 */
+export function deleteShopImage(id: number) {
+  return http.delete<boolean>(`${PREFIX}/delete-image`, { id })
+}

@@ -12,7 +12,7 @@
       将复用该图片的原始提示词重新发起生成，可选择新的模型。
     </p>
     <label class="regenerate-modal__field">
-      <span>生成模型</span>
+      <span>模型</span>
       <Select
         v-model:value="selectedModelId"
         :options="modelSelectOptions"

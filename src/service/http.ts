@@ -2,7 +2,6 @@ import axios, { type AxiosRequestConfig } from 'axios'
 import NProgress from 'nprogress'
 import { ApiError, type CommonResult } from '@/types/api'
 import { getAccessToken } from '@/lib/auth/storage'
-import { getTenantId } from '@/lib/auth/tenant'
 import { apiEnv } from '@/service/env'
 
 axios.defaults.baseURL = apiEnv.baseUrl
@@ -48,7 +47,6 @@ export function buildApiHeaders(
   if (!headers['Content-Type']) {
     headers['Content-Type'] = 'application/json'
   }
-  headers['tenant-id'] = getTenantId()
   if (!options?.skipAuth) {
     const token = getAccessToken()
     if (token) {

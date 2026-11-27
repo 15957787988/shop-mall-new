@@ -2,8 +2,6 @@
   <div
     v-if="mode === 'original'"
     class="image-card image-card--original"
-    @mouseenter="hovered = true"
-    @mouseleave="hovered = false"
   >
     <div
       class="image-card__wrap image-card__wrap--original"
@@ -52,8 +50,6 @@
   <div
     v-else-if="image"
     class="image-card"
-    @mouseenter="hovered = true"
-    @mouseleave="hovered = false"
   >
     <div class="image-card__wrap" :aria-busy="showGeneratingState">
       <div v-if="showGeneratingState" class="image-card__status">
@@ -76,21 +72,21 @@
         <span>结果暂不可用</span>
       </div>
 
-      <div v-if="showActions && hovered" class="image-card__actions">
+      <div v-if="showActions" class="image-card__actions media-actions">
         <button
-          v-if="showRegenerate"
           type="button"
-          class="image-card__action"
-          title="重新生成"
-          :disabled="regenerating"
-          @click.stop="emit('regenerate', image)"
+          class="image-card__action media-action media-action--danger"
+          title="删除"
+          aria-label="删除图片"
+          :disabled="deleting"
+          @click.stop="emit('remove', image)"
         >
-          <ReloadOutlined :spin="regenerating" />
+          <DeleteOutlined />
         </button>
-        <button
+        <button aria-label="下载"
           v-if="image.picUrl"
           type="button"
-          class="image-card__action"
+          class="image-card__action media-action"
           title="下载"
           @click.stop="emit('download', image)"
         >
@@ -104,9 +100,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import GenerationLoading from '@/components/ui/GenerationLoading.vue'
-import { DownloadOutlined, ReloadOutlined } from '@ant-design/icons-vue'
+import { DownloadOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { DETAIL_STATUS_FAILED, DETAIL_STATUS_SUCCESS } from '../utils/constants'
 import type { SaleorImageItem } from '../utils/types'
 
@@ -115,20 +111,18 @@ const props = withDefaults(
     image?: SaleorImageItem
     originalUrls?: string[]
     mode?: 'generated' | 'original'
-    regenerating?: boolean
-    showRegenerate?: boolean
+    deleting?: boolean
   }>(),
-  { mode: 'generated', regenerating: false, showRegenerate: true, originalUrls: () => [] }
+  { mode: 'generated', deleting: false, originalUrls: () => [] }
 )
 
 const emit = defineEmits<{
   download: [image: SaleorImageItem]
-  regenerate: [image: SaleorImageItem]
+  remove: [image: SaleorImageItem]
   preview: [image: SaleorImageItem]
   previewOriginal: [index: number]
 }>()
 
-const hovered = ref(false)
 
 const displayUrls = computed(() => (props.originalUrls ?? []).slice(0, 3))
 const collageClass = computed(() => {
@@ -144,16 +138,13 @@ const collageClass = computed(() => {
 
 const isGenerating = computed(() => props.image != null && props.image.status !== DETAIL_STATUS_SUCCESS && props.image.status !== DETAIL_STATUS_FAILED)
 const isFailed = computed(() => props.image?.status === DETAIL_STATUS_FAILED)
-const showGeneratingState = computed(() => props.regenerating || isGenerating.value)
-const showActions = computed(
-  () =>
-    !props.regenerating &&
-    (Boolean(props.image?.picUrl) || (props.showRegenerate && isFailed.value))
-)
+const showGeneratingState = computed(() => isGenerating.value)
+const showActions = computed(() => !isGenerating.value)
 </script>
 
 <style scoped lang="scss">
 .image-card {
+  min-width: 0;
   &__wrap {
     position: relative;
     aspect-ratio: 1;

@@ -21,7 +21,7 @@
           >
         </div>
         <div class="asset-library__actions">
-          <Button :loading="loading" @click="load">刷新</Button>
+
           <Button type="primary" :loading="uploading" :disabled="!isLoggedIn" @click="uploadInput?.click()"
             ><UploadOutlined />上传素材</Button
           >
@@ -92,10 +92,10 @@
               <div v-else class="asset-library__audio">
                 <SoundOutlined /><audio :src="asset.url" preload="none" controls />
               </div>
-              <div v-if="!selectable" class="asset-library__card-actions">
+              <div v-if="!selectable" class="asset-library__card-actions media-actions">
                 <button
                   type="button"
-                  class="asset-library__action"
+                  class="asset-library__action media-action"
                   title="下载"
                   aria-label="下载"
                   :disabled="!!downloadingKey"
@@ -106,7 +106,7 @@
                 <Popconfirm title="仅移除资产记录，保留原文件，确定移除？" @confirm="remove(asset)">
                   <button
                     type="button"
-                    class="asset-library__action asset-library__action--danger"
+                    class="asset-library__action asset-library__action--danger media-action media-action--danger"
                     title="移除"
                     aria-label="移除"
                     :disabled="busyKey === key(asset)"
@@ -118,7 +118,7 @@
             </div>
             <div v-if="!selectable" class="asset-library__caption">
               <strong :title="asset.name">{{ asset.name || kindLabel(asset.kind) }}</strong
-              ><span>{{ asset.createdAt?.replace('T', ' ') }}</span>
+              ><time v-if="asset.createdAt">{{ formatDateTime(asset.createdAt) }}</time>
             </div>
           </article>
         </div>
@@ -128,14 +128,13 @@
         />
       </Spin>
       <footer class="asset-library__footer">
-        <Pagination
+        <ResultPagination
           v-if="!selectable || total > 24"
-          v-model:current="pageNo"
+          :current="pageNo"
           :total="total"
           :page-size="24"
-          :show-size-changer="false"
-          size="small"
-          @change="load"
+          :loading="loading"
+          @change="pageNo = $event; load()"
         />
         <div v-if="selectable" class="asset-library__selection">
           <div class="asset-library__selected" aria-label="已选素材">
@@ -176,8 +175,10 @@
 </template>
 
 <script setup lang="ts">
+import ResultPagination from '@/components/ui/ResultPagination.vue'
+import { formatDateTime } from '@/lib/formatTime'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Alert, Button, Empty, Pagination, Popconfirm, Select, Spin } from 'ant-design-vue'
+import { Alert, Button, Empty, Popconfirm, Select, Spin } from 'ant-design-vue'
 import {
   DeleteOutlined,
   DownloadOutlined,

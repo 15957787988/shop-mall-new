@@ -1,15 +1,15 @@
 <template>
   <div class="result-toolbar">
     <h2 class="result-toolbar__title">生成结果：</h2>
-    <div class="result-toolbar__actions">
+    <div class="result-toolbar__actions media-actions">
       <Checkbox :checked="allSelected" :indeterminate="indeterminate" @change="toggleAll">
         全选
       </Checkbox>
-      <Button size="small" :disabled="!hasSelection" @click="emit('batch-download')">
+      <Button class="media-action" aria-label="下载" title="下载" size="small" :disabled="!hasSelection" @click="emit('batch-download')">
         <DownloadOutlined />
         批量下载
       </Button>
-      <Button
+      <Button class="media-action media-action--danger" aria-label="删除" title="删除"
         size="small"
         danger
         :disabled="!hasSelection"

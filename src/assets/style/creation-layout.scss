@@ -164,3 +164,48 @@
     }
   }
 }
+
+// 图片、视频和音频共用紧凑的方形上传入口。
+#app .image-upload .image-upload__empty,
+#app .upload-file--media .ant-upload.ant-upload-drag {
+  width: min(128px, 100%);
+  height: 128px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-surface-1);
+  box-shadow: none;
+}
+#app .image-upload .image-upload__empty {
+  gap: 12px;
+  .image-upload__empty-icon {
+    width: auto;
+    height: auto;
+    background: transparent;
+    box-shadow: none;
+    font-size: 24px;
+    color: var(--color-ink-secondary);
+  }
+  .image-upload__empty-title { font-size: 12px; font-weight: 600; }
+  .image-upload__empty-desc { display: none; }
+}
+#app .upload-file--media {
+  .ant-upload-btn { padding: 0; }
+  .upload-file__tile {
+    display: flex;
+    height: 128px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--color-ink-primary);
+    font-size: 12px;
+    font-weight: 600;
+    .anticon { font-size: 24px; color: var(--color-ink-secondary); }
+  }
+}
+#app .image-upload .image-upload__empty:hover,
+#app .upload-file--media .ant-upload.ant-upload-drag:not(.ant-upload-disabled):hover {
+  background: var(--color-surface-2);
+}

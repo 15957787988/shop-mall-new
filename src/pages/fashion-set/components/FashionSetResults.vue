@@ -2,7 +2,7 @@
   <section class="fashion-results">
     <header v-if="!hideHeading" class="fashion-results__heading">
       <h2>{{ title || '服装组图记录' }}</h2>
-      <Button :loading="loading" @click="load(1)"><ReloadOutlined />刷新</Button>
+
     </header>
     <Alert v-if="error" type="warning" show-icon :message="error" class="fashion-results__alert">
       <template #action
@@ -22,7 +22,7 @@
             <strong>{{ group.works[0].creationTitle || '服装组图' }}</strong>
             <StudioParams :work="group.works[0]" inline :show-points="false" />
           </div>
-          <Button
+          <Button class="media-group-download" aria-label="下载整组图片" title="下载整组图片"
             size="small"
             :loading="downloadingGroup === group.id"
             :disabled="loading || !!downloadingGroup || !group.works.some((work) => !!work.picUrl)"
@@ -60,8 +60,8 @@
               </span>
               <span class="fashion-image__label">{{ work.creationLabel || '生成图片' }}</span>
             </button>
-            <div class="fashion-image__actions">
-              <button
+            <div class="fashion-image__actions media-actions">
+              <button class="media-action"
                 type="button"
                 :aria-label="`下载${work.creationLabel || '图片'}`"
                 title="下载"
@@ -70,7 +70,7 @@
               >
                 <DownloadOutlined />
               </button>
-              <button
+              <button class="media-action media-action--danger"
                 type="button"
                 :aria-label="`删除${work.creationLabel || '图片'}`"
                 title="删除"
@@ -124,7 +124,6 @@ import { Alert, Button, Image, Modal } from 'ant-design-vue'
 import {
   DeleteOutlined,
   DownloadOutlined,
-  ReloadOutlined,
   WarningOutlined,
 } from '@ant-design/icons-vue'
 import { useAuth } from '@/composables/useAuth'
@@ -237,7 +236,7 @@ async function poll() {
     error.value = ''
     schedule()
   } catch {
-    if (token === version) error.value = '状态更新中断，请点击刷新核对原任务；无需重新提交生成。'
+    if (token === version) error.value = '状态更新中断，请点击重试核对原任务；无需重新提交生成。'
   }
 }
 async function load(no = 1) {
@@ -387,7 +386,7 @@ onBeforeUnmount(() => {
   }
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
     gap: var(--creation-item-gap);
   }
 }

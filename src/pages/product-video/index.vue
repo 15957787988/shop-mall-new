@@ -21,7 +21,7 @@
 
           <section class="studio__section">
             <h3 class="studio__label">提示词</h3>
-            <ReferencePrompt v-model="prompt" :images="refImages" :videos="refVideos" :audios="refAudios" :rows="6" :maxlength="30000" />
+            <ReferencePrompt ref="promptEditor" v-model="prompt" :images="refImages" :videos="refVideos" :audios="refAudios" :rows="6" :maxlength="30000" />
           </section>
 
           <section class="studio__section">
@@ -123,7 +123,7 @@
         <div v-if="listLoading && !works.length" class="studio__empty">
           <GenerationLoading label="正在读取作品…" />
         </div>
-        <CreationDemo v-else-if="!works.length" :tool="productMode ? 'product-video' : 'video'" />
+        <CreationStarter v-else-if="!works.length" kind="video" @use-prompt="useExamplePrompt" />
         <div v-if="works.length" class="studio__gallery-grid">
           <article v-for="item in works" :key="item.id" class="studio__card">
             <div class="studio__card-body">
@@ -163,10 +163,10 @@
                   item.status === 30 ? '生成失败' : '结果暂不可用'
                 }}</span>
               </div>
-              <div class="studio__actions">
+              <div class="studio__actions media-actions">
                 <button
                   type="button"
-                  class="studio__action"
+                  class="studio__action media-action"
                   title="下载"
                   aria-label="下载"
                   :disabled="!videoSrc(item) || downloadingId === item.id"
@@ -176,7 +176,7 @@
                 </button>
                 <button
                   type="button"
-                  class="studio__action studio__action--danger"
+                  class="studio__action studio__action--danger media-action media-action--danger"
                   title="删除"
                   aria-label="删除"
                   :disabled="deletingId === item.id"
@@ -213,8 +213,8 @@
       <div v-if="previewItem" class="studio-preview__body">
         <div class="studio-preview__stage">
           <video :src="videoSrc(previewItem)" controls autoplay playsinline />
-          <div class="studio-preview__bar">
-            <button
+          <div class="studio-preview__bar media-actions">
+            <button class="media-action" aria-label="下载" title="下载"
               type="button"
               :disabled="downloadingId === previewItem.id"
               @click="handleDownload(previewItem)"
@@ -234,9 +234,9 @@
 import StudioPromptDetails from '@/components/studio/StudioPromptDetails.vue'
 import ReferencePrompt from '@/components/studio/ReferencePrompt.vue'
 import GenerationLoading from '@/components/ui/GenerationLoading.vue'
-import CreationDemo from '@/components/CreationDemo.vue'
+import CreationStarter from '@/components/studio/CreationStarter.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { VideoCameraOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
 import { Button, Modal, Select, Slider } from 'ant-design-vue'
@@ -276,6 +276,13 @@ const models = ref<CommonAiModelItem[]>([])
 const modelsLoading = ref(true)
 const modelsError = ref('')
 const modelId = ref<number>()
+const promptEditor = ref<InstanceType<typeof ReferencePrompt>>()
+async function useExamplePrompt(text: string) {
+  prompt.value = text
+  await nextTick()
+  promptEditor.value?.focus()
+  addToast('已填入提示词，可修改后生成', 'success')
+}
 const prompt = ref('')
 const aspect = ref('')
 const resolution = ref('')

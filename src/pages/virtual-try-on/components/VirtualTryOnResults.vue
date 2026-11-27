@@ -7,7 +7,7 @@
         </h2>
         <p>任务保存在账户中，离开页面后可继续查看。</p>
       </div>
-      <Button :loading="loading" @click="load(1)"><ReloadOutlined />刷新</Button>
+
     </header>
     <Alert v-if="error" type="warning" show-icon :message="error" class="results-gallery__alert">
       <template #action><Button size="small" :loading="loading" @click="load(1)">重试</Button></template>
@@ -49,23 +49,14 @@
           </div>
         </button>
         <div class="result-tile__info">
-          <div class="result-tile__title">
-            <strong>{{ work.creationTitle || work.creationLabel || work.modelName || work.model || '创作作品' }}</strong
-            ><span :class="['result-tile__state', { failed: work.status === 30 }]">{{
-              pending(work) ? '处理中' : work.status === 20 ? '已完成' : '失败'
-            }}</span>
-          </div>
-          <StudioParams :work="work" :show-points="false" />
-          <p class="result-tile__date">{{ formatTime(work.createTime) }} · #{{ work.id }}</p>
-          <p v-if="work.errorMessage" class="result-tile__error">{{ work.errorMessage }}</p>
-          <div class="result-tile__actions">
-            <button
+          <div class="result-tile__actions media-actions">
+            <button class="media-action" aria-label="下载" title="下载"
               type="button"
               :disabled="pending(work) || !src(work) || downloading === work.id"
               @click="download(work)"
             >
               <DownloadOutlined />{{ downloading === work.id ? '下载中' : '下载' }}</button
-            ><button
+            ><button class="media-action media-action--danger" title="删除"
               type="button"
               :disabled="pending(work)"
               @click="remove(work)"
@@ -95,25 +86,27 @@
             controls
             playsinline
           />
-          <div class="studio-preview__bar">
-            <button type="button" @click="download(preview)"><DownloadOutlined />下载</button>
+          <div class="studio-preview__bar media-actions">
+            <button class="media-action" aria-label="下载" title="下载" type="button" @click="download(preview)"><DownloadOutlined />下载</button>
           </div>
         </div>
         <aside class="studio-preview__prompt">
           <h3>{{ preview.creationLabel || '作品详情' }}</h3>
           <StudioParams :work="preview" inset /><StudioReferences :work="preview" />
+          <StudioWorkDate :value="preview.createTime" />
         </aside>
       </div>
     </Modal>
   </section>
 </template>
 <script setup lang="ts">
+import StudioWorkDate from '@/components/studio/StudioWorkDate.vue'
 import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Alert, Button, Modal } from 'ant-design-vue'
-import { DeleteOutlined, DownloadOutlined, FolderOpenOutlined, PictureOutlined, PlayCircleOutlined, ReloadOutlined, WarningOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, DownloadOutlined, FolderOpenOutlined, PictureOutlined, PlayCircleOutlined, WarningOutlined } from '@ant-design/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { deleteStudioWork, downloadStudioFile, getStudioWork, pageStudioWorks, studioFileName, type StudioKind, type StudioWork } from '@/pages/virtual-try-on/api'
@@ -137,11 +130,6 @@ let version = 0
 let timer: ReturnType<typeof setTimeout> | undefined
 const pending = (work: StudioWork) => work.status !== 20 && work.status !== 30
 const src = (work: StudioWork) => kind === 'video' ? work.videoUrl || '' : work.picUrl || ''
-function formatTime(value: StudioWork['createTime']) {
-  if (!value) return ''
-  const date = Array.isArray(value) ? new Date(value[0], value[1] - 1, value[2], value[3] || 0, value[4] || 0) : new Date(value)
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('zh-CN', { hour12: false })
-}
 function schedule() {
   clearTimeout(timer)
   if (!works.value.some(pending) || !isLoggedIn.value) return
@@ -156,7 +144,7 @@ async function poll() {
     error.value = ''
     schedule()
   } catch {
-    if (token === version) error.value = '状态更新中断，请点击刷新核对原任务；无需重新提交生成。'
+    if (token === version) error.value = '状态更新中断，请点击重试核对原任务；无需重新提交生成。'
   }
 }
 async function load(no = 1) {
@@ -302,26 +290,6 @@ onBeforeUnmount(() => { version++; clearTimeout(timer) })
   &__info {
     padding: 16px;
   }
-  &__title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    strong {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 14px;
-    }
-  }
-  &__state {
-    color: var(--color-success-mint);
-    font-size: 11px;
-    flex-shrink: 0;
-    &.failed {
-      color: var(--color-danger);
-    }
-  }
   &__duration {
     position: absolute;
     right: 8px;
@@ -341,16 +309,6 @@ onBeforeUnmount(() => { version++; clearTimeout(timer) })
     -webkit-box-orient: vertical;
     font-size: 12px;
     color: var(--color-ink-muted);
-    overflow-wrap: anywhere;
-  }
-  &__date {
-    color: var(--color-ink-muted);
-    font-size: 11px;
-    margin: 8px 0 14px;
-  }
-  &__error {
-    color: var(--color-danger);
-    font-size: 12px;
     overflow-wrap: anywhere;
   }
   &__actions {

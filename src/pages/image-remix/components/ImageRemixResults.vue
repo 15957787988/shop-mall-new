@@ -7,7 +7,7 @@
         </h2>
         <p>任务保存在账户中，离开页面后可继续查看。</p>
       </div>
-      <Button :loading="loading" @click="load(1)"><ReloadOutlined />刷新</Button>
+
     </header>
     <Alert v-if="error" type="warning" show-icon :message="error" class="results-gallery__alert">
       <template #action
@@ -42,14 +42,14 @@
           </div>
         </button>
         <div class="result-tile__info">
-          <div class="result-tile__actions">
-            <button
+          <div class="result-tile__actions media-actions">
+            <button class="media-action" aria-label="下载" title="下载"
               type="button"
               :disabled="pending(work) || !src(work) || downloading === work.id"
               @click="download(work)"
             >
               <DownloadOutlined />{{ downloading === work.id ? '下载中' : '下载' }}</button
-            ><button
+            ><button class="media-action media-action--danger" title="删除"
               type="button"
               :disabled="pending(work)"
               @click="remove(work)"
@@ -80,19 +80,21 @@
       <div v-if="preview" class="studio-preview__body">
         <div class="studio-preview__stage">
           <img :src="src(preview)" alt="生成图片" />
-          <div class="studio-preview__bar">
-            <button type="button" @click="download(preview)"><DownloadOutlined />下载</button>
+          <div class="studio-preview__bar media-actions">
+            <button class="media-action" aria-label="下载" title="下载" type="button" @click="download(preview)"><DownloadOutlined />下载</button>
           </div>
         </div>
         <aside class="studio-preview__prompt">
           <h3>{{ preview.creationLabel || '作品详情' }}</h3>
           <StudioParams :work="preview" inset /><StudioReferences :work="preview" />
+          <StudioWorkDate :value="preview.createTime" />
         </aside>
       </div>
     </Modal>
   </section>
 </template>
 <script setup lang="ts">
+import StudioWorkDate from '@/components/studio/StudioWorkDate.vue'
 import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
@@ -101,7 +103,6 @@ import { Alert, Button, Modal } from 'ant-design-vue'
 import {
   DeleteOutlined,
   DownloadOutlined,
-  ReloadOutlined,
   WarningOutlined,
 } from '@ant-design/icons-vue'
 import { useAuth } from '@/composables/useAuth'
@@ -156,7 +157,7 @@ async function poll() {
     error.value = ''
     schedule()
   } catch {
-    if (token === version) error.value = '状态更新中断，请点击刷新核对原任务；无需重新提交生成。'
+    if (token === version) error.value = '状态更新中断，请点击重试核对原任务；无需重新提交生成。'
   }
 }
 async function load(no = 1) {

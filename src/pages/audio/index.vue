@@ -187,7 +187,7 @@
               >
                 <LoadingOutlined />正在制作，离开页面后仍可继续查看
               </div>
-              <footer class="audio-task__actions">
+              <footer class="audio-task__actions media-actions">
                 <time>{{ formatTime(task.createdAt) }}</time>
                 <Popconfirm
                   v-if="['SUCCESS', 'FAILED'].includes(task.state)"
@@ -196,7 +196,7 @@
                   ok-text="删除"
                   cancel-text="取消"
                   @confirm="remove(task.id)"
-                  ><Button
+                  ><Button class="media-action media-action--danger" title="删除"
                     type="text"
                     :loading="deleting === task.id"
                     :disabled="!!deleting"
@@ -245,9 +245,9 @@
               >
                 浏览器不支持音频播放。
               </audio>
-              <Button
+              <Button aria-label="下载" title="下载"
                 type="text"
-                class="audio-track__download"
+                class="audio-track__download media-action"
                 :loading="downloading === `${selectedTask.id}:${index}`"
                 :disabled="!!downloading"
                 @click="download(selectedTask.id, index)"
@@ -261,7 +261,7 @@
           <p>{{ selectedTask.lyrics }}</p>
         </details>
         <p v-if="resultsError" class="audio-error" role="alert">{{ resultsError }}</p>
-        <footer class="audio-task__actions audio-player__actions">
+        <footer class="audio-task__actions audio-player__actions media-actions">
           <time>{{ formatTime(selectedTask.createdAt) }}</time>
           <Popconfirm
             v-if="['SUCCESS', 'FAILED'].includes(selectedTask.state)"
@@ -270,7 +270,7 @@
             ok-text="删除"
             cancel-text="取消"
             @confirm="remove(selectedTask.id)"
-            ><Button type="text" :loading="deleting === selectedTask.id" :disabled="!!deleting"
+            ><Button class="media-action media-action--danger" aria-label="删除" title="删除" type="text" :loading="deleting === selectedTask.id" :disabled="!!deleting"
               ><DeleteOutlined /></Button
           ></Popconfirm>
         </footer>

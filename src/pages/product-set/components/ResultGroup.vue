@@ -6,20 +6,8 @@
         <span class="result-group__name">{{ group.title }}</span>
         <StudioParams :work="group" inline :show-points="false" />
       </div>
-      <div class="result-group__actions">
-        <Button
-          v-if="failedImages.length >= 2"
-          size="small"
-          @click="handleBatchRegenerate"
-        >
-          <ReloadOutlined />
-          批量重新生成
-        </Button>
-        <Button size="small" @click="handleGroupRegenerate">
-          <ReloadOutlined />
-          重新生成套图
-        </Button>
-        <Button size="small" :loading="downloading" @click="handleDownloadAll">
+      <div class="result-group__actions media-actions">
+        <Button class="media-group-download" aria-label="下载整组图片" title="下载整组图片" size="small" :loading="downloading" @click="handleDownloadAll">
           <DownloadOutlined />
           下载
         </Button>
@@ -37,10 +25,10 @@
         v-for="img in group.images"
         :key="img.id"
         :image="img"
-        :regenerating="regeneratingIds.has(img.id)"
+        :deleting="deletingIds.has(img.id)"
         @preview="openPreview"
         @download="handleDownloadImage"
-        @regenerate="handleRegenerateImage"
+        @remove="handleRemoveImage"
       />
     </div>
 
@@ -65,30 +53,22 @@
       />
     </ImagePreviewGroup>
 
-    <RegenerateModal
-      :open="regenerateModalOpen"
-      :default-model-id="group.modelId"
-      :image-count="pendingRegenerateIds.length"
-      :loading="regenerateModalLoading"
-      @confirm="handleRegenerateConfirm"
-      @cancel="closeRegenerateModal"
-    />
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import StudioParams from '@/components/studio/StudioParams.vue'
-import { Button, Image } from 'ant-design-vue'
-import { DownloadOutlined, ReloadOutlined } from '@ant-design/icons-vue'
+import { Button, Image, Modal } from 'ant-design-vue'
+import { DownloadOutlined } from '@ant-design/icons-vue'
 import {
   downloadShopImageGroupZip,
-  regenerateShopImageGroup,
+  deleteShopImage,
 } from '@/pages/product-set/api'
 import { useToast } from '@/composables/useToast'
-import { DETAIL_STATUS_FAILED, downloadBlob } from '../utils/constants'
+import { downloadBlob } from '../utils/constants'
 import ImageCard from './ImageCard.vue'
-import RegenerateModal from './RegenerateModal.vue'
 import type { SaleorImageItem, SaleorResultGroup } from '../utils/types'
 
 const ImagePreviewGroup = Image.PreviewGroup
@@ -98,22 +78,11 @@ const props = defineProps<{
   refreshResults?: () => Promise<void>
 }>()
 
-const emit = defineEmits<{
-  regenerated: []
-}>()
-
 const { addToast } = useToast()
 const downloading = ref(false)
-const regeneratingIds = ref(new Set<string>())
+const deletingIds = ref(new Set<string>())
 const viewerVisible = ref(false)
 const viewerIndex = ref(0)
-const regenerateModalOpen = ref(false)
-const regenerateModalLoading = ref(false)
-const pendingRegenerateIds = ref<string[]>([])
-
-const failedImages = computed(() =>
-  props.group.images.filter((img) => img.status === DETAIL_STATUS_FAILED),
-)
 
 const previewList = computed(() => {
   const urls: string[] = []
@@ -155,61 +124,28 @@ async function handleDownloadAll() {
   }
 }
 
-function openRegenerateModal(imageIds: string[]) {
-  pendingRegenerateIds.value = imageIds
-  regenerateModalOpen.value = true
-}
-
-function closeRegenerateModal() {
-  if (regenerateModalLoading.value) {
-    return
-  }
-  regenerateModalOpen.value = false
-  pendingRegenerateIds.value = []
-}
-
-async function handleRegenerateConfirm(modelId: number) {
-  const ids = pendingRegenerateIds.value
-  if (!ids.length) {
-    return
-  }
-
-  regenerateModalLoading.value = true
-  regeneratingIds.value = new Set([...regeneratingIds.value, ...ids])
-  try {
-    await Promise.all(
-      ids.map((id) => regenerateShopImageGroup({ id: Number(id), modelId })),
-    )
-    addToast(
-      ids.length > 1 ? `已提交 ${ids.length} 张图片的重新生成任务` : '重新生成任务已提交',
-      'success',
-    )
-    regenerateModalOpen.value = false
-    pendingRegenerateIds.value = []
-    await props.refreshResults?.()
-    emit('regenerated')
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '重新生成失败'
-    addToast(msg, 'error')
-  } finally {
-    regenerateModalLoading.value = false
-    const next = new Set(regeneratingIds.value)
-    ids.forEach((id) => next.delete(id))
-    regeneratingIds.value = next
-  }
-}
-
-function handleRegenerateImage(image: SaleorImageItem) {
-  openRegenerateModal([image.id])
-}
-
-async function handleBatchRegenerate() {
-  if (failedImages.value.length < 2) return
-  openRegenerateModal(failedImages.value.map((img) => img.id))
-}
-
-function handleGroupRegenerate() {
-  openRegenerateModal(props.group.images.map((img) => img.id))
+function handleRemoveImage(image: SaleorImageItem) {
+  Modal.confirm({
+    title: '删除这张图片？',
+    content: '仅删除作品记录，保留原文件。',
+    okText: '删除',
+    cancelText: '取消',
+    async onOk() {
+      deletingIds.value = new Set([...deletingIds.value, image.id])
+      try {
+        await deleteShopImage(Number(image.id))
+        await props.refreshResults?.()
+        addToast('已删除', 'success')
+      } catch (e: unknown) {
+        addToast(e instanceof Error ? e.message : '删除失败', 'error')
+        throw e
+      } finally {
+        const next = new Set(deletingIds.value)
+        next.delete(image.id)
+        deletingIds.value = next
+      }
+    },
+  })
 }
 
 function handleDownloadImage(image: SaleorImageItem) {
@@ -269,7 +205,7 @@ function handleDownloadImage(image: SaleorImageItem) {
 
   &__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
     gap: var(--creation-item-gap);
   }
 }

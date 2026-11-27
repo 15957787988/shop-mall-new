@@ -88,6 +88,12 @@ const props = withDefaults(defineProps<Props>(), {
 })
 const emit = defineEmits<{ (event: 'update:modelValue', value: string): void }>()
 const input = ref<HTMLTextAreaElement | null>(null)
+defineExpose({
+  focus: () => {
+    input.value?.scrollIntoView({ block: 'nearest' })
+    input.value?.focus({ preventScroll: true })
+  },
+})
 const highlight = ref<HTMLDivElement | null>(null)
 const container = ref<HTMLDivElement | null>(null)
 const menu = ref<HTMLDivElement | null>(null)

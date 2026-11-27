@@ -246,9 +246,7 @@
           </div>
           <p class="login-modal__wechat-status">{{ wechatStatus }}</p>
           <p class="login-modal__wechat-tip">扫码登录即表示同意用户协议</p>
-          <button v-if="scanToken" type="button" class="login-modal__refresh" @click="loadWechatQr">
-            刷新二维码
-          </button>
+
           <p v-if="error" class="login-modal__error">{{ error }}</p>
         </div>
 

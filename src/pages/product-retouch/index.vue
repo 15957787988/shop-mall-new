@@ -62,13 +62,18 @@
             />
           </section>
           <section class="creation-section">
-            <label
-              >生成模型<Select
-                v-model:value="modelId"
-                :options="modelOptions"
-                :loading="modelsLoading"
-                placeholder="请选择模型"
-            /></label>
+            <div class="creation-fields">
+              <label
+                >模型<Select
+                  v-model:value="modelId"
+                  :options="modelOptions"
+                  :loading="modelsLoading"
+                  placeholder="请选择模型"
+              /></label>
+              <label v-if="resolutionOptions.length"
+                >分辨率<Select v-model:value="resolution" :options="resolutionOptions"
+              /></label>
+            </div>
             <p v-if="modelsError" class="creation-error">
               {{ modelsError }} <button type="button" @click="loadModels">重试</button>
             </p>
@@ -76,9 +81,7 @@
               <label v-if="ratioOptions.length"
                 >图片比例<Select v-model:value="aspect" :options="ratioOptions"
               /></label>
-              <label v-if="resolutionOptions.length"
-                >分辨率<Select v-model:value="resolution" :options="resolutionOptions"
-              /></label>
+
               <label v-if="isGptImageFlare">输出格式<Select v-model:value="outputFormat" :options="outputFormatOptions" :disabled="locked" /></label>
             </div>
             <p v-if="referenceError" class="creation-error">{{ referenceError }}</p>

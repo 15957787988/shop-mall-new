@@ -7,10 +7,8 @@ import 'nprogress/nprogress.css'
 import '@/assets/style/global.scss'
 import router from './router/index'
 import { useAuthStore } from './store/auth'
-import { initTenantFromStorage } from '@/lib/auth/tenant'
 import VueLazyload from 'vue3-lazyload'
 
-initTenantFromStorage()
 
 const app = createApp(App)
 const pinia = createPinia()

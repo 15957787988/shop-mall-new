@@ -1,7 +1,7 @@
 <template>
   <div class="asset-picker">
     <p v-if="subtitle">{{ subtitle }}</p>
-    <button v-if="showRefresh" type="button" :disabled="loading" @click="emit('refresh')">刷新素材</button>
+
     <p v-if="!items.length">{{ emptyText }}</p>
     <label v-for="item in items" :key="item.id" class="asset-picker__row">
       <input type="checkbox" :checked="selectedKeys.includes(item.id)" @change="toggle(item.id)" />

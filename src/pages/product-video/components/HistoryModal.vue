@@ -43,11 +43,11 @@
             <GenerationLoading v-else-if="isPending(item)" />
             <span v-else class="hist__wait">{{ statusText(item) }}</span>
           </div>
-          <div class="hist__bar">
+          <div class="hist__bar media-actions">
             <time>{{ formatTime(item.createTime) }}</time>
-            <button
+            <button aria-label="下载" title="下载"
               type="button"
-              class="hist__download"
+              class="hist__download media-action"
               :disabled="!mediaUrl(item) || downloadingId === item.id"
               @click="handleDownload(item)"
             >
@@ -77,8 +77,8 @@
       playsinline
     />
     <div v-if="previewItem" class="hist__preview-actions">
-      <Button type="primary" :loading="downloadingId === previewItem.id" @click="handleDownload(previewItem)">
-        下载
+      <Button class="media-action" aria-label="下载" title="下载" type="primary" :loading="downloadingId === previewItem.id" @click="handleDownload(previewItem)">
+        <DownloadOutlined />
       </Button>
     </div>
   </Modal>

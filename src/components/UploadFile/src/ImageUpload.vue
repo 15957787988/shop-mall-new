@@ -57,7 +57,7 @@
 
     <button v-else type="button" class="image-upload__empty" @click="triggerSelect">
       <div class="image-upload__empty-icon">
-        <PictureOutlined />
+        <PlusOutlined />
       </div>
       <div class="image-upload__empty-title">{{
         drag ? (dragging ? '松开上传' : '点击或拖拽上传') : '上传图片'
@@ -117,7 +117,7 @@
 import { ref, computed, watch } from 'vue'
 import { Modal, Spin, Upload } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
-import { UploadOutlined, PictureOutlined, CloseOutlined } from '@ant-design/icons-vue'
+import { UploadOutlined, PlusOutlined, CloseOutlined } from '@ant-design/icons-vue'
 import { uploadFile } from '@/components/UploadFile/api'
 import { buildImageAccept, matchImageFileType } from '@/components/UploadFile/utils'
 import { useAuth } from '@/composables/useAuth'
@@ -156,7 +156,7 @@ const props = withDefaults(
     fileType: () => ['image/jpeg', 'image/png', 'image/webp'],
     requireLogin: false,
     saveToLibrary: false,
-    drag: false,
+    drag: true,
     preview: false,
   }
 )

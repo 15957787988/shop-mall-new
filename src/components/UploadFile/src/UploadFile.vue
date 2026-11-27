@@ -1,5 +1,5 @@
 <template>
-  <div :id="inputId" class="upload-file" :class="$attrs.class">
+  <div :id="inputId" class="upload-file" :class="[$attrs.class, { 'upload-file--media': libraryKinds.length > 0 && drag }]">
     <MediaSourceDialog
       v-model:open="sourceOpen"
       :kinds="libraryKinds"
@@ -21,8 +21,19 @@
       :custom-request="customRequest"
       @remove="handleRemove"
     >
+      <template #itemRender="{ file, actions, originNode }">
+        <div v-if="libraryKinds.length === 1 && libraryKinds[0] === 'video' && file.url" class="upload-file__video">
+          <ReferenceVideoPreview :src="file.url" />
+          <button v-if="!disabled" type="button" class="upload-file__video-remove" aria-label="删除参考视频" @click.stop="actions.remove()">×</button>
+        </div>
+        <component :is="originNode" v-else />
+      </template>
       <div role="button" tabindex="0" @click.stop="openSources" @keydown.enter.prevent.stop="openSources" @keydown.space.prevent.stop="openSources">
-      <slot>
+      <div v-if="libraryKinds.length" class="upload-file__tile">
+        <PlusOutlined aria-hidden="true" />
+        <span>点击或拖拽上传</span>
+      </div>
+      <slot v-else>
         <p class="upload-file__default-text">点击或拖拽上传文件</p>
       </slot>
       </div>
@@ -41,6 +52,13 @@
       :custom-request="customRequest"
       @remove="handleRemove"
     >
+      <template #itemRender="{ file, actions, originNode }">
+        <div v-if="libraryKinds.length === 1 && libraryKinds[0] === 'video' && file.url" class="upload-file__video">
+          <ReferenceVideoPreview :src="file.url" />
+          <button v-if="!disabled" type="button" class="upload-file__video-remove" aria-label="删除参考视频" @click.stop="actions.remove()">×</button>
+        </div>
+        <component :is="originNode" v-else />
+      </template>
       <div role="button" tabindex="0" @click.stop="openSources" @keydown.enter.prevent.stop="openSources" @keydown.space.prevent.stop="openSources">
       <slot>
         <Button type="primary">选取文件</Button>
@@ -56,6 +74,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import ReferenceVideoPreview from '@/components/studio/ReferenceVideoPreview.vue'
+import { PlusOutlined } from '@ant-design/icons-vue'
 import { Upload, Button } from 'ant-design-vue'
 import type { UploadFile, UploadProps } from 'ant-design-vue'
 import { uploadFile } from '@/components/UploadFile/api'
@@ -265,6 +285,14 @@ function handleRemove() {
 </script>
 
 <style scoped lang="scss">
+.upload-file__video { position: relative; width: 120px; margin-block: 8px; }
+.upload-file__video-remove { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border: 0; border-radius: 8px; background: var(--color-surface-0); color: var(--color-ink-primary); cursor: pointer; }
+@media (hover: hover) {
+  .upload-file__video-remove { opacity: 0; }
+  .upload-file__video:hover .upload-file__video-remove,
+  .upload-file__video:focus-within .upload-file__video-remove { opacity: 1; }
+}
+
 .upload-file {
   width: 100%;
 

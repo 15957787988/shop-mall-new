@@ -55,13 +55,13 @@
               <dd class="t8__detail-selling">{{ record.sellingPoints }}</dd>
             </div>
           </dl>
-          <div class="t8__detail-actions">
-            <Button
+          <div class="t8__detail-actions media-actions">
+            <Button aria-label="下载" title="下载"
               v-if="record.videoUrl"
               type="primary"
               block
               size="large"
-              class="t8__detail-download-btn"
+              class="t8__detail-download-btn media-action"
               @click="emit('download', record)"
             >
               <DownloadOutlined />

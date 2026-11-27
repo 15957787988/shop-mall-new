@@ -17,8 +17,8 @@
         <Input.TextArea v-model:value="details" :rows="2" :maxlength="300" :disabled="disabled || busy || !!request" aria-label="模特形象补充细节" placeholder="补充细节（选填）：如发型、妆容偏好等" />
       </div>
       <div class="fashion-model__generation">
-        <label>模特生图模型<Select v-model:value="modelId" :options="modelOptions" :loading="modelsLoading" :disabled="disabled || busy || !!request" placeholder="请选择模特生图模型" /></label>
-        <label v-if="resolutionOptions.length">模特图分辨率<Select v-model:value="resolution" :options="resolutionOptions" :disabled="disabled || busy || !!request" /></label>
+        <label>模型<Select v-model:value="modelId" :options="modelOptions" :loading="modelsLoading" :disabled="disabled || busy || !!request" placeholder="请选择模型" /></label>
+        <label v-if="resolutionOptions.length">分辨率<Select v-model:value="resolution" :options="resolutionOptions" :disabled="disabled || busy || !!request" /></label>
       </div>
       <Button block :loading="busy" :disabled="disabled || (!taskId && !request && (!model || model.disabled || points == null))" @click="generate">
         {{ taskId ? '继续查询模特形象' : request ? '核对模特生成请求' : urls.length ? '重新生成模特形象' : '生成模特形象' }}（{{ formatModelPoints(request ? requestPoints : points) }}）
@@ -174,8 +174,9 @@ onBeforeUnmount(() => { version++; clearTimeout(timer); emit('busy', false) })
 
   &__generation {
     display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-    label { margin: 0; }
+    label { display: grid; min-width: 0; gap: 8px; margin: 0; font-size: 12px; font-weight: 400; color: var(--color-ink-secondary); }
     :deep(.ant-select) { width: 100%; min-width: 0; }
   }
 

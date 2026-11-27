@@ -339,3 +339,39 @@
     }
   }
 }
+
+// 资产库页面采用独立缩略图，素材选择弹窗保留原有布局。
+.asset-library.asset-library--tiles {
+  border: 0;
+  border-radius: 0;
+  .asset-library__grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 156px), 156px));
+    gap: 20px 16px;
+  }
+  .asset-library__card {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+    box-shadow: none;
+  }
+  .asset-library__media {
+    overflow: hidden;
+    border: 1px solid var(--color-border-whisper);
+    border-radius: 16px;
+  }
+  .asset-library__play { display: none; }
+  .asset-library__caption {
+    padding: 8px 2px 0;
+    strong { display: none; }
+    time { display: block; font-size: 11px; line-height: 1.6; color: var(--color-ink-muted); }
+  }
+  @media (hover: hover) {
+    #app & .asset-library__card .asset-library__card-actions { opacity: 0; pointer-events: none; }
+    #app & .asset-library__card:hover .asset-library__card-actions,
+    #app & .asset-library__card:focus-within .asset-library__card-actions { opacity: 1; pointer-events: auto; }
+  }
+}
+
+.asset-library__footer .result-pagination { width: 100%; }
+.asset-library--tiles .asset-library__footer { border-top: 0; padding-top: 0; }

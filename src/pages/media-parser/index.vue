@@ -10,7 +10,7 @@
       </form>
       <Alert v-if="error" type="error" show-icon :message="error" />
       <section v-if="task" class="media-parser__results" aria-live="polite">
-        <header><div><span>{{ task.platform }}</span><h2>{{ task.title }}</h2></div><Button v-if="task.state === 'ready'" :loading="action === 'zip'" :disabled="!!action" @click="download()">打包下载</Button></header>
+        <header><div><span>{{ task.platform }}</span><h2>{{ task.title }}</h2></div><Button class="media-action" aria-label="打包下载" title="打包下载" v-if="task.state === 'ready'" :loading="action === 'zip'" :disabled="!!action" @click="download()"><DownloadOutlined /></Button></header>
         <p v-if="busy">{{ stateLabel }}，请稍候…</p>
         <p v-else-if="task.state === 'failed'">解析未完成，请重新提交链接。</p>
         <div class="media-parser__grid">
@@ -20,7 +20,7 @@
               <PictureOutlined v-else-if="file.kind === 'image'" /><PlayCircleOutlined v-else />
               <span>{{ file.kind === 'video' ? '播放视频' : '查看图片' }} {{ index + 1 }}</span>
             </button>
-            <footer><Button :disabled="!!action" @click="download(index)">下载</Button><Button :disabled="!!action" @click="save(index)">存入资产库</Button></footer>
+            <footer class="media-actions"><Button class="media-action" aria-label="下载" title="下载" :disabled="!!action" @click="download(index)"><DownloadOutlined /></Button><Button :disabled="!!action" @click="save(index)">存入资产库</Button></footer>
           </article>
         </div>
         <p v-if="task.state === 'ready'">预览与下载记录保留30分钟，保存到资产库后可长期使用。</p>
@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Alert, Button, Input, Modal, message } from 'ant-design-vue'
-import { LinkOutlined, PictureOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
+import { DownloadOutlined, LinkOutlined, PictureOutlined, PlayCircleOutlined } from '@ant-design/icons-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import { getConfig, getMedia, releaseTask, parseLink, saveAsset, type ParseTask } from './api'
 const text = ref(''), error = ref(''), configured = ref<boolean>(), busy = ref(false), action = ref('')

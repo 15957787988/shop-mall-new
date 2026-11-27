@@ -1,10 +1,10 @@
 <template>
   <PageContainer flush class-name="film-page">
-    <div class="film-layout">
-      <form class="film-editor" aria-label="商品视频生成" @submit.prevent="submit">
-        <div class="film-editor-scroll scroll-area">
+    <div class="film-layout creation-workbench">
+      <form class="film-editor creation-form" aria-label="商品视频生成" @submit.prevent="submit">
+        <div class="film-editor-scroll creation-form__body scroll-area">
           <Alert v-if="error" type="error" show-icon :message="error" class="film-notice" />
-          <section class="film-section">
+          <section class="film-section creation-section">
             <h2>
               上传商品图 <span class="film-muted">同一商品，最多 {{ maxImages }} 张</span>
             </h2>
@@ -22,7 +22,7 @@
               当前模型最多支持 {{ maxImages }} 张图片，请移除多余图片或更换模型。
             </p>
           </section>
-          <section class="film-section">
+          <section class="film-section creation-section">
             <div class="film-settings">
               <label for="film-market"
                 >市场地区<Select
@@ -63,7 +63,7 @@
             <div class="film-parameters">
               <div class="film-settings">
                 <label for="film-model"
-                  >生成模型<Select
+                  >模型<Select
                     id="film-model"
                     v-model:value="modelId"
                     class="film-control"
@@ -83,7 +83,7 @@
               </div>
             </div>
           </section>
-          <section class="film-section">
+          <section class="film-section creation-section">
             <header class="film-section-heading">
               <h2><label for="film-facts">商品卖点 &amp; 要求</label></h2>
               <AiWriteButton
@@ -102,24 +102,24 @@
             />
             <p class="film-muted">只提炼有依据的特点。请核对AI识别结果后再生成脚本。</p>
           </section>
-          <section class="film-section">
-            <h2>视频类型 <span class="film-muted">可多选，每种类型生成1条</span></h2>
-            <Checkbox.Group
-              v-model:value="selectedTypes"
+          <section class="film-section creation-section">
+            <h2>视频类型 <span class="film-muted">单选，生成1条视频</span></h2>
+            <Radio.Group
+              v-model:value="selectedType"
               class="film-types"
-              aria-label="视频类型，可多选"
+              aria-label="视频类型，单选"
               :disabled="busy"
-              ><Checkbox
+              ><Radio
                 v-for="option in typeOptions"
                 :key="option.value"
                 class="film-type"
-                :class="{ 'film-type--selected': selectedTypes.includes(option.value) }"
+                :class="{ 'film-type--selected': selectedType === option.value }"
                 :value="option.value"
-                >{{ option.label }}</Checkbox
-              ></Checkbox.Group
+                >{{ option.label }}</Radio
+              ></Radio.Group
             >
           </section>
-          <section class="film-section">
+          <section class="film-section creation-section">
             <ModelImagePanel
               v-model:urls="modelImages"
               :models="imageModels"
@@ -141,7 +141,7 @@
               形象设置会直接用于脚本，无需先生成图片。生成或上传模特图可进一步固定人物外貌；AI生成模特图单独计费。
             </p>
           </section>
-          <section class="film-section">
+          <section class="film-section creation-section">
             <header class="film-section-heading">
               <h2>确认脚本</h2>
               <Button
@@ -193,7 +193,7 @@
             </p>
           </section>
         </div>
-        <footer class="film-submit">
+        <footer class="film-submit creation-form__footer">
           <Button
             type="primary"
             html-type="submit"
@@ -206,11 +206,7 @@
           <span role="status">{{ submitting ? submitProgress : '按模型实际返回结算' }}</span>
         </footer>
       </form>
-      <section class="film-results" aria-label="我的成片">
-        <header class="film-section-heading">
-          <h2>我的成片</h2>
-          <Button :loading="refreshing" @click="refresh">刷新</Button>
-        </header>
+      <section class="film-results creation-results" aria-label="我的成片">
         <div class="film-results-scroll scroll-area">
           <div v-if="!tasks.length" class="film-empty">
             <VideoCameraOutlined />
@@ -235,6 +231,7 @@
                   preload="metadata"
                   @loadedmetadata="paintThumb"
                 /><PlayCircleOutlined />
+                <span v-if="task.duration" class="studio__duration-badge">{{ task.duration }}s</span>
               </button>
               <div v-else class="film-processing">
                 <Spin v-if="isPending(task)" /><VideoCameraOutlined v-else />
@@ -247,8 +244,8 @@
                 </p>
               </div>
               <div class="film-task-info">
-                <footer>
-                  <Button
+                <footer class="media-actions">
+                  <Button class="media-action"
                     type="text"
                     aria-label="下载"
                     title="下载"
@@ -260,19 +257,18 @@
                     v-if="!isPending(task)"
                     title="删除这条成片记录？"
                     @confirm="remove(task.id)"
-                    ><Button type="text" :aria-label="`删除${task.creationTitle || '商品短片'}`"
+                    ><Button class="media-action media-action--danger" title="删除" type="text" :aria-label="`删除${task.creationTitle || '商品短片'}`"
                       ><DeleteOutlined /></Button
                   ></Popconfirm>
                 </footer>
               </div>
             </article>
           </div>
-          <Pagination
+          <ResultPagination
             v-if="total > 12"
             :current="page"
             :total="total"
             :page-size="12"
-            :show-size-changer="false"
             class="film-pagination"
             @change="changePage"
           />
@@ -291,8 +287,8 @@
       <div v-if="selected" class="studio-preview__body">
         <div class="studio-preview__stage">
           <video :src="selected.videoUrl" controls autoplay playsinline />
-          <div class="studio-preview__bar">
-            <button type="button" :disabled="!!action" @click="download(selected)"><DownloadOutlined />下载</button>
+          <div class="studio-preview__bar media-actions">
+            <button class="media-action" aria-label="下载" title="下载" type="button" :disabled="!!action" @click="download(selected)"><DownloadOutlined />下载</button>
           </div>
         </div>
         <StudioPromptDetails :work="selected" />
@@ -301,6 +297,7 @@
   </PageContainer>
 </template>
 <script setup lang="ts">
+import ResultPagination from '@/components/ui/ResultPagination.vue'
 import StudioPromptDetails from '@/components/studio/StudioPromptDetails.vue'
 import '@/pages/product-video/video.scss'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -309,9 +306,8 @@ import {
   Button,
   Input,
   Slider,
-  Checkbox,
+  Radio,
   Modal,
-  Pagination,
   Popconfirm,
   Select,
   Spin,
@@ -359,12 +355,12 @@ const title = ref(''),
   duration = ref(15)
 const market = ref('china'),
   language = ref('zh'),
-  selectedTypes = ref<string[]>([]),
+  selectedType = ref(''),
+  selectedTypes = computed(() => selectedType.value ? [selectedType.value] : []),
   drafts = ref<Record<string, ScriptDraft>>({})
 const planning = ref(false),
   analyzing = ref(false),
   submitting = ref(false),
-  refreshing = ref(false),
   loading = ref(true),
   action = ref(''),
   submitProgress = ref('')
@@ -592,7 +588,6 @@ async function generate() {
 }
 async function refresh() {
   const seq = ++pageSeq
-  refreshing.value = true
   if (timer) clearTimeout(timer)
   try {
     const result = await listFilms(page.value)
@@ -603,10 +598,8 @@ async function refresh() {
   } catch (e: unknown) {
     if (!disposed && seq === pageSeq) error.value = explain(e)
   } finally {
-    if (seq === pageSeq) {
-      refreshing.value = false
-      if (!disposed && tasks.value.some(isPending)) timer = setTimeout(refresh, 5000)
-    }
+    if (seq === pageSeq && !disposed && tasks.value.some(isPending))
+      timer = setTimeout(refresh, 5000)
   }
 }
 function changePage(value: number) {
@@ -742,6 +735,7 @@ onBeforeUnmount(() => {
 </script>
 <style scoped lang="scss">
 .film-editor-scroll {
+  padding: 0 26px 24px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -752,7 +746,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  padding: 8px 4px 0;
+  padding: var(--creation-pane-padding);
   > header {
     flex-shrink: 0;
   }
@@ -762,37 +756,6 @@ onBeforeUnmount(() => {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-.film-section :deep(.image-upload__empty) {
-  width: 128px;
-  min-height: 128px;
-  padding: 16px;
-  border-style: solid;
-  border-radius: 16px;
-  gap: 10px;
-  background: var(--color-surface-2);
-}
-.film-section :deep(.image-upload__empty-desc) {
-  display: none;
-}
-.film-section :deep(.image-upload__empty-icon) {
-  width: auto;
-  height: auto;
-  background: transparent;
-  box-shadow: none;
-  &::before {
-    content: '+';
-    font-size: 36px;
-    line-height: 1;
-    font-weight: 300;
-  }
-  > .anticon {
-    display: none;
-  }
-}
-.film-section :deep(.image-upload__empty-title) {
-  font-size: 14px;
-  font-weight: 400;
 }
 .film-section :deep(.image-upload__grid) {
   max-height: 220px;
@@ -908,13 +871,13 @@ onBeforeUnmount(() => {
 }
 .film-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 440px) minmax(0, 1fr);
+  grid-template-columns: var(--layout-form-width) minmax(0, 1fr);
   height: 100%;
   min-height: 0;
-  padding: var(--layout-gap);
-  gap: var(--layout-gap);
-  max-width: var(--layout-content-width);
-  margin-inline: auto;
+  padding: 0;
+  gap: 0;
+  width: 100%;
+  color: var(--color-ink-primary);
 }
 .film-editor {
   display: flex;
@@ -922,12 +885,17 @@ onBeforeUnmount(() => {
   min-height: 0;
   min-width: 0;
   background: var(--color-surface-0);
-  border: 1px solid var(--color-border-whisper);
-  border-radius: 20px;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
 }
 .film-section {
-  padding: 18px 20px;
+  padding: 16px 0;
+  label {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--color-ink-secondary);
+  }
   > label {
     display: block;
     margin: 12px 0 6px;
@@ -935,9 +903,11 @@ onBeforeUnmount(() => {
   h2 {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 17px;
-    margin: 0 0 18px;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 650;
+    margin: 0 0 10px;
   }
 }
 .film-section-heading {
@@ -945,10 +915,10 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
   h2 {
     margin: 0;
-    font-size: 19px;
+    font-size: 14px;
   }
 }
 .film-muted {
@@ -958,15 +928,15 @@ onBeforeUnmount(() => {
 }
 .film-submit {
   flex-shrink: 0;
-  border-top: 1px solid var(--color-border-whisper);
+  border-top: 0;
   background: var(--color-surface-0);
-  padding: 16px 20px;
+  padding: 12px 16px;
   display: grid;
   gap: 8px;
   text-align: center;
   :deep(.ant-btn) {
     height: auto;
-    min-height: 48px;
+    min-height: 44px;
     white-space: normal;
   }
   span {
@@ -1024,6 +994,16 @@ onBeforeUnmount(() => {
     height: 100%;
     max-height: 320px;
     object-fit: contain;
+  }
+  .studio__duration-badge {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: var(--color-media-veil);
+    color: var(--color-on-media);
+    font-size: 12px;
   }
   > .anticon {
     position: absolute;

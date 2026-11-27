@@ -1,0 +1,136 @@
+// 下载、删除共用的图标按钮；样式仅作用于已标记的媒体操作。
+#app .media-action.media-action,
+.ant-modal .media-action.media-action {
+  display: inline-flex;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-ink-primary);
+  color: var(--color-on-media);
+  font-size: 0;
+  line-height: 1;
+  box-shadow: none;
+  cursor: pointer;
+  .anticon { font-size: 16px; color: inherit; }
+  > span:not(.anticon) { font-size: 0; }
+  &.media-action--danger { color: var(--color-danger); }
+  &:hover:not(:disabled) { background: var(--color-ink-secondary); color: var(--color-on-media); }
+  &.media-action--danger:hover:not(:disabled) { color: var(--color-danger); }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+  &:focus-visible { outline: 2px solid var(--color-workbench-blue); outline-offset: 3px; }
+}
+#app .media-actions.media-actions,
+.ant-modal .media-actions.media-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#app .asset-library__card-actions.media-actions,
+#app .image-card__actions.media-actions,
+#app .t8__gallery-hover.media-actions {
+  inset: auto 10px 10px auto;
+  width: auto;
+  padding: 0;
+  background: transparent;
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+#app .result-group,
+#app .compare-card,
+#app .detail-batch,
+#app .fashion-group { position: relative; padding-bottom: 56px; }
+#app .result-group__actions.media-actions,
+#app .compare-card__actions.media-actions,
+#app .detail-batch__actions.media-actions {
+  position: absolute;
+  inset: auto 12px 12px auto;
+}
+#app .fashion-group__header > .media-action { position: absolute; right: 12px; bottom: 12px; }
+
+// 组操作回到标题栏右侧；单图仍在图片右下角。
+#app .result-group,
+#app .detail-batch,
+#app .fashion-group {
+  padding: 16px 20px 20px;
+  border-radius: 12px;
+  background: var(--color-surface-0);
+  box-shadow: var(--shadow-soft);
+}
+#app .result-group__header,
+#app .detail-batch__head,
+#app .fashion-group__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+#app .result-group__actions.media-actions,
+#app .detail-batch__actions.media-actions { position: static; flex-shrink: 0; }
+#app .media-group-download.media-group-download {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--color-ink-primary);
+  color: var(--color-on-media);
+  .anticon { display: inline-flex; align-items: center; justify-content: center; margin: 0; font-size: 16px; }
+  &:disabled { opacity: .4; }
+}
+#app .media-action.media-action,
+.ant-modal .media-action.media-action {
+  .anticon { display: inline-flex; align-items: center; justify-content: center; margin: 0; line-height: 1; }
+  .anticon > svg { display: block; }
+}
+
+#app .media-action.media-action,
+.ant-modal .media-action.media-action {
+  gap: 0;
+  > .anticon + span { margin-inline-start: 0; }
+}
+#app .media-group-download.media-group-download > .anticon + span { margin-inline-start: 0; }
+
+// 单张作品的操作直接叠在媒体右下角，不再占用底部空白栏。
+#app .result-tile,
+#app .studio--gallery .studio__card,
+#app .film-task { position: relative; }
+#app .result-tile__actions.media-actions,
+#app .studio--gallery .studio__actions.media-actions,
+#app .film-task-info > footer.media-actions {
+  position: absolute;
+  inset: auto 10px 10px auto;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+  width: auto;
+}
+#app .result-tile__info:has(> .media-actions:only-child),
+#app .film-task-info { padding: 0; border: 0; }
+#app .studio--gallery .studio__duration-badge,
+#app .film-cover .studio__duration-badge,
+#app .result-tile__duration { right: auto; left: 8px; }
+#app .fashion-image__actions.media-actions {
+  inset: auto 10px 10px auto;
+  opacity: 1;
+}
+
+// 三种组图工作区使用相同的列宽、间距和方形图片高度。
+#app .result-group__grid,
+#app .detail-batch__strip,
+#app .fashion-group__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: var(--creation-item-gap);
+}

@@ -91,18 +91,18 @@
           </section>
           <section class="creation-section">
             <h3>生成设置</h3>
-            <label
-              >生成模型<Select
-                v-model:value="modelId"
-                :options="modelOptions"
-                :loading="modelsLoading"
-            /></label>
+            <div class="creation-fields">
+              <label
+                >模型<Select v-model:value="modelId" :options="modelOptions" :loading="modelsLoading"
+              /></label>
+              <label v-if="resolutionOptions.length"
+                >分辨率<Select v-model:value="resolution" :options="resolutionOptions"
+              /></label>
+            </div>
             <div class="creation-fields">
               <label v-if="ratioOptions.length"
                 >图片比例<Select v-model:value="aspect" :options="ratioOptions" /></label
-              ><label v-if="resolutionOptions.length"
-                >分辨率<Select v-model:value="resolution" :options="resolutionOptions"
-              /></label>
+              >
               <label v-if="isGptImageFlare"
                 >输出格式<Select
                   v-model:value="outputFormat"

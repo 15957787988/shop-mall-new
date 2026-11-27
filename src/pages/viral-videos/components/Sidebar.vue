@@ -63,7 +63,7 @@
           </div>
         </UploadFile>
         <div v-else class="t8__video-cover">
-          <img :src="referenceVideoCoverUrl" alt="参考视频封面" class="t8__video-cover-img" />
+          <ReferenceVideoPreview :src="currentForm.referenceVideoUrl" :poster="referenceVideoCoverUrl" class="t8__video-cover-img" />
           <button
             type="button"
             class="t8__video-cover-remove"
@@ -175,6 +175,7 @@
 </template>
 
 <script setup lang="ts">
+import ReferenceVideoPreview from '@/components/studio/ReferenceVideoPreview.vue'
 import AiWriteButton from '@/components/AiWriteButton.vue'
 import { computed } from 'vue'
 import {
@@ -394,6 +395,12 @@ const ratioSelectOptions = RATIO_OPTIONS.map((r) => ({ label: r.label, value: r.
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
+}
+
+@media (hover: hover) {
+  .t8__video-cover-remove { opacity: 0; }
+  .t8__video-cover:hover .t8__video-cover-remove,
+  .t8__video-cover:focus-within .t8__video-cover-remove { opacity: 1; }
 }
 
 .t8__video-cover-remove {

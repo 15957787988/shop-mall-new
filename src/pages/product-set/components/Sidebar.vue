@@ -40,7 +40,7 @@
             <Select v-model:value="form.language" :options="languageOptions" />
           </label>
           <label class="saleor-sidebar__field">
-            <span>生成模型</span>
+            <span>模型</span>
             <Select
               v-model:value="form.modelId"
               :options="modelSelectOptions"

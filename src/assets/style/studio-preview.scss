@@ -1,0 +1,55 @@
+// 预览尺寸由视口决定，媒体与操作栏分配同一块可用高度。
+.studio-preview .ant-modal {
+  max-width: calc(100% - 32px);
+  padding-bottom: 0;
+  .ant-modal-content {
+    padding: 0;
+    max-height: calc(100dvh - 32px);
+    overflow: clip;
+  }
+  .ant-modal-body { padding: 0; min-height: 0; }
+  .studio-preview__body {
+    display: flex;
+    height: min(780px, calc(100dvh - 48px));
+    min-height: 0;
+    max-height: none;
+  }
+  .studio-preview__stage,
+  .studio-preview__media-col {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+  .studio-preview__stage > img,
+  .studio-preview__stage > video {
+    display: block;
+    flex: 1 1 0;
+    width: 100%;
+    height: 0;
+    min-height: 0;
+    max-height: none;
+    object-fit: contain;
+  }
+  .studio-preview__bar {
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    min-height: 58px;
+    padding: 10px 16px 12px;
+  }
+  .studio-preview__body > .studio-preview__prompt {
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  @media (max-width: 960px) {
+    .studio-preview__body { flex-direction: column; }
+    .studio-preview__stage,
+    .studio-preview__media-col { flex: 0 0 48%; }
+    .studio-preview__body > .studio-preview__prompt { width: 100%; flex: 1 1 0; }
+  }
+}

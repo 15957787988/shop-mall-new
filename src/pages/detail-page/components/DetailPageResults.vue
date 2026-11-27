@@ -2,16 +2,21 @@
   <div class="detail-results">
     <article v-for="group in groups" :key="group.id" class="detail-batch">
       <header class="detail-batch__head">
-        <div class="detail-batch__title"><h3><time>{{ formatTime(group.works[0].createTime) }}</time> {{ group.title }}</h3><StudioParams :work="group.works[0]" inline :show-points="false" /></div>
-        <div class="detail-batch__actions">
+        <div class="detail-batch__title">
+          <time>{{ formatTime(group.works[0].createTime) }}</time>
+          <h3>{{ group.title }}</h3>
+          <StudioParams :work="group.works[0]" inline :show-points="false" />
+        </div>
+        <div class="detail-batch__actions media-actions">
           <Button :disabled="!group.works.some(work => work.picUrl)" @click="longPreview = group">预览长图</Button>
-          <Button :loading="downloadingLong === group.id" :disabled="!!downloadingLong || !group.works.some(work => work.picUrl)" @click="downloadLong(group)"><DownloadOutlined />下载长图</Button>
-          <Button type="primary" :loading="downloading === group.id" :disabled="!group.works.some(work => work.picUrl)" @click="downloadGroup(group)"><DownloadOutlined />下载分图</Button>
+          <Button class="media-group-download" aria-label="下载整组图片" title="下载整组图片" type="primary" :loading="downloading === group.id" :disabled="!group.works.some(work => work.picUrl)" @click="downloadGroup(group)"><DownloadOutlined />下载</Button>
         </div>
       </header>
       <div class="detail-batch__strip">
-        <button v-for="(url, index) in group.originals" :key="`original-${index}`" type="button" class="detail-card detail-card--original" @click="openPreview(group, url)">
-          <img :src="url" alt="商品原图" loading="lazy" />
+        <button v-if="group.originals.length" type="button" class="detail-card detail-card--original" aria-label="查看商品原图" @click="openPreview(group, group.originals[0])">
+          <span class="detail-original-collage" :data-count="Math.min(group.originals.length, 3)">
+            <img v-for="(url, index) in group.originals.slice(0, 3)" :key="`${index}-${url}`" :src="url" :alt="`商品原图 ${index + 1}`" loading="lazy" />
+          </span>
           <span class="detail-card__original">原图</span>
         </button>
         <button v-for="work in group.works" :key="work.id" type="button" class="detail-card" :disabled="pending(work) || !work.picUrl" :aria-busy="pending(work)" @click="openPreview(group, work.picUrl)">
@@ -30,7 +35,7 @@
       </section>
       <template #footer>
         <Button @click="longPreview = undefined">关闭</Button>
-        <Button
+        <Button class="media-action" aria-label="下载长图" title="下载长图"
           type="primary"
           :loading="downloadingLong === longPreview?.id"
           :disabled="!!downloadingLong || previewLoading || !previewBlob"
@@ -142,20 +147,30 @@ async function downloadLong(group: DetailWorkGroup) {
 .detail-results { display: grid; gap: var(--creation-group-gap); }
 .detail-batch {
   min-width: 0;
-  &__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
-  &__title { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; min-width: 0; flex: 1; }
-  h3 { margin: 0; min-width: 0; overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
-  time { margin-right: 8px; }
+  &__head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: var(--creation-group-gap); }
+  &__title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; flex: 1; }
+  h3 { margin: 0; min-width: 0; overflow-wrap: anywhere; font-size: 15px; font-weight: 600; }
+  time { font-size: 13px; font-weight: 400; color: var(--color-ink-secondary); }
   &__actions { display: flex; gap: 8px; flex-shrink: 0; }
   &__strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: var(--creation-item-gap); }
 }
 .detail-card {
   position: relative; width: 100%; min-width: 0; aspect-ratio: 1; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: var(--color-surface-0); cursor: zoom-in;
-  img { width: 100%; height: 100%; object-fit: contain; }
+  img { width: 100%; height: 100%; object-fit: cover; }
   &:disabled { cursor: default; }
-  &__original { position: absolute; top: 8px; left: 8px; padding: 4px 10px; border-radius: 6px; color: var(--color-on-media); background: var(--color-media-veil); }
-  &__label { position: absolute; inset: auto 0 0; padding: 28px 12px 12px; text-align: left; font-size: 13px; font-weight: 600; color: var(--color-on-media); background: linear-gradient(transparent, var(--color-media-veil)); }
+  &__original { position: absolute; bottom: 8px; left: 8px; padding: 4px 8px; border-radius: 6px; color: var(--color-on-media); background: var(--color-media-veil); }
+  &__label { position: absolute; left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 4px 8px; border-radius: 6px; text-align: left; font-size: 12px; font-weight: 400; color: var(--color-on-media); background: var(--color-media-veil); }
   &__placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 100%; padding: 20px; color: var(--color-ink-secondary); }
+}
+.detail-original-collage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  img { display: block; min-height: 0; }
+  &[data-count='1'] { grid-template-columns: minmax(0, 1fr); }
+  &[data-count='3'] { grid-template-rows: repeat(2, minmax(0, 1fr)); img:first-child { grid-row: span 2; } }
 }
 .detail-long-preview { max-height: 75vh; overflow-y: auto; img { display: block; width: 100%; height: auto; } }
 .detail-preview-source { display: none; }

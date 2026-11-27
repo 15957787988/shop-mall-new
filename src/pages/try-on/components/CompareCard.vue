@@ -6,8 +6,8 @@
         <span class="compare-card__time">{{ group.createTime }}</span>
         <span class="compare-card__name">{{ group.title }}</span>
       </div>
-      <div class="compare-card__actions">
-        <Button type="primary" size="small" :disabled="!hasDownloadable" @click="emit('download', group)">
+      <div class="compare-card__actions media-actions">
+        <Button class="media-action" aria-label="下载" title="下载" type="primary" size="small" :disabled="!hasDownloadable" @click="emit('download', group)">
           <DownloadOutlined />
           下载
         </Button>

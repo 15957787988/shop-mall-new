@@ -20,7 +20,6 @@ import {
   setUserInfoCache,
   clearUserInfoCache,
 } from '@/lib/auth/storage'
-import { initTenantFromStorage } from '@/lib/auth/tenant'
 import { createSessionRefresh } from '@/lib/sessionRefresh'
 
 export type LoginModalMode = 'login' | 'bind-mobile'
@@ -149,7 +148,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const init = () => {
-    initTenantFromStorage()
     const at = getAccessToken()
     if (at) {
       isLoggedIn.value = true
