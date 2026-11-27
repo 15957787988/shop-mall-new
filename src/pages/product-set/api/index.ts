@@ -92,8 +92,3 @@ export async function downloadShopImageGroupZip(
   const blob = await http.getBlob(`${PREFIX}/download-zip`, { groupId })
   return { blob, fileName: `shop_images_${groupId}.zip` }
 }
-
-/** AI 帮写卖点（商品图 / 爆款视频等共用） */
-export async function aiWriteSellingPoints(originalUrls: string[]): Promise<string> {
-  return http.post<string>('/admin-api/ai/shop/image-group/ai-write', { originalUrls, creationTool: 'product-set' })
-}

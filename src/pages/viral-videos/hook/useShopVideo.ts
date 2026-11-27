@@ -2,7 +2,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { usePolling } from '@/composables/usePolling'
-import { aiWriteSellingPoints } from '@/pages/viral-videos/api'
+import { aiWriteSellingPoints } from '@/service/api/shop-image-group'
 import {
   generateShopVideo,
   replicateShopVideo,
@@ -471,9 +471,9 @@ export function useShopVideo() {
     }
     aiWriting.value = true
     try {
-      const text = await aiWriteSellingPoints(currentForm.value.uploadedUrls)
+      const text = await aiWriteSellingPoints(currentForm.value.uploadedUrls, 'viral-videos')
       currentForm.value.sellingPoints = text
-      addToast('卖点已生成', 'success')
+      addToast('AI 帮写完成', 'success')
     } catch (e: unknown) {
       addToast(e instanceof Error ? e.message : 'AI 帮写失败', 'error')
     } finally {

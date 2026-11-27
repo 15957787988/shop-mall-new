@@ -1,6 +1,6 @@
 <template>
   <section class="creation-section fashion-model">
-    <h3 class="fashion-model__heading">模特形象<small>{{ batch ? '整批商品共用' : '整套共用同一模特' }}</small></h3>
+    <h3 class="fashion-model__heading">模特形象<small>{{ batch ? '整批商品共用' : '共用同一模特' }}</small></h3>
     <div class="fashion-model__sources" role="group" aria-label="模特来源">
       <Button class="fashion-model__source" :class="{ 'is-active': source === 'ai' }" :aria-pressed="source === 'ai'" :disabled="disabled || busy || !!request" @click="source = 'ai'">
         <ThunderboltOutlined /><span>AI 生成</span>
@@ -12,7 +12,10 @@
     <template v-if="source === 'ai'">
       <div class="fashion-model__settings">
         <div class="fashion-model__fields">
-          <Select v-for="field in fields" :key="field.key" v-model:value="attributes[field.key]" :aria-label="field.label" :options="field.options.map(value => ({ label: value, value }))" :disabled="disabled || busy || !!request" />
+          <div v-for="field in fields" :key="field.key" class="fashion-model__field">
+            <label :for="`model-image-${field.key}`" class="fashion-model__accessible-label">{{ field.label }}</label>
+            <Select :id="`model-image-${field.key}`" v-model:value="attributes[field.key]" :options="field.options.map(value => ({ label: value, value }))" :disabled="disabled || busy || !!request" />
+          </div>
         </div>
         <Input.TextArea v-model:value="details" :rows="2" :maxlength="300" :disabled="disabled || busy || !!request" aria-label="模特形象补充细节" placeholder="补充细节（选填）：如发型、妆容偏好等" />
       </div>
@@ -37,11 +40,11 @@ import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { Button, Input, Select } from 'ant-design-vue'
 import { ThunderboltOutlined, UploadOutlined } from '@ant-design/icons-vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
-import { getStudioWork, submitStudioImage, type CommonAiModelItem } from '@/pages/virtual-try-on/api'
+import { getStudioWork, submitStudioImage, type CommonAiModelItem } from '@/service/api/studio'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useAuth } from '@/composables/useAuth'
 const props = defineProps<{ urls: string[]; models?: CommonAiModelItem[]; modelsLoading?: boolean; disabled?: boolean; batch?: boolean }>()
-const emit = defineEmits<{ 'update:urls': [urls: string[]]; busy: [busy: boolean] }>()
+const emit = defineEmits<{ 'update:urls': [urls: string[]]; busy: [busy: boolean]; description: [description: string] }>()
 const { isLoggedIn, openLogin, userInfo } = useAuth()
 const source = ref<'ai' | 'upload'>('ai')
 const modelId = ref<number>()
@@ -63,6 +66,7 @@ const fields = [
 ]
 const attributes = reactive<Record<string, string>>({ gender: '女性', age: '青年', ethnicity: '欧美白人', body: '标准' })
 const details = ref('')
+watch(() => [source.value, ...Object.values(attributes), details.value], () => emit('description', source.value === 'ai' ? `${Object.values(attributes).join('，')}。${details.value}` : ''), { immediate: true })
 const busy = ref(false)
 const error = ref('')
 const taskId = ref<number>()
@@ -99,7 +103,7 @@ async function generate() {
     if (!taskId.value) {
       if (!request.value) requestPoints.value = points.value
       request.value ||= { creationTool: 'model-image', idempotencyKey: crypto.randomUUID(), modelId: model.value!.id, model: model.value!.model, aspectRatio: ratio.value, resolution: resolution.value,
-        prompt: `生成一张符合所选年龄段的真人服装展示模特正面全身基准照：${Object.values(attributes).join('，')}。${attributes.age === '婴儿' ? '婴儿使用有支撑的自然坐姿或躺姿，不使用成人站姿或行走姿势。' : '使用符合所选年龄与体态的自然站姿。'}体型特征仅在所选年龄的合理范围内体现。穿着符合年龄的简洁中性服装，面部清晰，双手与脚部完整，柔和摄影光线，干净背景。不要文字、水印或拼图。${details.value}` }
+        prompt: `生成一张符合所选年龄段的真人模特正面全身基准照：${Object.values(attributes).join('，')}。${attributes.age === '婴儿' ? '婴儿使用有支撑的自然坐姿或躺姿，不使用成人站姿或行走姿势。' : '使用符合所选年龄与体态的自然站姿。'}体型特征仅在所选年龄的合理范围内体现。穿着符合年龄的简洁中性服装，面部清晰，双手与脚部完整，柔和摄影光线，干净背景。不要文字、水印或拼图。${details.value}` }
       const id = await submitStudioImage(request.value)
       if (token !== version) return
       taskId.value = id
@@ -120,12 +124,18 @@ onBeforeUnmount(() => { version++; clearTimeout(timer); emit('busy', false) })
   gap: 16px;
 
   &__heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 17px;
     justify-content: flex-start;
     gap: 10px;
     margin-bottom: 0;
-    small { font-weight: 400; }
+    small { font-size: 12px; font-weight: 400; }
   }
 
+  &__field { min-width: 0; :deep(.ant-select) { width: 100%; } }
+  &__accessible-label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   &__sources {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

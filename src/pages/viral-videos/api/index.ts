@@ -104,8 +104,3 @@ export async function getShopVideo(id: number): Promise<ShopVideoRecord> {
 export async function regenerateShopVideo(id: number): Promise<number> {
   return http.post<number>(`${PREFIX}/regenerate`, { id })
 }
-
-/** AI 帮写卖点（商品图 / 爆款视频等共用） */
-export async function aiWriteSellingPoints(originalUrls: string[]): Promise<string> {
-  return http.post<string>('/admin-api/ai/shop/image-group/ai-write', { originalUrls, creationTool: 'viral-videos' })
-}

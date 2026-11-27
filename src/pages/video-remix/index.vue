@@ -1,6 +1,6 @@
 <template>
   <PageContainer flush>
-    <div class="replicate studio--gallery">
+    <div class="replicate studio--gallery studio-video-results">
       <div class="replicate__layout">
         <section class="replicate__card replicate__materials">
           <div class="replicate__materials-scroll scroll-area">
@@ -217,22 +217,30 @@
                 </button>
                 <span v-else class="studio__media-wait">{{ taskDescription(task) }}</span>
               </div>
-              <div class="result-tile__info">
-                <div class="result-tile__actions">
-                  <button
-                    type="button"
-                    :disabled="
-                      pendingStatuses.has(task.status) ||
-                      !task.resultUrl ||
-                      downloadingId === task.id
-                    "
-                    @click="handleDownload(task)"
-                  >
-                    <DownloadOutlined />{{ downloadingId === task.id ? '下载中' : '下载' }}</button
-                  ><button type="button" aria-label="删除作品" @click="removeTask(task)">
-                    <DeleteOutlined />
-                  </button>
-                </div>
+              <div class="studio__actions">
+                <button
+                  type="button"
+                  class="studio__action"
+                  title="下载"
+                  aria-label="下载"
+                  :disabled="
+                    pendingStatuses.has(task.status) ||
+                    !task.resultUrl ||
+                    downloadingId === task.id
+                  "
+                  @click="handleDownload(task)"
+                >
+                  <DownloadOutlined />
+                </button>
+                <button
+                  type="button"
+                  class="studio__action studio__action--danger"
+                  title="删除"
+                  aria-label="删除作品"
+                  @click="removeTask(task)"
+                >
+                  <DeleteOutlined />
+                </button>
               </div>
             </article>
           </div>
@@ -255,54 +263,25 @@
       wrap-class-name="studio-preview"
     >
       <div v-if="previewTask" class="studio-preview__body">
-        <div class="studio-preview__media-col">
-          <div class="studio-preview__stage">
-            <video :src="previewTask.resultUrl || ''" controls autoplay playsinline />
-          </div>
-          <div class="result-tile__info">
-            <div class="result-tile__actions">
-              <button
-                type="button"
-                :disabled="
-                  pendingStatuses.has(previewTask.status) ||
-                  !previewTask.resultUrl ||
-                  downloadingId === previewTask.id
-                "
-                @click="handleDownload(previewTask)"
-              >
-                <DownloadOutlined />{{
-                  downloadingId === previewTask.id ? '下载中' : '下载'
-                }}</button
-              ><button
-                type="button"
-                :disabled="pendingStatuses.has(previewTask.status) || !previewTask.canvasTaskId"
-                aria-label="删除作品"
-                @click="removeTask(previewTask)"
-              >
-                <DeleteOutlined />
-              </button>
-            </div>
+        <div class="studio-preview__stage">
+          <video :src="previewTask.resultUrl || ''" controls autoplay playsinline />
+          <div class="studio-preview__bar">
+            <button type="button" :disabled="!previewTask.resultUrl || downloadingId === previewTask.id" @click="handleDownload(previewTask)"><DownloadOutlined />下载</button>
           </div>
         </div>
-        <aside class="studio-preview__prompt">
-          <h3>作品详情</h3>
-          <StudioParams v-if="previewWork" :work="previewWork" inset />
-          <StudioReferences
-            v-if="previewWork"
-            :work="previewWork"
-            :source-video-url="previewTask.sourceVideoUrl"
-          />
-        </aside>
+        <StudioPromptDetails v-if="previewWork" :work="previewWork" :source-video-url="previewTask.sourceVideoUrl" />
       </div>
     </Modal>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+import StudioPromptDetails from '@/components/studio/StudioPromptDetails.vue'
 import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
 import {
   DeleteOutlined,
@@ -331,9 +310,7 @@ import {
   studioFileName,
   type StudioWork,
 } from '@/pages/video-remix/api'
-import StudioParams from '@/components/studio/StudioParams.vue'
 import '@/pages/product-video/video.scss'
-import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useToast } from '@/composables/useToast'
 import type { CommonAiModelItem } from '@/service/api/ai-model'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
@@ -458,6 +435,8 @@ watch(modelId, () => {
   }
 })
 onMounted(async () => {
+  const referenceAsset = useRoute().query.referenceAsset
+  if (typeof referenceAsset === 'string' && /^https?:\/\//.test(referenceAsset)) materials.videoUrl = referenceAsset
   void fetchHistory()
   modelsLoading.value = true
   try {

@@ -177,31 +177,14 @@
             </button>
           </div>
         </div>
-        <aside class="studio-preview__prompt">
-          <h3>提示词</h3>
-          <div class="studio-preview__text">{{ previewItem.prompt || '无提示词' }}</div>
-          <StudioReferences :work="previewItem" />
-          <div class="studio-preview__copy-bar">
-            <button
-              type="button"
-              class="studio-preview__copy"
-              :disabled="!previewItem.prompt"
-              @click="copyPrompt(previewItem.prompt)"
-            >
-              <CopyOutlined />
-              复制
-            </button>
-          </div>
-          <div class="studio-preview__params-bar">
-            <StudioParams :work="previewItem" />
-          </div>
-        </aside>
+        <StudioPromptDetails v-if="previewItem" :work="previewItem" />
       </div>
     </Modal>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+import StudioPromptDetails from '@/components/studio/StudioPromptDetails.vue'
 import ReferencePrompt from '@/components/studio/ReferencePrompt.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import AutoLoadMore from '@/components/ui/AutoLoadMore.vue'
@@ -209,7 +192,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   PictureOutlined,
-  CopyOutlined,
   DeleteOutlined,
   DownloadOutlined,
 } from '@ant-design/icons-vue'
@@ -217,8 +199,6 @@ import { Button, Modal, Select } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
 import HistoryModal from './components/HistoryModal.vue'
-import StudioParams from '@/components/studio/StudioParams.vue'
-import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useAuth } from '@/composables/useAuth'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useToast } from '@/composables/useToast'
@@ -329,16 +309,6 @@ function openPreview(item: StudioWork) {
   previewOpen.value = true
 }
 
-async function copyPrompt(text?: string) {
-  const value = text?.trim()
-  if (!value) return
-  try {
-    await navigator.clipboard.writeText(value)
-    addToast('已复制', 'success')
-  } catch {
-    addToast('复制失败', 'error')
-  }
-}
 
 function syncModelFields() {
   const ratios = ratioOptions.value.map((item) => item.value)

@@ -242,7 +242,7 @@ watch(
   () => {
     accountVersion++
     products.value = []
-    reference.value = []
+    reference.value = typeof route.query.referenceAsset === 'string' && /^https?:\/\//.test(route.query.referenceAsset) ? [route.query.referenceAsset] : []
     uploads.product = false
     uploads.reference = false
     requirements.value =

@@ -103,7 +103,12 @@
               ><label v-if="resolutionOptions.length"
                 >分辨率<Select v-model:value="resolution" :options="resolutionOptions"
               /></label>
-              <label v-if="isGptImageFlare">输出格式<Select v-model:value="outputFormat" :options="outputFormatOptions" :disabled="locked" /></label>
+              <label v-if="isGptImageFlare"
+                >输出格式<Select
+                  v-model:value="outputFormat"
+                  :options="outputFormatOptions"
+                  :disabled="locked"
+              /></label>
             </div>
             <p v-if="modelsError" class="creation-error">
               {{ modelsError }} <button type="button" @click="loadModels">重试</button>
@@ -152,7 +157,7 @@ import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { ApiError } from '@/types/api'
-import { aiWriteSellingPoints } from '@/pages/fashion-set/api'
+import { aiWriteSellingPoints } from '@/service/api/shop-image-group'
 import { imageTool } from '@/lib/creation/catalog'
 import {
   loadFashionWorkbenchConfig,
@@ -167,8 +172,8 @@ import {
 import FashionSetResults from './components/FashionSetResults.vue'
 
 // ponytail: dev 预填参考图暂关
-// const MOCK_REFERENCE_URL =
-//   'https://storage.pixpix.media/pixpix/frontend/images/tools/apparel-set-1-1.webp'
+const MOCK_REFERENCE_URL =
+  'https://storage.pixpix.media/pixpix/frontend/images/tools/apparel-set-1-1.webp'
 
 const route = useRoute()
 const fashionMode = ref<FashionMode>('basic')
@@ -219,7 +224,7 @@ const aspect = ref('')
 const resolution = ref('')
 const outputFormat = ref('png')
 const isGptImageFlare = computed(() => currentModel.value?.model === 'gpt-image-2.6-flare')
-const outputFormatOptions = ['png', 'jpeg', 'webp', 'svg', 'gif'].map(value => ({
+const outputFormatOptions = ['png', 'jpeg', 'webp', 'svg', 'gif'].map((value) => ({
   label: ['svg', 'gif'].includes(value) ? `${value}（仅文生图）` : value,
   value,
   disabled: ['svg', 'gif'].includes(value),
@@ -307,7 +312,10 @@ const pendingKey = computed(
 watch(modelId, () => {
   const model = currentModel.value
   if (!model?.ratio?.includes(aspect.value))
-    aspect.value = ['3:4', '4:5', '2:3', '1:1'].find((ratio) => model?.ratio?.includes(ratio)) || model?.ratio?.[0] || ''
+    aspect.value =
+      ['3:4', '4:5', '2:3', '1:1'].find((ratio) => model?.ratio?.includes(ratio)) ||
+      model?.ratio?.[0] ||
+      ''
   if (!model?.resolution?.includes(resolution.value))
     resolution.value = model?.resolution?.[0] || ''
 })
@@ -390,17 +398,17 @@ watch(
     }
     if (typeof route.query.prompt === 'string')
       requirements.value = route.query.prompt.slice(0, 1000)
-    // applyDevReferenceMock()
+    applyDevReferenceMock()
   },
   { immediate: true }
 )
-// function applyDevReferenceMock() {
-//   if (!import.meta.env.DEV) return
-//   for (const group of uploadGroups.value) {
-//     if (group.min > 0) references[group.key] = [MOCK_REFERENCE_URL]
-//   }
-// }
-// watch(uploadGroups, applyDevReferenceMock, { immediate: true })
+function applyDevReferenceMock() {
+  if (!import.meta.env.DEV) return
+  for (const group of uploadGroups.value) {
+    if (group.min > 0) references[group.key] = [MOCK_REFERENCE_URL]
+  }
+}
+watch(uploadGroups, applyDevReferenceMock, { immediate: true })
 async function loadModels() {
   modelsLoading.value = true
   modelsError.value = ''
@@ -424,7 +432,7 @@ async function handleAiWrite() {
   const originalText = requirements.value
   aiWriting.value = true
   try {
-    const text = await aiWriteSellingPoints(urls)
+    const text = await aiWriteSellingPoints(urls, 'fashion-set')
     if (
       disposed ||
       owner !== userInfo.value?.id ||
@@ -434,7 +442,7 @@ async function handleAiWrite() {
       return
     if (!text?.trim()) throw new Error('AI 未返回卖点文案，请重试')
     requirements.value = text
-    addToast('AI 帮写完成，请核对商品信息', 'success')
+    addToast('AI 帮写完成', 'success')
   } catch (e) {
     if (!disposed && owner === userInfo.value?.id)
       addToast(e instanceof Error ? e.message : 'AI 帮写失败', 'error')

@@ -70,6 +70,7 @@ const shortDescriptions: Record<string, string> = {
   'detail-page': '主视觉、卖点与细节，一套完成',
   'image-remix': '参考喜欢的画面，换上你的商品',
   'video-remix': '参考原片，演绎新的内容',
+  'product-film': '商品图到脚本，一键生成动态短片',
   'product-video': '让商品动起来，展示真实卖点',
   'product-retouch': '优化光线与背景，呈现商品质感',
   'virtual-try-on': '同一套搭配，多种穿戴姿态',

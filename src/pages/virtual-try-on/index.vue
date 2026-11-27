@@ -224,7 +224,7 @@ import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { ApiError } from '@/types/api'
-import { aiWriteSellingPoints } from '@/pages/virtual-try-on/api'
+import { aiWriteSellingPoints } from '@/service/api/shop-image-group'
 import { imageTool } from '@/lib/creation/catalog'
 import {
   loadFashionWorkbenchConfig,
@@ -237,7 +237,7 @@ import {
   type FashionPhotoshootPlan,
 } from '@/pages/virtual-try-on/api'
 import VirtualTryOnResults from './components/VirtualTryOnResults.vue'
-import FashionModelPanel from './components/FashionModelPanel.vue'
+import FashionModelPanel from '@/components/creation/ModelImagePanel.vue'
 
 // ponytail: dev 预填参考图，上线前删或改 env 门控
 const MOCK_REFERENCE_URL = 'https://cdn.quantv.com/canvas/featured/1792138387159_5dr62fcnpcg.png'
@@ -490,7 +490,7 @@ async function handleAiWrite() {
   const originalText = sellingPoints.value
   aiWriting.value = true
   try {
-    const text = await aiWriteSellingPoints(urls)
+    const text = await aiWriteSellingPoints(urls, 'virtual-try-on')
     if (
       disposed ||
       owner !== userInfo.value?.id ||
@@ -501,7 +501,7 @@ async function handleAiWrite() {
       return
     if (!text?.trim()) throw new Error('AI 未返回卖点文案，请重试')
     sellingPoints.value = text
-    addToast('AI 帮写完成，请核对商品信息', 'success')
+    addToast('AI 帮写完成', 'success')
   } catch (e) {
     if (!disposed && owner === userInfo.value?.id && tool.value.code === 'detail-page')
       addToast(e instanceof Error ? e.message : 'AI 帮写失败', 'error')

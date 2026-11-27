@@ -225,7 +225,7 @@ import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { ApiError } from '@/types/api'
-import { aiWriteSellingPoints } from '@/pages/detail-page/api'
+import { aiWriteSellingPoints } from '@/service/api/shop-image-group'
 import { buildImagePrompts, imageTool } from '@/lib/creation/catalog'
 import {
   planDetailPage,
@@ -480,7 +480,7 @@ async function handleAiWrite() {
   const originalText = sellingPoints.value
   aiWriting.value = true
   try {
-    const text = await aiWriteSellingPoints(urls)
+    const text = await aiWriteSellingPoints(urls, 'detail-page')
     if (
       disposed ||
       owner !== userInfo.value?.id ||
@@ -491,7 +491,7 @@ async function handleAiWrite() {
       return
     if (!text?.trim()) throw new Error('AI 未返回卖点文案，请重试')
     sellingPoints.value = text
-    addToast('AI 帮写完成，请核对商品信息', 'success')
+    addToast('AI 帮写完成', 'success')
   } catch (e) {
     if (!disposed && owner === userInfo.value?.id && tool.value.code === 'detail-page')
       addToast(e instanceof Error ? e.message : 'AI 帮写失败', 'error')

@@ -142,6 +142,7 @@ const props = withDefaults(
     primaryIndex?: number
     fileType?: string[]
     requireLogin?: boolean
+    saveToLibrary?: boolean
     fileSize?: number
     emptyDesc?: string
     drag?: boolean
@@ -154,6 +155,7 @@ const props = withDefaults(
     primaryIndex: 0,
     fileType: () => ['image/jpeg', 'image/png', 'image/webp'],
     requireLogin: false,
+    saveToLibrary: false,
     drag: false,
     preview: false,
   }
@@ -305,7 +307,7 @@ async function customRequest(options: UploadRequestOption) {
     return
   }
   try {
-    const url = await uploadFile(file as File)
+    const url = await uploadFile(file as File, undefined, { saveToLibrary: props.saveToLibrary })
     images.value = images.value.map((item) =>
       item.uid === uid ? { ...item, url, uploading: false } : item
     )

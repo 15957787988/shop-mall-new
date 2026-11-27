@@ -1,6 +1,6 @@
 <template>
   <PageContainer flush>
-    <div class="studio studio--gallery">
+    <div class="studio studio--gallery studio-video-results">
       <aside class="studio__form">
         <div class="studio__form-scroll scroll-area">
           <section class="studio__section">
@@ -19,21 +19,8 @@
             <p v-else-if="!modelsLoading && !models.length" class="studio__hint">暂无可用模型</p>
           </section>
 
-          <section v-if="productMode" class="studio__section">
-            <h3 class="studio__label">商品信息</h3>
-            <label class="studio__field studio__duration"
-              >商品卖点 / 口播文案<Input.TextArea
-                v-model:value="productSellingPoints"
-                :rows="3"
-                :maxlength="1000"
-                placeholder="如：轻便通勤、可拆卸肩带；请勿填写未经证实的功效"
-            /></label>
-            <p class="studio__hint">
-              下方至少添加一张商品图。参考图决定商品外观，卖点和创作要求决定展示内容。
-            </p>
-          </section>
           <section class="studio__section">
-            <h3 class="studio__label">{{ productMode ? '创作要求' : '提示词' }}</h3>
+            <h3 class="studio__label">提示词</h3>
             <ReferencePrompt v-model="prompt" :images="refImages" :videos="refVideos" :audios="refAudios" :rows="6" :maxlength="30000" />
           </section>
 
@@ -237,26 +224,22 @@
             </button>
           </div>
         </div>
-        <aside class="studio-preview__prompt">
-          <h3>作品详情</h3>
-          <StudioParams :work="previewItem" inset />
-          <StudioReferences :work="previewItem" />
-        </aside>
+        <StudioPromptDetails v-if="previewItem" :work="previewItem" />
       </div>
     </Modal>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+import StudioPromptDetails from '@/components/studio/StudioPromptDetails.vue'
 import ReferencePrompt from '@/components/studio/ReferencePrompt.vue'
 import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { buildProductVideoPrompt } from '@/lib/creation/product-video'
 import { VideoCameraOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons-vue'
-import { Button, Input, Modal, Select, Slider } from 'ant-design-vue'
+import { Button, Modal, Select, Slider } from 'ant-design-vue'
 import type { UploadProps } from 'ant-design-vue'
 import PageContainer from '@/components/ui/PageContainer.vue'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
@@ -268,8 +251,6 @@ import { isSeedance, assertSeedanceDimensions } from '@/pages/canvas/utils/seeda
 import { readReferenceVideoMetadata } from '@/pages/canvas/utils/videoReferencePreflight'
 import UploadFile from '@/components/UploadFile/src/UploadFile.vue'
 import HistoryModal from './components/HistoryModal.vue'
-import StudioParams from '@/components/studio/StudioParams.vue'
-import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { useAuth } from '@/composables/useAuth'
 import { estimateModelPoints, formatModelPoints } from '@/lib/modelPricing'
 import { useToast } from '@/composables/useToast'
@@ -288,7 +269,6 @@ import {
 
 const productMode = true
 const route = useRoute()
-const productSellingPoints = ref('')
 const { isLoggedIn, openLogin } = useAuth()
 const { addToast } = useToast()
 
@@ -752,9 +732,7 @@ async function handleGenerate() {
     if (refVideos.value.length) await assertRefVideos(refVideos.value, currentModel.value)
     if (refAudios.value.length) await assertRefAudios(refAudios.value, maxAudioDuration.value)
     const params = buildVideoParams({
-      prompt: productMode
-        ? buildProductVideoPrompt('', productSellingPoints.value, prompt.value)
-        : prompt.value,
+      prompt: prompt.value,
       aspect: aspect.value,
       duration: duration.value,
       resolution: resolution.value,
@@ -800,7 +778,6 @@ watch(
   () => [productMode, route.query.prompt],
   () => {
     prompt.value = typeof route.query.prompt === 'string' ? route.query.prompt.slice(0, 30000) : ''
-    productSellingPoints.value = ''
     refImages.value = []
     refVideos.value = []
     refAudios.value = []

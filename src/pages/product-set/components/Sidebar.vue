@@ -145,7 +145,7 @@ import { reactive, computed, ref, watch, onMounted } from 'vue'
 import { Input, Select, Button, Radio, Popover } from 'ant-design-vue'
 import { PlusOutlined, MinusOutlined, QuestionCircleOutlined } from '@ant-design/icons-vue'
 import uploadGuideImg from '@/assets/image/aiProductImage-tips.png'
-import { aiWriteSellingPoints } from '@/pages/product-set/api'
+import { aiWriteSellingPoints } from '@/service/api/shop-image-group'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import ImageUpload from '@/components/UploadFile/src/ImageUpload.vue'
@@ -314,7 +314,7 @@ async function handleAiWrite() {
 
   aiWriting.value = true
   try {
-    form.sellingPoints = await aiWriteSellingPoints(form.productImages.slice(0, 3))
+    form.sellingPoints = await aiWriteSellingPoints(form.productImages, 'product-set')
     addToast('AI 帮写完成', 'success')
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'AI 帮写失败'

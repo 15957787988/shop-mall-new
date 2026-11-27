@@ -235,6 +235,16 @@ export const creationTools = [
     href: '/video-remix',
     media: '视频',
   },
+  {
+    code: 'product-film',
+    name: '商品成片',
+    description: '上传商品图，AI规划脚本并生成完整动态短片。',
+    icon: 'play',
+    cover: 'perfume',
+    tone: 'cream',
+    href: '/product-film',
+    media: '视频',
+  },
   // {
   //   code: 'product-video',
   //   name: '带货视频',

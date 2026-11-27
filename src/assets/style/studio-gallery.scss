@@ -153,3 +153,20 @@
     font-size: 12px;
   }
 }
+
+/* 视频结果预览高度与商品短片保持一致。 */
+#app .studio--gallery.studio-video-results {
+  .studio__gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  }
+  .studio__media {
+    height: 320px;
+    aspect-ratio: auto;
+    flex: 0 0 auto;
+  }
+  .studio__poster img,
+  .studio__poster video {
+    max-height: 320px;
+    object-fit: contain;
+  }
+}

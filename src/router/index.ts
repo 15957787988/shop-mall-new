@@ -2,6 +2,8 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import { Modal } from 'ant-design-vue'
 
 const routes: RouteRecordRaw[] = [
+  { path: '/product-film', name: 'ProductFilm', component: () => import('@/pages/product-film/index.vue'), meta: { creationWorkspace: true } },
+  { path: '/media-parser', name: 'MediaParser', component: () => import('@/pages/media-parser/index.vue') },
   { path: '/audio', name: 'Audio', component: () => import('@/pages/audio/index.vue') },
   {
     path: '/design-preview',

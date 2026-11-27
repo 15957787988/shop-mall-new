@@ -10,6 +10,8 @@ axios.defaults.timeout = 120000
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=UTF-8'
 
 export interface HttpRequestOptions {
+  /** 单次请求超时；多阶段AI规划可显式延长。 */
+  timeoutMs?: number
   /** 跳过鉴权头（登录等匿名接口） */
   skipAuth?: boolean
   /** 覆盖默认 Authorization */
@@ -87,6 +89,7 @@ function mergeAxiosConfig(
     headers.Authorization = auth
   }
   return {
+    timeout: options?.timeoutMs ?? axios.defaults.timeout,
     ...extra,
     headers: {
       ...headers,
@@ -115,6 +118,7 @@ axios.interceptors.response.use(
       /\/ai\/(?:image|video)\/(?:common\/(?:generations|generate)|collections)$/.test(path)
       || /\/ai\/video\/replicate\/(?:tasks|prompt)$/.test(path)
       || /\/ai\/shop\/image-group\/(?:generate|regenerate)$/.test(path)
+      || /\/ai\/product-film\/generate$/.test(path)
     )
     if (submission && res.data?.code === 0) onPointsChanged?.()
     return res

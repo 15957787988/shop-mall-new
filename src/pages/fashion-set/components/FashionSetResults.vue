@@ -32,7 +32,7 @@
         </header>
         <div class="fashion-group__grid">
           <div v-for="(url, index) in group.originals" :key="url" class="fashion-image">
-            <button type="button" class="fashion-image__media" @click="openOriginal(url)">
+            <button type="button" class="fashion-image__media" @click="openOriginal(group, index)">
               <img :src="url" alt="商品原图" loading="lazy" />
               <span class="fashion-image__label"
                 >原图{{ group.originals.length > 1 ? ` ${index + 1}` : '' }}</span
@@ -45,7 +45,7 @@
               class="fashion-image__media"
               :disabled="pending(work) || !work.picUrl"
               :aria-busy="pending(work)"
-              @click="openPreview(work)"
+              @click="openPreview(group, work)"
             >
               <span v-if="pending(work)" class="fashion-image__placeholder"><GenerationLoading /></span>
               <img
@@ -91,33 +91,26 @@
       :loading="loading"
       @change="load"
     />
-    <Modal
-      :open="!!previewUrl"
-      :footer="null"
-      width="1080px"
-      centered
-      destroy-on-close
-      wrap-class-name="studio-preview"
-      @cancel="closePreview"
+    <ImagePreviewGroup
+      v-if="viewerVisible"
+      :preview="{
+        visible: viewerVisible,
+        current: viewerIndex,
+        onVisibleChange: (visible: boolean) => {
+          viewerVisible = visible
+        },
+        onChange: (current: number) => {
+          viewerIndex = current
+        },
+      }"
     >
-      <div v-if="previewUrl" class="studio-preview__body">
-        <div class="studio-preview__stage">
-          <img :src="previewUrl" :alt="preview?.creationLabel || '商品原图'" />
-          <div class="studio-preview__bar">
-            <button
-              type="button"
-              @click="preview ? download(preview) : downloadOriginal(previewUrl)"
-            >
-              <DownloadOutlined />下载
-            </button>
-          </div>
-        </div>
-        <aside v-if="preview" class="studio-preview__details">
-          <h3>{{ preview.creationLabel || '作品详情' }}</h3>
-          <StudioParams :work="preview" inset /><StudioReferences :work="preview" />
-        </aside>
-      </div>
-    </Modal>
+      <Image
+        v-for="(url, index) in previewUrls"
+        :key="`${index}-${url}`"
+        :src="url"
+        class="fashion-preview-source"
+      />
+    </ImagePreviewGroup>
   </section>
 </template>
 
@@ -126,9 +119,8 @@ import GenerationLoading from '@/components/ui/GenerationLoading.vue'
 import CreationDemo from '@/components/CreationDemo.vue'
 import ResultPagination from '@/components/ui/ResultPagination.vue'
 import StudioParams from '@/components/studio/StudioParams.vue'
-import StudioReferences from '@/components/studio/StudioReferences.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Alert, Button, Modal } from 'ant-design-vue'
+import { Alert, Button, Image, Modal } from 'ant-design-vue'
 import {
   DeleteOutlined,
   DownloadOutlined,
@@ -156,6 +148,7 @@ interface ResultGroup {
   works: StudioWork[]
   originals: string[]
 }
+const ImagePreviewGroup = Image.PreviewGroup
 const props = defineProps<Props>()
 const { isLoggedIn, userInfo } = useAuth()
 const { addToast } = useToast()
@@ -164,9 +157,10 @@ const total = ref(0)
 const page = ref(1)
 const loading = ref(false)
 const error = ref('')
-const preview = ref<StudioWork>()
-const originalPreview = ref('')
-const previewUrl = computed(() => originalPreview.value || preview.value?.picUrl || '')
+const viewerVisible = ref(false)
+const viewerIndex = ref(0)
+const previewUrls = ref<string[]>([])
+const viewerGroupId = ref('')
 const downloading = ref<number>()
 const downloadingGroup = ref('')
 let version = 0
@@ -202,17 +196,30 @@ function formatTime(value: StudioWork['createTime']) {
     : new Date(value)
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('zh-CN', { hour12: false })
 }
-function openPreview(work: StudioWork) {
-  originalPreview.value = ''
-  preview.value = work
+function groupPreviewUrls(group: ResultGroup) {
+  return [
+    ...group.originals,
+    ...group.works.flatMap((work) => (work.picUrl ? [work.picUrl] : [])),
+  ]
 }
-function openOriginal(url: string) {
-  preview.value = undefined
-  originalPreview.value = url
+function openAt(group: ResultGroup, index: number) {
+  const urls = groupPreviewUrls(group)
+  if (!urls[index]) return
+  viewerGroupId.value = group.id
+  previewUrls.value = urls
+  viewerIndex.value = index
+  viewerVisible.value = true
+}
+function openOriginal(group: ResultGroup, index: number) {
+  openAt(group, index)
+}
+function openPreview(group: ResultGroup, work: StudioWork) {
+  const generatedIndex = group.works.filter((item) => item.picUrl).findIndex((item) => item.id === work.id)
+  if (generatedIndex < 0) return
+  openAt(group, group.originals.length + generatedIndex)
 }
 function closePreview() {
-  preview.value = undefined
-  originalPreview.value = ''
+  viewerVisible.value = false
 }
 function schedule() {
   clearTimeout(timer)
@@ -273,13 +280,6 @@ async function download(work: StudioWork) {
     downloading.value = undefined
   }
 }
-async function downloadOriginal(url: string) {
-  try {
-    await downloadStudioFile(url, studioFileName('image', 0, url))
-  } catch (e) {
-    addToast(e instanceof Error ? e.message : '下载失败，请重试', 'error')
-  }
-}
 async function downloadGroup(group: ResultGroup) {
   if (loading.value || downloadingGroup.value) return
   downloadingGroup.value = group.id
@@ -306,7 +306,8 @@ function remove(work: StudioWork) {
       try {
         await deleteStudioWork('image', work.id)
         if (token !== version) return
-        if (preview.value?.id === work.id) closePreview()
+        const groupId = work.creationBatchId ? `batch:${work.creationBatchId}` : `work:${work.id}`
+        if (viewerGroupId.value === groupId) closePreview()
         await load(page.value)
       } catch (e) {
         if (token === version) addToast(e instanceof Error ? e.message : '删除失败', 'error')
@@ -465,43 +466,8 @@ onBeforeUnmount(() => {
     cursor: default;
   }
 }
-.studio-preview {
-  &__body {
-    display: flex;
-    max-height: 84vh;
-    overflow: auto;
-  }
-  &__stage {
-    flex: 1;
-    min-width: 0;
-    background: var(--color-ink-primary);
-  }
-  &__stage img {
-    width: 100%;
-    height: 65vh;
-    object-fit: contain;
-  }
-  &__bar {
-    padding: 12px;
-    text-align: right;
-  }
-  &__bar button {
-    border: 0;
-    background: var(--color-media-control);
-    color: var(--color-on-media);
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  &__details {
-    width: 320px;
-    flex-shrink: 0;
-    overflow: auto;
-  }
-  &__details h3 {
-    padding: 16px;
-    margin: 0;
-  }
+.fashion-preview-source {
+  display: none;
 }
 @media (hover: none) {
   .fashion-image__actions {
@@ -514,15 +480,6 @@ onBeforeUnmount(() => {
   }
   .fashion-group__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .studio-preview__body {
-    flex-direction: column;
-  }
-  .studio-preview__details {
-    width: 100%;
-  }
-  .studio-preview__stage img {
-    height: 42vh;
   }
 }
 </style>
