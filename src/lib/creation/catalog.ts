@@ -237,8 +237,8 @@ export const creationTools = [
   },
   {
     code: 'product-film',
-    name: '商品成片',
-    description: '上传商品图，AI规划脚本并生成完整动态短片。',
+    name: '带货视频',
+    description: '上传商品图、描述卖点，制作产品展示短片。',
     icon: 'play',
     cover: 'perfume',
     tone: 'cream',
